@@ -1,0 +1,72 @@
+[
+  {
+    "id": "extra_papaya_apex",
+    "title": "Papaya Apex",
+    "category": "Cars",
+    "color": "Orange",
+    "kind": "STATIC",
+    "asset": "wallpapers/extra_papaya_apex.webp",
+    "thumbnail": "wallpapers/extra_papaya_apex_thumb.webp",
+    "author": "DepthWall",
+    "license": "Original artwork",
+    "sourceUrl": "https://github.com/Srimi1/depthwall/blob/main/tools/generate_extra_art.py",
+    "width": 2160,
+    "height": 4680
+  },
+  {
+    "id": "extra_midnight_gt",
+    "title": "Midnight GT",
+    "category": "Cars",
+    "color": "Blue",
+    "kind": "STATIC",
+    "asset": "wallpapers/extra_midnight_gt.webp",
+    "thumbnail": "wallpapers/extra_midnight_gt_thumb.webp",
+    "author": "DepthWall",
+    "license": "Original artwork",
+    "sourceUrl": "https://github.com/Srimi1/depthwall/blob/main/tools/generate_extra_art.py",
+    "width": 2160,
+    "height": 4680
+  },
+  {
+    "id": "extra_racing_line",
+    "title": "Papaya Racing Line",
+    "category": "Themes",
+    "color": "Orange",
+    "kind": "STATIC",
+    "asset": "wallpapers/extra_racing_line.webp",
+    "thumbnail": "wallpapers/extra_racing_line_thumb.webp",
+    "author": "DepthWall",
+    "license": "Original artwork",
+    "sourceUrl": "https://github.com/Srimi1/depthwall/blob/main/tools/generate_extra_art.py",
+    "width": 2160,
+    "height": 4680
+  },
+  {
+    "id": "extra_carbon_fold",
+    "title": "Carbon Fold",
+    "category": "Themes",
+    "color": "Orange",
+    "kind": "STATIC",
+    "asset": "wallpapers/extra_carbon_fold.webp",
+    "thumbnail": "wallpapers/extra_carbon_fold_thumb.webp",
+    "author": "DepthWall",
+    "license": "Original artwork",
+    "sourceUrl": "https://github.com/Srimi1/depthwall/blob/main/tools/generate_extra_art.py",
+    "width": 2160,
+    "height": 4680
+  },
+  {
+    "id": "extra_orbital_blue",
+    "title": "Orbital Blue",
+    "category": "Themes",
+    "color": "Blue",
+    "kind": "STATIC",
+    "asset": "wallpapers/extra_orbital_blue.webp",
+    "thumbnail": "wallpapers/extra_orbital_blue_thumb.webp",
+    "author": "DepthWall",
+    "license": "Original artwork",
+    "sourceUrl": "https://github.com/Srimi1/depthwall/blob/main/tools/generate_extra_art.py",
+    "width": 2160,
+    "height": 4680
+  }
+]

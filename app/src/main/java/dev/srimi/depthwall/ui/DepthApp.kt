@@ -43,9 +43,12 @@ import coil.compose.AsyncImage
 import dev.srimi.depthwall.R
 import dev.srimi.depthwall.data.*
 import dev.srimi.depthwall.wallpaper.DepthWallpaperService
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun DepthApp(vm:MainViewModel) {
+@Composable fun DepthApp(vm:MainViewModel,initialSettingsOpen:Boolean=false) {
     val context=LocalContext.current
     val items by vm.wallpapers.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -53,7 +56,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
     val settings by vm.settings.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var selected by remember { vm.selected }
-    var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
     val snackbar=remember { SnackbarHostState() }
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
@@ -82,7 +85,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
         NavigationBar(containerColor=Color(0xFF0C0C0C),tonalElevation=0.dp) {
             val icons=listOf(Icons.Outlined.GridView,Icons.Outlined.Public,Icons.Outlined.Layers,Icons.Outlined.CollectionsBookmark)
             listOf("Explore","Super","Depth Studio","Library").forEachIndexed { i,label ->
-                NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Orange,selectedTextColor=Ivory,indicatorColor=Color(0xFF2A1C0D)),modifier=Modifier.testTag("tab_$i"))
+                NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Orange,selectedTextColor=Ivory,indicatorColor=MaterialTheme.colorScheme.primaryContainer),modifier=Modifier.testTag("tab_$i"))
             }
         }
     }) { padding ->
@@ -94,7 +97,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
                     Text("MADE FOR AMOLED",fontSize=8.sp,letterSpacing=2.sp,color=Muted)
                 }
                 IconButton(onClick={importImage.launch(arrayOf("image/*"))}) { Icon(Icons.Outlined.AddPhotoAlternate,"Import image",tint=Ivory) }
-                if(tab==3)IconButton(onClick={settingsOpen=true},modifier=Modifier.testTag("settings")) { Icon(Icons.Outlined.Tune,"Settings") }
+                IconButton(onClick={settingsOpen=true},modifier=Modifier.testTag("settings")) { Icon(Icons.Outlined.Tune,"Settings") }
             }
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
             Box(Modifier.weight(1f)) {
@@ -118,7 +121,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
             catch(e:Exception) { vm.repo.scenes.clearPending();vm.message("Wallpaper picker unavailable: ${e.message}") }
         })
     }
-    if(settingsOpen)SettingsDialog(settings,items,vm,{settingsOpen=false})
+    if(settingsOpen)SettingsDialog(items,vm,{settingsOpen=false})
     report?.let { info ->
         AlertDialog(onDismissRequest={report=null},title={Text("Review wallpaper pack")},text={
             Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -134,21 +137,61 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
 }
 
 @Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("All") }
     var color by rememberSaveable { mutableStateOf("All colours") }
     var provider by rememberSaveable { mutableStateOf("Offline") }
+    var topic by rememberSaveable { mutableStateOf("") }
+    var only4k by rememberSaveable { mutableStateOf(false) }
     var online by remember { mutableStateOf<List<WallpaperItem>>(emptyList()) }
-    var searched by rememberSaveable { mutableStateOf(false) }
-    fun searchOnline() {
-        val requestedProvider=provider;val requestedQuery=query
-        vm.run {
-            val results=vm.repo.online(requestedProvider,requestedQuery)
-            if(provider==requestedProvider && query==requestedQuery) { online=results;searched=true }
+    var searched by remember { mutableStateOf(false) }
+    var nextCursor by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<String?>(null) }
+    var failedAppend by remember { mutableStateOf(false) }
+    var generation by remember { mutableIntStateOf(0) }
+    var searchJob by remember { mutableStateOf<Job?>(null) }
+    var websiteImport by rememberSaveable { mutableStateOf(false) }
+    val sources=WallpaperSources.sources
+    val sourceInfo=sources.firstOrNull { it.id==provider }
+
+    fun resetOnline() {
+        generation++
+        searchJob?.cancel()
+        online=emptyList();nextCursor=null;searched=false;loading=false;failure=null
+    }
+    fun searchOnline(append:Boolean=false) {
+        if(loading || provider=="Offline")return
+        val cursor=if(append)nextCursor ?: return else null
+        val requestedProvider=provider;val requestedQuery=query;val requested4k=only4k
+        val request=++generation
+        loading=true;failure=null;failedAppend=append
+        searchJob=scope.launch {
+            try {
+                val page=vm.repo.onlinePage(requestedProvider,requestedQuery,cursor,requested4k)
+                if(request==generation) {
+                    online=(if(append)online+page.items else page.items).distinctBy { it.id }
+                    nextCursor=page.nextCursor;searched=true
+                }
+            } catch(cancelled:CancellationException) { throw cancelled }
+            catch(error:Exception) {
+                if(request==generation)failure=error.message ?: "This source is unavailable. Please try again."
+            } finally { if(request==generation)loading=false }
         }
     }
-    val source=if(provider=="Offline")items.filter { it.kind=="STATIC" && it.isLocal } else online.map { remote -> items.firstOrNull { it.id==remote.id } ?: remote }
-    val filtered=remember(source,query,category,color,provider) { source.filter { (provider!="Offline" || (it.title.contains(query,true)||it.category.contains(query,true))) && (category=="All" || it.category==category || provider!="Offline") && (color=="All colours"||it.color==color||provider!="Offline") } }
+    fun openWebsite(url:String) {
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url))) }
+            .onFailure { vm.message("No browser is available to open this website.") }
+    }
+    val source=if(provider=="Offline")items.filter { it.kind=="STATIC" && it.isLocal }
+        else online.map { remote -> items.firstOrNull { it.id==remote.id } ?: remote }
+    val filtered=remember(source,query,category,color,provider) {
+        source.filter { (provider!="Offline" || it.title.contains(query,true) || it.category.contains(query,true)) &&
+            (provider!="Offline" || category=="All" || it.category==category) &&
+            (provider!="Offline" || color=="All colours" || it.color==color) }
+    }
     LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=24.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(18.dp),modifier=Modifier.testTag("explore_grid")) {
         item(span={GridItemSpan(2)}) {
             Box(Modifier.fillMaxWidth().height(255.dp).clip(RoundedCornerShape(26.dp)).background(Surface).clickable(onClick=onHero)) {
@@ -164,24 +207,148 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
         }
         item(span={GridItemSpan(2)}) {
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
-                    Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
-                    Text(if(provider=="Offline")"${source.size} wallpapers" else provider,color=Muted,fontSize=11.sp)
+                Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
+                Text("Space, open roads and AMOLED colour.",color=Muted,fontSize=13.sp)
+                ChoiceRow(listOf("Space","Cars","Themes","Alps"),topic) { selectedTopic ->
+                    resetOnline();topic=selectedTopic
+                    when(selectedTopic) {
+                        "Space" -> { if(provider=="Offline" || provider=="Wallhaven")provider="NASA";query="nebula" }
+                        "Cars" -> { provider="Wallhaven";query="McLaren" }
+                        "Themes" -> { provider="Wallhaven";query="abstract" }
+                        else -> { provider="Wikimedia";query="Alps landscape" }
+                    }
+                    category="All";color="All colours"
+                    searchOnline()
                 }
-                OutlinedTextField(query,{query=it},placeholder={Text(if(provider=="Offline")"Search your collection" else "Search $provider")},leadingIcon={Icon(Icons.Outlined.Search,null)},singleLine=true,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().testTag("search"),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={if(provider!="Offline")searchOnline()}))
-                ChoiceRow(listOf("Offline","NASA","Wikimedia"),provider) { provider=it;searched=false;online=emptyList();category="All";color="All colours" }
+                OutlinedTextField(query,{resetOnline();query=it;topic=""},placeholder={Text(if(provider=="Offline")"Search your collection" else "Search ${sourceInfo?.label ?: provider}")},leadingIcon={Icon(Icons.Outlined.Search,null)},singleLine=true,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().testTag("search"),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={searchOnline()}))
+                ChoiceRow(listOf("Offline")+sources.map { it.label },sourceInfo?.label ?: "Offline") { label ->
+                    resetOnline();provider=sources.firstOrNull { it.label==label }?.id ?: "Offline"
+                    category="All";color="All colours"
+                }
                 if(provider=="Offline") {
-                    ChoiceRow(listOf("All","Space","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
+                    Text("${source.size} wallpapers available offline",color=Muted,fontSize=11.sp)
+                    ChoiceRow(listOf("All","Space","Cars","Themes","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
                     ChoiceRow(listOf("All colours","Orange","Blue","Green","Purple","Gold","Red","White"),color){color=it}
                 } else {
-                    Text("Download favourites for offline use. Credits stay attached to every image.",color=Muted,fontSize=12.sp)
-                    Button(onClick={searchOnline()},modifier=Modifier.fillMaxWidth()) { Text("Find wallpapers") }
+                    Card(colors=CardDefaults.cardColors(containerColor=Surface),shape=RoundedCornerShape(16.dp)) {
+                        Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
+                            Text(sourceInfo?.label ?: provider,style=MaterialTheme.typography.titleSmall)
+                            Text(sourceInfo?.description.orEmpty(),color=Muted,fontSize=12.sp)
+                            Text("No daily download quota or subscription in DepthWall. Source availability and rate limits still apply. Credits stay with saved images.",color=Muted,fontSize=12.sp)
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("4K sources only",fontSize=13.sp)
+                            Text("At least 3840 × 2160, either orientation",color=Muted,fontSize=11.sp)
+                        }
+                        Switch(only4k,{resetOnline();only4k=it},modifier=Modifier.testTag("filter_4k"))
+                    }
+                    Button(enabled=!loading,onClick={searchOnline()},modifier=Modifier.fillMaxWidth().testTag("find_wallpapers")) {
+                        Icon(Icons.Outlined.Search,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp))
+                        Text(if(loading)"Finding wallpapers…" else "Find wallpapers")
+                    }
+                }
+                OutlinedButton(onClick={websiteImport=true},modifier=Modifier.fillMaxWidth().testTag("import_website")) {
+                    Icon(Icons.Outlined.Link,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("Import from a website")
+                }
+                Text("More wallpaper websites",style=MaterialTheme.typography.labelLarge)
+                Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        "NASA" to "https://images.nasa.gov/",
+                        "ESA" to "https://www.esa.int/ESA_Multimedia/Images",
+                        "ESO" to "https://www.eso.org/public/images/",
+                        "Hubble" to "https://esahubble.org/images/",
+                        "Webb" to "https://esawebb.org/images/",
+                        "Wallpaper Abyss" to "https://wall.alphacoders.com/",
+                        "Wallhaven" to "https://wallhaven.cc/"
+                    ).forEach { (label,url) ->
+                        SuggestionChip(onClick={openWebsite(url)},label={Text(label,fontSize=11.sp)},icon={Icon(Icons.Outlined.OpenInNew,null,Modifier.size(13.dp))})
+                    }
+                }
+                Text("Open a website, then paste an image or wallpaper-page link to import it. Some sites require a browser download first.",color=Muted,fontSize=11.sp)
+            }
+        }
+        if(loading)item(span={GridItemSpan(2)}) { LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange) }
+        if(failure!=null)item(span={GridItemSpan(2)}) {
+            Card(colors=CardDefaults.cardColors(containerColor=Surface)) {
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Text("Couldn’t load ${sourceInfo?.label ?: provider}",style=MaterialTheme.typography.titleSmall)
+                    Text(failure.orEmpty(),color=Muted,fontSize=12.sp)
+                    TextButton(enabled=!loading,onClick={searchOnline(failedAppend)},modifier=Modifier.testTag("retry_search")){Text("Try again")}
                 }
             }
         }
         items(filtered,key={it.id}) { item -> WallpaperCard(item,{onSelect(item)},{vm.favorite(item)}) }
-        if(filtered.isEmpty())item(span={GridItemSpan(2)}) { EmptyState(if(provider!="Offline" && !searched)"A wider world awaits" else "Nothing here yet",if(provider!="Offline" && !searched)"Search for Earth, Moon, mountains or a colour you love." else "Try another search or filter.") }
+        if(filtered.isEmpty() && !loading && failure==null)item(span={GridItemSpan(2)}) {
+            EmptyState(
+                if(provider!="Offline" && !searched)"A wider world awaits" else if(nextCursor!=null)"No matches on this page" else "Nothing here yet",
+                if(provider!="Offline" && !searched)"Pick a collection or search for something you love."
+                else if(nextCursor!=null)"Load more to keep looking, or change your search."
+                else if(only4k && provider!="Offline")"Try a different search or turn off the 4K filter." else "Try another search or filter.")
+        }
+        if(provider!="Offline" && nextCursor!=null)item(span={GridItemSpan(2)}) {
+            OutlinedButton(enabled=!loading,onClick={searchOnline(true)},modifier=Modifier.fillMaxWidth().testTag("load_more")) {
+                Text(if(loading)"Loading…" else "Load more wallpapers")
+            }
+        }
+        if(provider!="Offline" && searched && filtered.isNotEmpty() && nextCursor==null && !loading)item(span={GridItemSpan(2)}) {
+            Text("${filtered.size} wallpapers · End of this search",color=Muted,fontSize=12.sp)
+        }
     }
+    if(websiteImport)WebsiteImportDialog(vm,{websiteImport=false}) { item -> websiteImport=false;onSelect(item) }
+}
+
+@Composable private fun WebsiteImportDialog(vm:MainViewModel,onClose:()->Unit,onSelect:(WallpaperItem)->Unit) {
+    val scope=rememberCoroutineScope()
+    var url by rememberSaveable { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<String?>(null) }
+    var candidates by remember { mutableStateOf<List<WallpaperItem>>(emptyList()) }
+    var job by remember { mutableStateOf<Job?>(null) }
+    var generation by remember { mutableIntStateOf(0) }
+    fun findImages() {
+        if(loading || url.isBlank())return
+        loading=true;failure=null;candidates=emptyList()
+        val request=++generation
+        val requestedUrl=url.trim()
+        job=scope.launch {
+            try {
+                val result=vm.repo.importWebImage(requestedUrl).distinctBy { it.remoteUrl }
+                if(request==generation) {
+                    candidates=result
+                    if(candidates.isEmpty())failure="No downloadable images were found. Open the site in your browser and import its downloaded image instead."
+                }
+            } catch(cancelled:CancellationException) { throw cancelled }
+            catch(error:Exception) { if(request==generation)failure=error.message ?: "This page could not be imported." }
+            finally { if(request==generation)loading=false }
+        }
+    }
+    AlertDialog(onDismissRequest=onClose,title={Text("Wallpaper from the web")},text={
+        Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+            Text("Paste a public HTTPS image or wallpaper-page link. Choose a photo to preview, crop and download.",color=Muted,fontSize=12.sp)
+            OutlinedTextField(url,{
+                generation++;job?.cancel();loading=false;failure=null;candidates=emptyList();url=it
+            },label={Text("Image or page URL")},singleLine=true,modifier=Modifier.fillMaxWidth().testTag("website_url"),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={findImages()}))
+            Text("Use images the site offers for download. A page may expose only a preview; the downloaded image’s actual size determines its quality.",color=Muted,fontSize=11.sp)
+            if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
+            failure?.let { Text(it,color=MaterialTheme.colorScheme.error,fontSize=12.sp) }
+            if(candidates.isNotEmpty()) {
+                Text("${candidates.size} images found · choose one",fontSize=12.sp)
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max=280.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    items(candidates,key={it.id}) { candidate ->
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onSelect(candidate) }.padding(6.dp),verticalAlignment=Alignment.CenterVertically) {
+                            AsyncImage(candidate.thumbnailModel,candidate.title,Modifier.size(68.dp).clip(RoundedCornerShape(9.dp)),contentScale=ContentScale.Crop)
+                            Column(Modifier.weight(1f).padding(start=10.dp)) {
+                                Text(candidate.title,maxLines=2,overflow=TextOverflow.Ellipsis,fontSize=13.sp)
+                                Text(if(candidate.width>0 && candidate.height>0)"${candidate.width} × ${candidate.height}" else "Size checked on download",color=Muted,fontSize=11.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },confirmButton={TextButton(enabled=!loading && url.isNotBlank(),onClick={findImages()}){Text(if(failure!=null)"Try again" else "Find images")}},dismissButton={TextButton(onClick=onClose){Text("Close")}})
 }
 
 @Composable fun ChoiceRow(options:List<String>,selected:String,onSelect:(String)->Unit) {
@@ -190,7 +357,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
     }
 }
 @Composable fun BadgeLabel(label:String,modifier:Modifier=Modifier) {
-    Text(label,modifier.clip(RoundedCornerShape(30.dp)).background(Color(0xCC1C1914)).padding(horizontal=11.dp,vertical=7.dp),color=Orange,fontSize=8.sp,letterSpacing=1.sp,fontWeight=FontWeight.Bold)
+    Text(label,modifier.clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.85f)).padding(horizontal=11.dp,vertical=7.dp),color=Orange,fontSize=8.sp,letterSpacing=1.sp,fontWeight=FontWeight.Bold)
 }
 @Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit) {
     val context = LocalContext.current
@@ -202,10 +369,11 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
             AsyncImage(thumbnail,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             IconButton(onClick=onFavorite,modifier=Modifier.align(Alignment.TopEnd)) { Icon(if(item.favorite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Favorite ${item.title}",tint=if(item.favorite)Orange else Ivory,modifier=Modifier.size(19.dp)) }
             if(item.kind!="STATIC")BadgeLabel(if(item.kind=="NATIVE_SCENE")"LIVE" else "DEPTH",Modifier.align(Alignment.BottomStart).padding(9.dp))
+            else if(maxOf(item.width,item.height)>=3840 && minOf(item.width,item.height)>=2160)BadgeLabel("4K SOURCE",Modifier.align(Alignment.BottomStart).padding(9.dp))
             if(item.localPath.isNotEmpty())Icon(Icons.Outlined.OfflinePin,"Available offline",Modifier.align(Alignment.BottomEnd).padding(10.dp).size(16.dp),tint=Ivory)
         }
         Text(item.title,Modifier.padding(top=9.dp),fontWeight=FontWeight.Medium,fontSize=14.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
-        Text(item.category,Modifier.padding(top=2.dp),color=Muted,fontSize=11.sp)
+        Text(if(item.width>0 && item.height>0)"${item.category} · ${item.width} × ${item.height}" else item.category,Modifier.padding(top=2.dp),color=Muted,fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
     }
 }
 @Composable fun EmptyState(title:String,body:String) {

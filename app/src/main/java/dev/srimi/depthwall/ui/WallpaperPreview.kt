@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
 @Composable fun WallpaperPreview(item:WallpaperItem,vm:MainViewModel,onClose:()->Unit,onLive:(SceneConfig)->Unit) {
     val context=LocalContext.current
     var config by remember(item.id) { vm.draft(item) }
-    var live by rememberSaveable(item.id) { mutableStateOf(item.kind!="STATIC") }
+    var live by rememberSaveable(item.id) { mutableStateOf(item.kind!="STATIC" || vm.settings.value.depthEnabled) }
     var showControls by rememberSaveable { mutableStateOf(true) }
     var showSurface by rememberSaveable { mutableStateOf(false) }
     var target by rememberSaveable { mutableStateOf("Home") }
@@ -50,6 +50,7 @@ import kotlinx.coroutines.withContext
     var favourite by remember(item.id) { mutableStateOf(item.favorite) }
     val notice=remember { SnackbarHostState() }
     val busy by vm.busy.collectAsStateWithLifecycle()
+    val preferences by vm.settings.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.messages.collect { notice.showSnackbar(it) } }
     val importForeground=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { vm.run("Foreground imported") { val fg=vm.repo.importImage(it,true);config=config.copy(foreground=fg.localPath,scene="depth");live=true } }
@@ -88,7 +89,12 @@ import kotlinx.coroutines.withContext
                     if(!local.isLocal) {
                         Text("Download to crop, edit or apply offline.",color=Muted,fontSize=12.sp)
                         if(local.bytes>0)Text("Download size: %.1f MB".format(local.bytes/1048576.0),color=Muted,fontSize=11.sp)
-                        Button(enabled=!busy,onClick={vm.run("Saved for offline use"){local=vm.repo.download(local);config=vm.repo.config(local)}}){Text("Download image")}
+                        Button(enabled=!busy,onClick={vm.run("Saved for offline use"){local=vm.repo.download(local);config=config.copy(background=local.localPath)}}){Text("Download original")}
+                    }
+                    if(item.kind!="NATIVE_SCENE") {
+                        Text("Save to Pictures · ${preferences.downloadSize}",color=Muted,fontSize=12.sp)
+                        if(local.width>0 && local.height>0)Text("Source: ${local.width} × ${local.height}",color=Muted,fontSize=11.sp)
+                        if(preferences.downloadSize!="Original")Text("Uses your crop and phone profile. Smaller source crops keep their original detail without enlargement.",color=Muted,fontSize=11.sp)
                     }
                     if(item.kind!="NATIVE_SCENE") {
                         if(local.kind=="STATIC")ChoiceRow(listOf("Still","Depth + clock"),if(live)"Depth + clock" else "Still") { live=it=="Depth + clock" }
@@ -117,7 +123,7 @@ import kotlinx.coroutines.withContext
                     }
                 }
                 Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    OutlinedIconButton(enabled=!busy,onClick={vm.run("Saved to Pictures/DepthWall") { vm.repo.export(local) }},modifier=Modifier.size(52.dp)) { Icon(Icons.Outlined.Download,"Export image") }
+                    OutlinedIconButton(enabled=!busy,onClick={vm.run("Saved to Pictures/DepthWall") { vm.repo.export(local,config) }},modifier=Modifier.size(52.dp)) { Icon(Icons.Outlined.Download,"Export image") }
                     Button(enabled=!busy,onClick={
                         if(live) {
                             if(local.isLocal)onLive(config) else vm.message("Download this image before applying a live wallpaper.")
