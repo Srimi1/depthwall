@@ -23,6 +23,8 @@ data class WallpaperItem(
     val localPath: String = "",
     val favorite: Boolean = false,
     val bytes: Long = 0,
+    @ColumnInfo(defaultValue = "0") val width: Int = 0,
+    @ColumnInfo(defaultValue = "0") val height: Int = 0,
 ) {
     val isLocal: Boolean get() = asset.isNotBlank() || localPath.isNotBlank()
     val imageModel: String get() = localPath.ifBlank { if (asset.isNotBlank()) "file:///android_asset/$asset" else remoteUrl }
@@ -41,7 +43,7 @@ interface WallpaperDao {
     @Query("UPDATE wallpapers SET favorite = NOT favorite WHERE id=:id") suspend fun toggleFavorite(id: String)
     @Query("DELETE FROM wallpapers WHERE id=:id") suspend fun delete(id: String)
 }
-@Database(entities = [WallpaperItem::class], version = 1, exportSchema = true)
+@Database(entities = [WallpaperItem::class], version = 2, exportSchema = true)
 abstract class DepthDatabase : RoomDatabase() { abstract fun wallpapers(): WallpaperDao }
 
 data class SceneConfig(
@@ -57,7 +59,20 @@ data class SceneConfig(
     val offsetY: Float = .5f,
 )
 
-data class AppSettings(val quality: String = "Balanced", val rotationHours: Int = 0, val rotationTarget: Int = 1, val favoritesOnly: Boolean = true, val wifiOnly: Boolean = true)
+data class AppSettings(
+    val quality: String = "Balanced",
+    val rotationHours: Int = 0,
+    val rotationTarget: Int = 1,
+    val favoritesOnly: Boolean = true,
+    val wifiOnly: Boolean = true,
+    val appTheme: String = "Papaya",
+    val deviceProfile: String = "OnePlus 7T Pro",
+    val downloadSize: String = "Original",
+    val depthEnabled: Boolean = false,
+    val depthParallax: Float = .35f,
+    val depthClock: String = "Off",
+    val depthClockY: Float = .33f,
+)
 
 object CropMath {
     data class Crop(val left: Int, val top: Int, val width: Int, val height: Int)

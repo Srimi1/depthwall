@@ -5,10 +5,12 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.memory.MemoryCache
 import dev.srimi.depthwall.data.Repository
+import dev.srimi.depthwall.data.RemoteImageAccess
 
 class DepthWallApp : Application(), ImageLoaderFactory {
     val repository by lazy { Repository(this) }
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        .okHttpClient { RemoteImageAccess(repository.http).safeClient() }
         .memoryCache { MemoryCache.Builder(this).maxSizeBytes(32 * 1024 * 1024).build() }
         .build()
 }

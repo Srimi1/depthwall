@@ -6,11 +6,16 @@ A personal, no-root Android wallpaper app with AMOLED blacks and papaya-orange a
 
 ## Inside
 
-- **Explore:** 48 original static illustrations, search, category/colour filters, favourites, crop positioning, home/lock application and image export.
+- **Explore:** 53 original static illustrations, including five 4K portrait car and theme designs, search, category/colour filters, favourites, crop positioning, home/lock application and image export.
 - **Super:** seven native OpenGL worlds — Earth, Mars, Saturn, Moon, Snow Mountain, Geometry and Sun — with adjustable performance.
 - **Depth Studio:** 12 prepared layered scenes, transparent foreground import, a manual erase/restore mask editor, parallax and optional digital, minimal or analogue clocks.
 - **Library:** offline downloads, local imports, saved favourites, settings and optional hourly, six-hourly or daily static rotation.
-- Optional NASA and Wikimedia searches retain image credits and source links. No ads, accounts, subscriptions, analytics or hosted backend.
+- **Online collections:** paginated NASA originals, SFW Wallhaven, Wikimedia, and ESA / ISRO / JAXA / CSA collections via Commons. Filter by verified 4K source dimensions and keep creator credits and source links.
+- **Website import:** paste an accessible HTTPS wallpaper page or direct image link, including official space galleries and wallpaper sites. Choose an original image from the detected candidates; sites requiring browser access can still be downloaded there and imported locally.
+- **Phone and depth settings:** Papaya, Space blue and AMOLED monochrome palettes; OnePlus 7T Pro 1440 × 3120 export profile; optional 2160 × 4680 portrait export; persistent depth/clock defaults and explicit updates to an active depth wallpaper. Android’s live wallpaper settings button opens these controls directly.
+- No app download-count quota, ads, accounts, subscriptions, analytics or hosted backend. Provider rate limits, source rights and device storage still apply. Downloads retain originals; smaller images are never upscaled into claimed 4K detail.
+
+See [sources, downloads and phone settings](docs/ONLINE_WALLPAPERS.md) for supported integrations and limitations.
 
 ### Original Super Wallpaper ports
 
@@ -33,7 +38,7 @@ Build with JDK 17 and Android SDK platform **37.0**:
 ./gradlew connectedDebugAndroidTest
 ```
 
-For a personally signed release, run `python3 tools/create_personal_key.py`, then `./gradlew assembleRelease`. The key and credentials stay outside Git. Preserve them to sign future updates. Dependency versions, Gradle wrapper, source assets and artwork-generation code are checked in.
+For a personally signed release, run `python3 tools/create_personal_key.py`, then `./gradlew assembleRelease`. The key and credentials stay outside Git. Preserve them to sign future updates. Dependency versions, Gradle wrapper, source assets and artwork-generation code are checked in. Use the [signed release workflow](docs/RELEASING.md) to verify the existing signing identity, publish to this repository, and check the uploaded APK against its checksum.
 
 ## Artwork and identity
 

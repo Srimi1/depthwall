@@ -1,3 +1,3 @@
 <wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/wallpaper_description" android:thumbnail="@drawable/depthwall_logo"
-    android:settingsActivity="dev.srimi.depthwall.MainActivity" android:supportsMultipleDisplays="true" />
+    android:settingsActivity="dev.srimi.depthwall.WallpaperSettingsActivity" android:supportsMultipleDisplays="true" />

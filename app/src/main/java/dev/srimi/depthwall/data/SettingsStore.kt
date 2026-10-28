@@ -13,9 +13,33 @@ class SettingsStore(private val context: Context) {
     private val target = intPreferencesKey("rotation_target")
     private val favorites = booleanPreferencesKey("favorites_only")
     private val wifi = booleanPreferencesKey("wifi_only")
-    val flow = context.dataStore.data.map { AppSettings(it[quality] ?: "Balanced", it[hours] ?: 0, it[target] ?: 1, it[favorites] ?: true, it[wifi] ?: true) }
+    private val theme = stringPreferencesKey("app_theme")
+    private val profile = stringPreferencesKey("device_profile")
+    private val exportSize = stringPreferencesKey("export_size")
+    private val depth = booleanPreferencesKey("depth_enabled")
+    private val parallax = floatPreferencesKey("depth_parallax")
+    private val clock = stringPreferencesKey("depth_clock")
+    private val clockY = floatPreferencesKey("depth_clock_y")
+    val flow = context.dataStore.data.map { values ->
+        AppSettings(
+            quality = values[quality] ?: "Balanced",
+            rotationHours = values[hours] ?: 0,
+            rotationTarget = values[target] ?: 1,
+            favoritesOnly = values[favorites] ?: true,
+            wifiOnly = values[wifi] ?: true,
+            appTheme = values[theme] ?: "Papaya",
+            deviceProfile = values[profile] ?: "OnePlus 7T Pro",
+            downloadSize = values[exportSize] ?: "Original",
+            depthEnabled = values[depth] ?: false,
+            depthParallax = values[parallax]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: .35f,
+            depthClock = values[clock]?.takeIf { it in listOf("Off", "Digital", "Minimal", "Analogue") } ?: "Off",
+            depthClockY = values[clockY]?.takeIf { it.isFinite() }?.coerceIn(.18f, .72f) ?: .33f,
+        )
+    }
     suspend fun save(s: AppSettings) = context.dataStore.edit {
         it[quality]=s.quality; it[hours]=s.rotationHours; it[target]=s.rotationTarget; it[favorites]=s.favoritesOnly; it[wifi]=s.wifiOnly
+        it[theme]=s.appTheme; it[profile]=s.deviceProfile; it[exportSize]=s.downloadSize
+        it[depth]=s.depthEnabled; it[parallax]=s.depthParallax; it[clock]=s.depthClock; it[clockY]=s.depthClockY
     }
 }
 
