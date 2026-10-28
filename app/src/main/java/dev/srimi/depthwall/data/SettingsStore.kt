@@ -23,17 +23,73 @@ class SettingsStore(private val context: Context) {
 @android.annotation.SuppressLint("ApplySharedPref") // Commit preview/apply state before Android creates another engine.
 class SceneStore(context: Context) {
     private val prefs = context.getSharedPreferences("scenes", Context.MODE_PRIVATE)
-    fun stage(config: SceneConfig) { prefs.edit().putString("pending", encode(config)).commit() }
+    fun stage(config: SceneConfig, before: WallpaperApplyState? = null) {
+        prefs.edit().putString("pending", encode(config))
+            .putString("pending_before", before?.let { encodeState(it) })
+            .putString("pending_previous_home", encode(active(1)))
+            .remove("pending_applied_flags").commit()
+    }
     fun pending(): SceneConfig = decode(prefs.getString("pending", null))
     fun active(flags: Int = 1): SceneConfig = decode(prefs.getString(if (flags == 2) "lock" else "home", null))
     fun commit(config: SceneConfig, flags: Int) {
+        if (flags and 3 == 0) return
         val editor=prefs.edit(); val encoded=encode(config)
         if (flags and 1 != 0) editor.putString("home",encoded)
         if (flags and 2 != 0) editor.putString("lock",encoded)
         editor.putLong("revision",System.nanoTime()).commit()
     }
-    fun clearPending() { prefs.edit().remove("pending").apply() }
+    /** The newer picker callback supplies authoritative destinations when it is supported. */
+    fun confirmApplied(config: SceneConfig, flags: Int) {
+        val destinations = flags and 3
+        if (destinations == 0) return
+        if (prefs.contains("pending") && pending() == config)
+            prefs.edit().putInt("pending_applied_flags", destinations).commit()
+        commit(config, destinations)
+    }
+    /** Complete an app-launched preview, including pickers that never call onApplyWallpaper. */
+    fun finishPreview(accepted: Boolean, after: WallpaperApplyState?, component: String): Int {
+        try {
+            if (!prefs.contains("pending")) return 0
+            val callbackFlags = prefs.getInt("pending_applied_flags", 0) and 3
+            val before = decodeState(prefs.getString("pending_before", null))
+            val flags = if (callbackFlags != 0) callbackFlags
+                else if (accepted && before != null && after != null)
+                    WallpaperApplyDestination.resolve(before, after, component)
+                else 0
+            // When Android splits a shared live wallpaper, lock inherits the old HOME scene.
+            // Its dormant stored lock scene may differ. Stage the old home before any callback
+            // can overwrite it, then copy only after the actual ID migration is confirmed.
+            if (flags == 1 && before != null && after != null && before.lockId < 0 &&
+                before.homeComponent == component && after.lockId == before.homeId &&
+                after.lockComponent == component) {
+                prefs.getString("pending_previous_home", null)?.let { commit(decode(it), 2) }
+            }
+            if (flags != 0 && callbackFlags == 0) commit(pending(), flags)
+            return flags
+        } finally { clearPending() }
+    }
+    fun clearPending() {
+        prefs.edit().remove("pending").remove("pending_before").remove("pending_previous_home")
+            .remove("pending_applied_flags").commit()
+    }
+    private fun encodeState(s: WallpaperApplyState) = JSONObject().apply {
+        put("homeId", s.homeId); put("lockId", s.lockId)
+        put("homeComponent", s.homeComponent); put("lockComponent", s.lockComponent)
+    }.toString()
+    private fun decodeState(value: String?): WallpaperApplyState? = runCatching {
+        val j = JSONObject(value ?: return@runCatching null)
+        WallpaperApplyState(j.getInt("homeId"), j.getInt("lockId"),
+            if (j.isNull("homeComponent")) null else j.getString("homeComponent"),
+            if (j.isNull("lockComponent")) null else j.getString("lockComponent"))
+    }.getOrNull()
     fun revision() = prefs.getLong("revision",0)
+    fun listenForAppliedChanges(onChange: () -> Unit): () -> Unit {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "revision") onChange()
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        return { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     fun encode(c: SceneConfig): String = JSONObject().apply {
         put("id",c.wallpaperId);put("scene",c.scene);put("background",c.background);put("foreground",c.foreground)
         put("clock",c.clock);put("parallax",c.parallax);put("clockY",c.clockY)

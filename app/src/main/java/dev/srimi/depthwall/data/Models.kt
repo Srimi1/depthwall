@@ -72,6 +72,16 @@ object CropMath {
 }
 
 object RenderBudget {
+    // Settled terrain and layered images have no time-driven shader effects.
+    // Motion/clock events can still request a frame without an idle frame loop.
+    fun hasContinuousMotion(scene: String, progress: Float): Boolean = when(scene) {
+        "depth" -> false
+        "earth", "mars", "moon" -> progress < 1f
+        else -> true
+    }
+    fun renderWidth(quality: String, saver: Boolean, hot: Boolean): Int =
+        if(saver || hot || quality == "Battery") 720 else if(quality == "High Quality") 1440 else 960
+
     fun fps(quality: String, transitioning: Boolean, visible: Boolean, saver: Boolean, hot: Boolean, refresh: Float = 90f): Int {
         if (!visible) return 0
         if (saver || hot) return if (transitioning) 15 else 0

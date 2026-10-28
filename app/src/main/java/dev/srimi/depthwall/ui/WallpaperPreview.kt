@@ -54,15 +54,21 @@ import kotlinx.coroutines.withContext
     val importForeground=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { vm.run("Foreground imported") { val fg=vm.repo.importImage(it,true);config=config.copy(foreground=fg.localPath,scene="depth");live=true } }
     }
-    LaunchedEffect(local.id,local.localPath) {
-        if(local.isLocal && local.kind=="STATIC") {
-            runCatching { withContext(Dispatchers.IO) { vm.repo.decode(local.localPath.ifBlank { local.asset }) } }.onSuccess { bitmap=it }.onFailure { vm.message(it.message.orEmpty()) }
+    LaunchedEffect(local.id,local.localPath,live) {
+        bitmap=null
+        if(!live && local.isLocal && local.kind=="STATIC") {
+            try {
+                val metrics=context.resources.displayMetrics
+                val edge=maxOf(metrics.widthPixels,metrics.heightPixels).coerceIn(1024,3120)
+                bitmap=withContext(Dispatchers.IO) { vm.repo.decode(local.localPath.ifBlank { local.asset },edge) }
+            } catch(cancelled:kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch(error:Exception) { vm.message(error.message.orEmpty()) }
         }
     }
     Dialog(onDismissRequest=onClose,properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)) {
         BackHandler(onBack=onClose)
         Box(Modifier.fillMaxSize().background(Ink)) {
-            if(live && local.isLocal) ScenePreview(config,showSurface,Modifier.fillMaxSize(),vm::message)
+            if(live && local.isLocal) ScenePreview(config,showSurface,Modifier.fillMaxSize(),vm::message,!mask && !credits && !busy)
             else bitmap?.let { b -> CropPreview(b,config,Modifier.fillMaxSize()) }
                 ?: coil.compose.AsyncImage(local.imageModel,local.title,Modifier.fillMaxSize(),contentScale=androidx.compose.ui.layout.ContentScale.Crop)
             Box(Modifier.fillMaxWidth().height(160.dp).background(Brush.verticalGradient(listOf(Color.Black.copy(.8f),Color.Transparent))))
@@ -140,13 +146,14 @@ import kotlinx.coroutines.withContext
         drawImage(image,srcOffset=IntOffset(crop.left,crop.top),srcSize=IntSize(crop.width,crop.height),dstSize=IntSize(size.width.toInt(),size.height.toInt()))
     }
 }
-@Composable fun ScenePreview(config:SceneConfig,surface:Boolean,modifier:Modifier,onError:(String)->Unit) {
+@Composable fun ScenePreview(config:SceneConfig,surface:Boolean,modifier:Modifier,onError:(String)->Unit,enabled:Boolean=true) {
     val context=LocalContext.current;val owner=LocalLifecycleOwner.current
+    val enabledNow by rememberUpdatedState(enabled)
     val view=remember { SceneView(context) }
     DisposableEffect(owner,view) {
-        val observer=LifecycleEventObserver { _,event -> when(event){Lifecycle.Event.ON_RESUME->view.setActive(true);Lifecycle.Event.ON_PAUSE->view.setActive(false);else->Unit} }
+        val observer=LifecycleEventObserver { _,event -> when(event){Lifecycle.Event.ON_RESUME->view.setActive(enabledNow);Lifecycle.Event.ON_PAUSE->view.setActive(false);else->Unit} }
         owner.lifecycle.addObserver(observer)
         onDispose { owner.lifecycle.removeObserver(observer);view.setActive(false) }
     }
-    AndroidView(factory={view},modifier=modifier,update={it.config=config;it.showSurface=surface;it.onError=onError})
+    AndroidView(factory={view},modifier=modifier,update={it.config=config;it.showSurface=surface;it.onError=onError;it.setActive(enabled && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))})
 }

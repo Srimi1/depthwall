@@ -12,7 +12,9 @@ Images use Android's document picker for import and MediaStore for export. Downl
 
 Static images use a shared crop calculation in the editor and `WallpaperManager`. A home, lock or combined destination is explicit. Rotation uses a unique WorkManager periodic job, defaults off, requires adequate battery, uses local static images, and pauses when a live wallpaper is active on the requested destination.
 
-For native scenes, UI changes edit a draft. Opening the Android live-wallpaper picker stages a pending configuration without changing the active home/lock records. On Android 36+, `Engine.onApplyWallpaper(which)` commits to the actual selected destination. API 31–35 use the picker's successful activity result for the home configuration. Cancelling never commits. Android decides which live-wallpaper destinations it supports.
+For native scenes, UI changes edit a draft. Opening Android's picker stages the pending configuration and a snapshot of current wallpaper IDs/components without changing active home/lock records. `Engine.onApplyWallpaper(which)` supplies authoritative destinations when the picker supports that callback. Android's legacy LivePicker can return success without calling it, including on API 37. The fallback compares fresh system wallpaper IDs after `RESULT_OK` and confirms this app's component before committing the selected destination. It distinguishes a new lock application from Android moving the previous shared home wallpaper to lock. Cancellation and unconfirmed results preserve active configuration. Pending state is persisted across activity recreation. Android decides which destinations it supports.
+
+The behavior follows [LivePicker's apply/result flow](https://android.googlesource.com/platform/packages/wallpapers/LivePicker/+/refs/heads/main/src/com/android/wallpaper/livepicker/LiveWallpaperPreview.java) and [framework wallpaper ID/migration handling](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/core/java/com/android/server/wallpaper/WallpaperManagerService.java). API 31–36 device behavior remains unverified.
 
 ## Rendering
 
@@ -27,13 +29,17 @@ Rendering uses a bounded offscreen framebuffer, then scales to the actual wallpa
 | High Quality | 1440 px | up to 90 fps / 30 fps |
 | Battery saver or thermal pressure | 720 px | 15 fps / on demand |
 
-Frame rates are targets, not measured OnePlus results. Rendering stops when invisible or the screen is off. Motion listeners are removed when hidden, in Battery mode, under battery saver or thermal pressure. Clocks refresh by minute when otherwise idle. There are no wake locks or persistent foreground services.
+Frame rates are targets, not measured OnePlus results. The idle rate applies only to time-driven scenes: settled Earth/Mars/Moon terrain and depth layers render on demand, with motion events and minute ticks requesting new frames. In-app previews follow the same quality, battery and thermal policy and pause under the mask editor or credits dialog. Rendering stops when invisible or the screen is off. Motion listeners are removed when hidden, without a surface, in Battery mode, under battery saver or thermal pressure. Power/display state and GL uniform locations are cached instead of queried every frame. The framework-protected `USER_PRESENT` action has a dedicated exported receiver so SystemUI's separate UID can deliver unlock events; other receivers remain unexported. This prevents the cached lock state from leaving a home scene stuck in orbit after a real swipe unlock. Layer textures are decoded to the active render size; gallery requests are bounded and Coil has a 32 MiB memory cache. Full originals remain available for export. Clocks refresh by minute when otherwise idle. There are no wake locks or persistent foreground services.
 
 The native clock belongs to SystemUI; DepthWall's clock is a separate optional wallpaper layer. The application does not request overlay, accessibility, root, device administration or broad storage permissions.
 
+## Always-on display
+
+The no-root app does not declare hidden ambient-wallpaper support. Android 17 and crDroid require the system-only `AMBIENT_WALLPAPER` permission for that flag, and reject ambient wallpaper binding without it (except watches). Screen-off rendering therefore stays stopped. The Settings screen explains the limitation and links to the ROM's display settings. AOD requires a supported ROM integration and physical-device verification, not a timer drawing while the screen is off.
+
 ## Original Super Wallpaper ports
 
-PackManager discovers wallpaper services and exported settings activities from installed packages. Original locations are selected in the port's own settings; DepthWall does not fabricate a list of internal variants or access private activities. Original packs retain their original engine and performance characteristics.
+PackManager discovers wallpaper services and exported settings activities from installed packages. The inspected modern packages expose all 18 locations as separate public wallpaper services; DepthWall lists those services. Public settings are available only on versions that actually export a configuration activity. Private activities are not launched. Original packs retain their original engine and performance characteristics.
 
 APK imports are statically inspected for identity, SDKs, ABI libraries, signing certificates, signing conflicts, version downgrades and declared components. Android's package installer performs final installation validation with visible user interaction. Passing archive checks is not a claim of source authenticity or runtime compatibility.
 

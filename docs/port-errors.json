@@ -1,0 +1,1507 @@
+{
+  "schema_version": 1,
+  "analysis_date": "2026-10-28",
+  "scope": "Read-only main-log and crash-buffer classification for the 18-scene cold emulator sweep plus five warm probes. No APK or emulator changes were made by this analysis.",
+  "evidence_root": "/Users/srimi/.cache/depthwall/retest-cold-metal-v2",
+  "environment": "Android 17 API 37 ARM64 emulator, host MoltenVK with Guest ANGLE and exposeES32ForTesting. Emulator-only configuration; physical crDroid results remain untested.",
+  "cold_summary": {
+    "scene_count": 18,
+    "scenes_with_captured_native_crash": 3,
+    "native_crash_count": 4,
+    "confirmed_port_process_death_count": 4,
+    "no_fatal_crash_captured_scene_count": 15,
+    "uncaught_java_exception_count": 0,
+    "filament_texture_94_panic_count": 0,
+    "all_android_crash_buffers_empty": true
+  },
+  "mandatory_interpretation": [
+    "An empty crashes.txt is not evidence of zero crashes. Unity emits its native crash report to main logcat; inspect E CRASH signal lines and correlate ActivityManager process death/restart.",
+    "The original Earth/Mars Unity 2019.3.15f1 allocator fault remains unresolved. The graphics backend improvement does not repair that engine code.",
+    "The allocator message mentions virtual-address regions, not proof that the process allocated 16 GB of physical RAM. GPU memory pressure or ASLR may change the trigger; their causal role has not been isolated.",
+    "A wallpaper that becomes visible after a process restart has recovered during this bounded sample; it has not passed uninterrupted preview stability.",
+    "These results do not validate a physical OnePlus/crDroid build, long-duration performance, battery use, or all warm-service transitions.",
+    "Warm Earth/Mars switching also has a separate null-pointer / duplicate-Unity-initialization fault. Neither this lifecycle problem nor the allocator failure is repaired by the emulator graphics flags."
+  ],
+  "safe_app_side_mitigations": [
+    "Keep original-port status explicit and offer the corresponding DepthWall native alternative as a user-selected fallback.",
+    "Allow the user to retry Android live-wallpaper preview, with the remaining compatibility limitation visible. A retry is not a repair or stability guarantee.",
+    "Preserve the current wallpaper when preview is cancelled. Do not force-stop external packages, silently swap the current wallpaper, or reset it to an intermediate wallpaper.",
+    "The DepthWall app cannot repair the separately installed port native allocator through its own rendering settings. Do not distribute an unvalidated debug allocator repack as a performance fix.",
+    "If an original Earth/Mars package is already active, explain that changing its location may restart or crash the external engine. Do not promise that reopening preview or changing DepthWall quality can fix it."
+  ],
+  "warm_run": {
+    "status": "analyzed",
+    "evidence_root": "/Users/srimi/.cache/depthwall/retest-warm-repro",
+    "scene_count": 5,
+    "distinct_native_crash_count": 4,
+    "scenes_with_captured_native_crash": 2,
+    "sigsegv_count": 2,
+    "sigtrap_count": 2,
+    "target_package_process_death_count": 8,
+    "self_sigkill_event_count": 6,
+    "interpretation": [
+      "Longji and Bahram each first fault at null address 0x0 on UnityMain during same-package scene switching, then a replacement process hits duplicate NavMeshAgent class registration and SIGTRAP. These differ from the cold allocator signature.",
+      "Logs show two Unity initialization threads in the restarted shared package process. Together with static service code constructing separate UnityPlayer instances, this supports a multi-engine lifecycle conflict; it does not prove every later process death has that cause.",
+      "Self-directed SIGKILL after lifecycle/timeout events is listed separately from native fatal signals. Other wallpaper packages still running during a capture are excluded from the target scene count.",
+      "A warm-window restart count includes the initial process inherited from an earlier scene when its death is present; starts-minus-one would undercount these transitions."
+    ],
+    "scenes": [
+      {
+        "pack": "pack-1",
+        "scene_index": 0,
+        "label": "Croatia Cape Kamenjak",
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+        "evidence_directory": "pack-1/scene-0",
+        "logcat_sha256": "cccf025290bdb64e430733b6aa5e44cdfb47fd2024f98148dc9df64b5e7d3d1d",
+        "classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "distinct_native_crash_count": 0,
+        "sigsegv_count": 0,
+        "sigtrap_count": 0,
+        "unity_allocator_error_count": 0,
+        "android_runtime_fatal_report_count": 0,
+        "android_runtime_fatal_report_interpretation": "Where present these java.lang.Error reports wrap the already-counted native SIGSEGV; do not count them as independent additional crashes.",
+        "android_crash_buffer_bytes": 0,
+        "native_crashes": [],
+        "port_process_starts": [
+          {
+            "line": 1000,
+            "timestamp": "10-28 13:48:31.092",
+            "pid": 3315,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper"
+          }
+        ],
+        "confirmed_port_process_deaths": [],
+        "observed_restarts_after_death": [],
+        "self_sigkill_events": [],
+        "duplicate_unity_class_registration": [],
+        "angle_unsupported_vulkan_feature_messages": {
+          "count": 2,
+          "first_line": 1431,
+          "interpretation": "GL INVALID_OPERATION with Vulkan feature-not-present is a separate driver warning. Visible screenshots do not establish that every effect renders correctly."
+        },
+        "other_wallpaper_package_deaths": [],
+        "application_component_confirmed": true,
+        "parent_visual_review": "Parent reports real scene imagery in preview40 and home15 for all five probes. This is separate from the fatal-event classification."
+      },
+      {
+        "pack": "pack-1",
+        "scene_index": 1,
+        "label": "Guangxi, China Longji Terraced Fields",
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+        "evidence_directory": "pack-1/scene-1",
+        "logcat_sha256": "3b0af62501bdd9ae0aa42fd6d97c9f8929b382e03ef0bbda2203d71a790b85f2",
+        "classification": "fatal_same_package_switch_then_restarts",
+        "distinct_native_crash_count": 2,
+        "sigsegv_count": 1,
+        "sigtrap_count": 1,
+        "unity_allocator_error_count": 0,
+        "android_runtime_fatal_report_count": 1,
+        "android_runtime_fatal_report_interpretation": "Where present these java.lang.Error reports wrap the already-counted native SIGSEGV; do not count them as independent additional crashes.",
+        "android_crash_buffer_bytes": 15447,
+        "native_crashes": [
+          {
+            "line": 662,
+            "timestamp": "10-28 13:49:46.088",
+            "pid": 3315,
+            "tid": 3633,
+            "signal": 11,
+            "signal_name": "SIGSEGV",
+            "detail": "1 (SEGV_MAPERR), fault addr 0x0",
+            "signature": "unity_null_dereference_during_same_package_scene_switch",
+            "backtrace_pcs": [
+              "000000000048f698",
+              "0000000000510664",
+              "00000000005103bc",
+              "00000000005063c0",
+              "0000000000506b64",
+              "000000000063cd44",
+              "0000000000650428",
+              "00000000002e5c20"
+            ],
+            "note": "Repeated AndroidRuntime and am_crash copies of this event are not counted as additional crashes."
+          },
+          {
+            "line": 948,
+            "timestamp": "10-28 13:49:47.289",
+            "pid": 3641,
+            "signal": 5,
+            "signal_name": "SIGTRAP",
+            "detail": "code -1 (SI_QUEUE) in tid 3657 (UnityMain), pid 3641 (hSuperWallpaper)",
+            "signature": "unity_duplicate_class_registration_sigtrap",
+            "preceding_class_conflict_lines": [
+              945
+            ]
+          }
+        ],
+        "port_process_starts": [
+          {
+            "line": 785,
+            "timestamp": "10-28 13:49:47.188",
+            "pid": 3641,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper"
+          },
+          {
+            "line": 1421,
+            "timestamp": "10-28 13:49:48.494",
+            "pid": 3732,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper"
+          },
+          {
+            "line": 2842,
+            "timestamp": "10-28 13:49:50.109",
+            "pid": 3808,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          },
+          {
+            "line": 3687,
+            "timestamp": "10-28 13:50:12.227",
+            "pid": 3877,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          },
+          {
+            "line": 6645,
+            "timestamp": "10-28 13:50:23.371",
+            "pid": 4061,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          }
+        ],
+        "confirmed_port_process_deaths": [
+          {
+            "line": 746,
+            "timestamp": "10-28 13:49:46.163",
+            "pid": 3315,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 1150,
+            "timestamp": "10-28 13:49:47.484",
+            "pid": 3641,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 2808,
+            "timestamp": "10-28 13:49:49.097",
+            "pid": 3732,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "fg  BTOP"
+          },
+          {
+            "line": 3595,
+            "timestamp": "10-28 13:50:08.206",
+            "pid": 3808,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 6596,
+            "timestamp": "10-28 13:50:22.354",
+            "pid": 3877,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BFGS"
+          }
+        ],
+        "observed_restarts_after_death": [
+          {
+            "line": 785,
+            "timestamp": "10-28 13:49:47.188",
+            "pid": 3641,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper"
+          },
+          {
+            "line": 1421,
+            "timestamp": "10-28 13:49:48.494",
+            "pid": 3732,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper"
+          },
+          {
+            "line": 2842,
+            "timestamp": "10-28 13:49:50.109",
+            "pid": 3808,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          },
+          {
+            "line": 3687,
+            "timestamp": "10-28 13:50:12.227",
+            "pid": 3877,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          },
+          {
+            "line": 6645,
+            "timestamp": "10-28 13:50:23.371",
+            "pid": 4061,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1"
+          }
+        ],
+        "self_sigkill_events": [
+          {
+            "line": 740,
+            "timestamp": "10-28 13:49:46.153",
+            "pid": 3315,
+            "message": "Sending signal. PID: 3315 SIG: 9",
+            "interpretation": "Process self-kill follows the already-counted native fatal report; not an additional independent crash.",
+            "same_pid_has_prior_native_fatal_event": true
+          },
+          {
+            "line": 2807,
+            "timestamp": "10-28 13:49:49.092",
+            "pid": 3732,
+            "message": "Sending signal. PID: 3732 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          },
+          {
+            "line": 3591,
+            "timestamp": "10-28 13:50:08.178",
+            "pid": 3808,
+            "message": "Sending signal. PID: 3808 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          },
+          {
+            "line": 6591,
+            "timestamp": "10-28 13:50:22.345",
+            "pid": 3877,
+            "message": "Sending signal. PID: 3877 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          }
+        ],
+        "duplicate_unity_class_registration": [
+          {
+            "line": 945,
+            "pid": 3641,
+            "message": "ClassID 195 (NavMeshAgent) conflicts with that of another class (NavMeshAgent). Please resolve the conflict."
+          }
+        ],
+        "angle_unsupported_vulkan_feature_messages": {
+          "count": 6,
+          "first_line": 3095,
+          "interpretation": "GL INVALID_OPERATION with Vulkan feature-not-present is a separate driver warning. Visible screenshots do not establish that every effect renders correctly."
+        },
+        "other_wallpaper_package_deaths": [],
+        "application_component_confirmed": true,
+        "parent_visual_review": "Parent reports real scene imagery in preview40 and home15 for all five probes. This is separate from the fatal-event classification."
+      },
+      {
+        "pack": "pack-3",
+        "scene_index": 0,
+        "label": "Nilosyrtis Mensae Region",
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+        "evidence_directory": "pack-3/scene-0",
+        "logcat_sha256": "5134710bfd6ce9dbc2190bfbee45d7b15d312ddf6612196dd0564f6f0cfb3a1e",
+        "classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "distinct_native_crash_count": 0,
+        "sigsegv_count": 0,
+        "sigtrap_count": 0,
+        "unity_allocator_error_count": 0,
+        "android_runtime_fatal_report_count": 0,
+        "android_runtime_fatal_report_interpretation": "Where present these java.lang.Error reports wrap the already-counted native SIGSEGV; do not count them as independent additional crashes.",
+        "android_crash_buffer_bytes": 0,
+        "native_crashes": [],
+        "port_process_starts": [
+          {
+            "line": 211,
+            "timestamp": "10-28 13:50:44.944",
+            "pid": 4307,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper"
+          }
+        ],
+        "confirmed_port_process_deaths": [],
+        "observed_restarts_after_death": [],
+        "self_sigkill_events": [],
+        "duplicate_unity_class_registration": [],
+        "angle_unsupported_vulkan_feature_messages": {
+          "count": 4,
+          "first_line": 541,
+          "interpretation": "GL INVALID_OPERATION with Vulkan feature-not-present is a separate driver warning. Visible screenshots do not establish that every effect renders correctly."
+        },
+        "other_wallpaper_package_deaths": [
+          {
+            "line": 1426,
+            "message": "10-28 13:51:00.570   641  2277 I ActivityManager: Process com.miui.miwallpaper.earth:earthSuperWallpaper (pid 4219) has died: vis BFGS",
+            "note": "Other wallpaper package in the capture; excluded from the requested scene target-package crash/death count."
+          },
+          {
+            "line": 2536,
+            "message": "10-28 14:04:45.794   641  2289 I ActivityManager: Process com.miui.miwallpaper.earth:earthSuperWallpaper (pid 4370) has died: vis BFGS",
+            "note": "Other wallpaper package in the capture; excluded from the requested scene target-package crash/death count."
+          },
+          {
+            "line": 4244,
+            "message": "10-28 14:05:04.494   641  2217 I ActivityManager: Process com.miui.miwallpaper.earth:earthSuperWallpaper (pid 4456) has died: fg  BFGS",
+            "note": "Other wallpaper package in the capture; excluded from the requested scene target-package crash/death count."
+          }
+        ],
+        "application_component_confirmed": true,
+        "parent_visual_review": "Parent reports real scene imagery in preview40 and home15 for all five probes. This is separate from the fatal-event classification."
+      },
+      {
+        "pack": "pack-3",
+        "scene_index": 4,
+        "label": "Bahram Vallis",
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+        "evidence_directory": "pack-3/scene-4",
+        "logcat_sha256": "21986c9692363658efe675f11cbd8938c41c669ddd6f3017b7f2d4f1562a9b39",
+        "classification": "fatal_same_package_switch_then_restarts",
+        "distinct_native_crash_count": 2,
+        "sigsegv_count": 1,
+        "sigtrap_count": 1,
+        "unity_allocator_error_count": 0,
+        "android_runtime_fatal_report_count": 1,
+        "android_runtime_fatal_report_interpretation": "Where present these java.lang.Error reports wrap the already-counted native SIGSEGV; do not count them as independent additional crashes.",
+        "android_crash_buffer_bytes": 15425,
+        "native_crashes": [
+          {
+            "line": 647,
+            "timestamp": "10-28 14:05:26.022",
+            "pid": 4307,
+            "tid": 4673,
+            "signal": 11,
+            "signal_name": "SIGSEGV",
+            "detail": "1 (SEGV_MAPERR), fault addr 0x0",
+            "signature": "unity_null_dereference_during_same_package_scene_switch",
+            "backtrace_pcs": [
+              "000000000048f698",
+              "0000000000510664",
+              "00000000005103bc",
+              "00000000005063c0",
+              "0000000000506b64",
+              "000000000063cd44",
+              "0000000000650428",
+              "00000000002e5c20"
+            ],
+            "note": "Repeated AndroidRuntime and am_crash copies of this event are not counted as additional crashes."
+          },
+          {
+            "line": 974,
+            "timestamp": "10-28 14:05:27.194",
+            "pid": 4678,
+            "signal": 5,
+            "signal_name": "SIGTRAP",
+            "detail": "code -1 (SI_QUEUE) in tid 4703 (UnityMain), pid 4678 (sSuperWallpaper)",
+            "signature": "unity_duplicate_class_registration_sigtrap",
+            "preceding_class_conflict_lines": [
+              971
+            ]
+          }
+        ],
+        "port_process_starts": [
+          {
+            "line": 769,
+            "timestamp": "10-28 14:05:27.102",
+            "pid": 4678,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4"
+          },
+          {
+            "line": 1262,
+            "timestamp": "10-28 14:05:28.387",
+            "pid": 4745,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper"
+          },
+          {
+            "line": 2666,
+            "timestamp": "10-28 14:05:29.764",
+            "pid": 4816,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4"
+          }
+        ],
+        "confirmed_port_process_deaths": [
+          {
+            "line": 735,
+            "timestamp": "10-28 14:05:26.081",
+            "pid": 4307,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 1175,
+            "timestamp": "10-28 14:05:27.365",
+            "pid": 4678,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 2263,
+            "timestamp": "10-28 14:05:28.756",
+            "pid": 4745,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "fg  BTOP"
+          }
+        ],
+        "observed_restarts_after_death": [
+          {
+            "line": 769,
+            "timestamp": "10-28 14:05:27.102",
+            "pid": 4678,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4"
+          },
+          {
+            "line": 1262,
+            "timestamp": "10-28 14:05:28.387",
+            "pid": 4745,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper"
+          },
+          {
+            "line": 2666,
+            "timestamp": "10-28 14:05:29.764",
+            "pid": 4816,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4"
+          }
+        ],
+        "self_sigkill_events": [
+          {
+            "line": 725,
+            "timestamp": "10-28 14:05:26.069",
+            "pid": 4307,
+            "message": "Sending signal. PID: 4307 SIG: 9",
+            "interpretation": "Process self-kill follows the already-counted native fatal report; not an additional independent crash.",
+            "same_pid_has_prior_native_fatal_event": true
+          },
+          {
+            "line": 2229,
+            "timestamp": "10-28 14:05:28.728",
+            "pid": 4745,
+            "message": "Sending signal. PID: 4745 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          }
+        ],
+        "duplicate_unity_class_registration": [
+          {
+            "line": 971,
+            "pid": 4678,
+            "message": "ClassID 195 (NavMeshAgent) conflicts with that of another class (NavMeshAgent). Please resolve the conflict."
+          }
+        ],
+        "angle_unsupported_vulkan_feature_messages": {
+          "count": 4,
+          "first_line": 2951,
+          "interpretation": "GL INVALID_OPERATION with Vulkan feature-not-present is a separate driver warning. Visible screenshots do not establish that every effect renders correctly."
+        },
+        "other_wallpaper_package_deaths": [],
+        "application_component_confirmed": true,
+        "parent_visual_review": "Parent reports real scene imagery in preview40 and home15 for all five probes. This is separate from the fatal-event classification."
+      },
+      {
+        "pack": "pack-6",
+        "scene_index": 0,
+        "label": "The Apennines",
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+        "evidence_directory": "pack-6/scene-0",
+        "logcat_sha256": "4b534a12e538c2e6b59d45cd28ae0e3b5f3b843bf3f29c07810d6783893cedc4",
+        "classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "distinct_native_crash_count": 0,
+        "sigsegv_count": 0,
+        "sigtrap_count": 0,
+        "unity_allocator_error_count": 0,
+        "android_runtime_fatal_report_count": 0,
+        "android_runtime_fatal_report_interpretation": "Where present these java.lang.Error reports wrap the already-counted native SIGSEGV; do not count them as independent additional crashes.",
+        "android_crash_buffer_bytes": 0,
+        "native_crashes": [],
+        "port_process_starts": [
+          {
+            "line": 198,
+            "timestamp": "10-28 14:17:58.616",
+            "pid": 5114,
+            "process": "com.miui.miwallpaper.moon:moonSuperWallpaper",
+            "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper"
+          }
+        ],
+        "confirmed_port_process_deaths": [],
+        "observed_restarts_after_death": [],
+        "self_sigkill_events": [],
+        "duplicate_unity_class_registration": [],
+        "angle_unsupported_vulkan_feature_messages": {
+          "count": 0,
+          "first_line": null,
+          "interpretation": "GL INVALID_OPERATION with Vulkan feature-not-present is a separate driver warning. Visible screenshots do not establish that every effect renders correctly."
+        },
+        "other_wallpaper_package_deaths": [
+          {
+            "line": 2867,
+            "message": "10-28 14:18:43.860   641  1769 I ActivityManager: Process com.miui.miwallpaper.mars:marsSuperWallpaper (pid 4816) has died: fg  SVC ",
+            "note": "Other wallpaper package in the capture; excluded from the requested scene target-package crash/death count."
+          }
+        ],
+        "application_component_confirmed": true,
+        "parent_visual_review": "Parent reports real scene imagery in preview40 and home15 for all five probes. This is separate from the fatal-event classification."
+      }
+    ],
+    "self_sigkill_without_prior_native_fatal_count": 4
+  },
+  "scenes": [
+    {
+      "pack": "pack-1",
+      "scene_index": 0,
+      "label": "Croatia Cape Kamenjak",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+      "apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "evidence_directory": "pack-1/scene-0",
+      "logcat_sha256": "307e875b71b5709686e23a6c2ae97e58c50785c4b4929be5e780fa4ada503bb9",
+      "captured_log_start": "10-28 13:23:57.349",
+      "captured_log_end": "10-28 13:24:59.917",
+      "classification": "native_crash_then_process_restart",
+      "native_crash_count": 1,
+      "unity_allocator_error_count": 1,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 275,
+          "timestamp": "10-28 13:23:57.643",
+          "pid": 5131,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        },
+        {
+          "line": 839,
+          "timestamp": "10-28 13:24:16.772",
+          "pid": 5187,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [
+        {
+          "line": 811,
+          "timestamp": "10-28 13:24:15.747",
+          "pid": 5131,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "restart_count": 1,
+      "native_crashes": [
+        {
+          "line": 545,
+          "timestamp": "10-28 13:23:57.940",
+          "pid": 5131,
+          "tid": 5179,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 534,
+              "message": "10-28 13:23:57.939  5131  5179 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "backtrace_pcs": [
+            "0000000000c17494",
+            "0000000000c17034",
+            "0000000000c16f84",
+            "0000000000407a68",
+            "0000000000566334",
+            "000000000043e504",
+            "0000000000486afc",
+            "0000000000487fc4",
+            "00000000006158b8",
+            "000000000060ccb4",
+            "000000000060d338",
+            "000000000050f1a0",
+            "0000000000510af4",
+            "0000000000510940",
+            "00000000005108ac",
+            "000000000058809c",
+            "000000000008e208",
+            "000000000007f4dc"
+          ],
+          "signature": "unity_legacy_allocator_region_tracking_sigsegv"
+        }
+      ],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 126,
+          "first_line": 428,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-1",
+      "scene_index": 1,
+      "label": "Guangxi, China Longji Terraced Fields",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+      "apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "evidence_directory": "pack-1/scene-1",
+      "logcat_sha256": "29b90a8107282820d9b448a0dc735538588250e8ae72b5cb83ec5efe4633ef66",
+      "captured_log_start": "10-28 13:25:03.337",
+      "captured_log_end": "10-28 13:26:05.568",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 326,
+          "timestamp": "10-28 13:25:03.683",
+          "pid": 5583,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 89,
+          "first_line": 441,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-1",
+      "scene_index": 2,
+      "label": "Greenland Ilulissat",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper2",
+      "apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "evidence_directory": "pack-1/scene-2",
+      "logcat_sha256": "b60359bbc4eaf61693486f2d660537f73d13e55a308dc09dc5de6589f0273ff3",
+      "captured_log_start": "10-28 13:26:08.903",
+      "captured_log_end": "10-28 13:27:10.457",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 541,
+          "timestamp": "10-28 13:26:09.202",
+          "pid": 6013,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 87,
+          "first_line": 658,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-1",
+      "scene_index": 3,
+      "label": "Greece Navagio Beach",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper3",
+      "apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "evidence_directory": "pack-1/scene-3",
+      "logcat_sha256": "97a54d6b08a523ab9ccb2ea90892586a76d9cb6abdadd23ce0bcdbc2dbf39d4c",
+      "captured_log_start": "10-28 13:27:13.816",
+      "captured_log_end": "10-28 13:28:16.409",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 306,
+          "timestamp": "10-28 13:27:14.121",
+          "pid": 6405,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 430,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-1",
+      "scene_index": 4,
+      "label": "Italy Dolomites",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper4",
+      "apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "evidence_directory": "pack-1/scene-4",
+      "logcat_sha256": "1511e80fcffddffe96408626367bd94361993681c27d9ed1e6ed2816fecb8c16",
+      "captured_log_start": "10-28 13:28:20.120",
+      "captured_log_end": "10-28 13:29:22.680",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 273,
+          "timestamp": "10-28 13:28:20.480",
+          "pid": 6792,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 91,
+          "first_line": 383,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-3",
+      "scene_index": 0,
+      "label": "Nilosyrtis Mensae Region",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+      "apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "evidence_directory": "pack-3/scene-0",
+      "logcat_sha256": "38bc4f1cdc185b91e9802ac8dd10a626043da104bafc33440999367bbfdbd92b",
+      "captured_log_start": "10-28 13:29:26.068",
+      "captured_log_end": "10-28 13:30:28.792",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 305,
+          "timestamp": "10-28 13:29:26.393",
+          "pid": 7168,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 92,
+          "first_line": 435,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-3",
+      "scene_index": 1,
+      "label": "Gale Crater",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper1",
+      "apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "evidence_directory": "pack-3/scene-1",
+      "logcat_sha256": "cdff063e20848cd8190c744fffc66459ccd93890e1875ba7d238d4aa7bf1a72c",
+      "captured_log_start": "10-28 13:30:32.253",
+      "captured_log_end": "10-28 13:31:35.106",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 296,
+          "timestamp": "10-28 13:30:32.578",
+          "pid": 7547,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 89,
+          "first_line": 412,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-3",
+      "scene_index": 2,
+      "label": "Crater in Mawrth Vallis",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper2",
+      "apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "evidence_directory": "pack-3/scene-2",
+      "logcat_sha256": "b645878793118ad79a30d8ebddad4791bc1863c04727d9198053ffe3acfff4e6",
+      "captured_log_start": "10-28 13:31:38.508",
+      "captured_log_end": "10-28 13:32:44.184",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 266,
+          "timestamp": "10-28 13:31:38.843",
+          "pid": 7921,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 89,
+          "first_line": 381,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-3",
+      "scene_index": 3,
+      "label": "Pahrump Hills",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper3",
+      "apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "evidence_directory": "pack-3/scene-3",
+      "logcat_sha256": "38a7d07e1e64f45ff2bee32396c857f05ad0767e078a27a1c53cfbed91eec05f",
+      "captured_log_start": "10-28 13:32:51.378",
+      "captured_log_end": "10-28 13:34:06.789",
+      "classification": "native_crash_then_process_restart",
+      "native_crash_count": 1,
+      "unity_allocator_error_count": 1,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 471,
+          "timestamp": "10-28 13:32:52.452",
+          "pid": 8304,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        },
+        {
+          "line": 1229,
+          "timestamp": "10-28 13:33:11.770",
+          "pid": 8359,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [
+        {
+          "line": 1197,
+          "timestamp": "10-28 13:33:10.729",
+          "pid": 8304,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "restart_count": 1,
+      "native_crashes": [
+        {
+          "line": 761,
+          "timestamp": "10-28 13:32:53.211",
+          "pid": 8304,
+          "tid": 8351,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 750,
+              "message": "10-28 13:32:53.210  8304  8351 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "backtrace_pcs": [
+            "0000000000c17494",
+            "0000000000c17034",
+            "0000000000c16f84",
+            "0000000000407a68",
+            "0000000000566334",
+            "000000000043e504",
+            "0000000000486afc",
+            "0000000000487fc4",
+            "00000000006158b8",
+            "000000000060ccb4",
+            "000000000060d338",
+            "000000000050f1a0",
+            "0000000000510af4",
+            "0000000000510940",
+            "00000000005108ac",
+            "000000000058809c",
+            "000000000008e208",
+            "000000000007f4dc"
+          ],
+          "signature": "unity_legacy_allocator_region_tracking_sigsegv"
+        }
+      ],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 86,
+          "first_line": 647,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-3",
+      "scene_index": 4,
+      "label": "Bahram Vallis",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+      "apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "evidence_directory": "pack-3/scene-4",
+      "logcat_sha256": "8a95291411ac1f35efd9ed4a43f937809eecca9cc3aab7f5079d54a4626cbc7b",
+      "captured_log_start": "10-28 13:34:14.619",
+      "captured_log_end": "10-28 13:35:16.466",
+      "classification": "native_crash_then_process_restart",
+      "native_crash_count": 2,
+      "unity_allocator_error_count": 2,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 317,
+          "timestamp": "10-28 13:34:15.294",
+          "pid": 8738,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        },
+        {
+          "line": 1052,
+          "timestamp": "10-28 13:34:34.605",
+          "pid": 8790,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        },
+        {
+          "line": 1887,
+          "timestamp": "10-28 13:34:56.889",
+          "pid": 8868,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [
+        {
+          "line": 1020,
+          "timestamp": "10-28 13:34:33.559",
+          "pid": 8738,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        },
+        {
+          "line": 1553,
+          "timestamp": "10-28 13:34:52.861",
+          "pid": 8790,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "restart_count": 2,
+      "native_crashes": [
+        {
+          "line": 579,
+          "timestamp": "10-28 13:34:16.071",
+          "pid": 8738,
+          "tid": 8784,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 568,
+              "message": "10-28 13:34:16.069  8738  8784 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "backtrace_pcs": [
+            "0000000000c17494",
+            "0000000000c17034",
+            "0000000000c16f84",
+            "0000000000407a68",
+            "0000000000566334",
+            "000000000043e504",
+            "0000000000486afc",
+            "0000000000487fc4",
+            "00000000006158b8",
+            "000000000060ccb4",
+            "000000000060d338",
+            "000000000050f1a0",
+            "0000000000510af4",
+            "0000000000510940",
+            "00000000005108ac",
+            "000000000058809c",
+            "000000000008e208",
+            "000000000007f4dc"
+          ],
+          "signature": "unity_legacy_allocator_region_tracking_sigsegv"
+        },
+        {
+          "line": 1317,
+          "timestamp": "10-28 13:34:35.604",
+          "pid": 8790,
+          "tid": 8841,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 1306,
+              "message": "10-28 13:34:35.602  8790  8841 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "backtrace_pcs": [
+            "0000000000c17494",
+            "0000000000c17034",
+            "0000000000c16f84",
+            "0000000000407a68",
+            "0000000000566334",
+            "000000000043e504",
+            "0000000000486afc",
+            "0000000000487fc4",
+            "00000000006158b8",
+            "000000000060ccb4",
+            "000000000060d338",
+            "000000000050f1a0",
+            "0000000000510af4",
+            "0000000000510940",
+            "00000000005108ac",
+            "000000000058809c",
+            "000000000008e208",
+            "000000000007f4dc"
+          ],
+          "signature": "unity_legacy_allocator_region_tracking_sigsegv"
+        }
+      ],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 163,
+          "first_line": 462,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability.",
+      "bahram_preview_causality": {
+        "observation": "Parent visual review: both preview samples are black/loading; later home samples show terrain.",
+        "explanation": "Two native allocator crashes and confirmed process deaths occur during the preview window. A third service process starts before the later home samples. This supports a restarted-process recovery, not a stable preview.",
+        "final_process_pid": 8868,
+        "home_sample_hashes_equal": true,
+        "animation_caveat": "Identical home samples do not independently demonstrate animation or long-term stability."
+      }
+    },
+    {
+      "pack": "pack-5",
+      "scene_index": 0,
+      "label": "Faraway rings",
+      "component": "com.miui.miwallpaper.saturn/com.miui.miwallpaper.saturn.superwallpaper.SaturnSuperWallpaper",
+      "apk_sha256": "6b2651f25e34e1034d844a575a1213fb5d07b39ac5052c3cc1b7410110c347c9",
+      "evidence_directory": "pack-5/scene-0",
+      "logcat_sha256": "6b8d96d74a04aef7b8c98953570e817fed0c4ae04841e53d65c135771c8861cd",
+      "captured_log_start": "10-28 13:35:20.250",
+      "captured_log_end": "10-28 13:36:22.472",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 350,
+          "timestamp": "10-28 13:35:20.574",
+          "pid": 9209,
+          "process": "com.miui.miwallpaper.saturn:saturnSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "unity_splash_network_permission_denied",
+          "count": 1,
+          "first_line": 383,
+          "interpretation": "Logged by Unity splash WebRequest background task; process continues. Does not establish that networking is required to render local scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 92,
+          "first_line": 505,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-6",
+      "scene_index": 0,
+      "label": "The Apennines",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+      "apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "evidence_directory": "pack-6/scene-0",
+      "logcat_sha256": "b4ed731fe510cd0deba76f20e326526c7396c4d8346f3654c7f6c4cdd72d8c55",
+      "captured_log_start": "10-28 13:36:27.014",
+      "captured_log_end": "10-28 13:37:29.670",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 324,
+          "timestamp": "10-28 13:36:27.600",
+          "pid": 9559,
+          "process": "com.miui.miwallpaper.moon:moonSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 366,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 403,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-6",
+      "scene_index": 1,
+      "label": "Moon Palace",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper1",
+      "apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "evidence_directory": "pack-6/scene-1",
+      "logcat_sha256": "b6f2866d1bbb20e7e2886d7b22e1c1ae433744cfb7aa1ba7933f407d3ff86b28",
+      "captured_log_start": "10-28 13:37:33.104",
+      "captured_log_end": "10-28 13:38:35.785",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 263,
+          "timestamp": "10-28 13:37:33.425",
+          "pid": 9888,
+          "process": "com.miui.miwallpaper.moon:moonSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 297,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 346,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-6",
+      "scene_index": 2,
+      "label": "The far side of the Moon",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper2",
+      "apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "evidence_directory": "pack-6/scene-2",
+      "logcat_sha256": "b5f14b8d1f479283ff15c773908928875d989d5580f992d6b387f4f67dec54f5",
+      "captured_log_start": "10-28 13:38:40.486",
+      "captured_log_end": "10-28 13:39:47.882",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 345,
+          "timestamp": "10-28 13:38:40.910",
+          "pid": 10206,
+          "process": "com.miui.miwallpaper.moon:moonSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 390,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 425,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-6",
+      "scene_index": 3,
+      "label": "Chang'e 5",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper3",
+      "apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "evidence_directory": "pack-6/scene-3",
+      "logcat_sha256": "f870b1c8615f474b0c37a94308518d919cf2a0afcc84e144ee54a7bf6240a814",
+      "captured_log_start": "10-28 13:39:53.725",
+      "captured_log_end": "10-28 13:40:59.163",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 335,
+          "timestamp": "10-28 13:39:54.294",
+          "pid": 10523,
+          "process": "com.miui.miwallpaper.moon:moonSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 378,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 415,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-6",
+      "scene_index": 4,
+      "label": "Tranquility Base",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper4",
+      "apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "evidence_directory": "pack-6/scene-4",
+      "logcat_sha256": "31d41e51b1fabae75efe66be4a06bf156a7c0f79d74f35ecb7571efafa035d52",
+      "captured_log_start": "10-28 13:41:02.591",
+      "captured_log_end": "10-28 13:42:05.052",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 302,
+          "timestamp": "10-28 13:41:02.928",
+          "pid": 10829,
+          "process": "com.miui.miwallpaper.moon:moonSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 333,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 88,
+          "first_line": 377,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-7",
+      "scene_index": 0,
+      "label": "Snowy peaks",
+      "component": "com.miui.miwallpaper.snowmountain/com.miui.miwallpaper.snowmountain.superwallpaper.SnowmountainSuperWallpaper",
+      "apk_sha256": "f8a7e5450aaf4f8b0c03fab0c08002b12dd7741987a2e9a72d0922376ceaddcb",
+      "evidence_directory": "pack-7/scene-0",
+      "logcat_sha256": "697743be57937866bcafb26aaf78ef89723734e65f359dce886690f35edddc16",
+      "captured_log_start": "10-28 13:42:08.487",
+      "captured_log_end": "10-28 13:43:10.681",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 260,
+          "timestamp": "10-28 13:42:08.791",
+          "pid": 11144,
+          "process": "com.miui.miwallpaper.snowmountain:snowmountainSuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "display_constructor_reflection_denied",
+          "count": 1,
+          "first_line": 356,
+          "interpretation": "Caught hidden-API reflection error; the same process proceeds to engine creation. No fatal exception or process death correlated in these scenes."
+        },
+        {
+          "signature": "unity_splash_network_permission_denied",
+          "count": 1,
+          "first_line": 306,
+          "interpretation": "Logged by Unity splash WebRequest background task; process continues. Does not establish that networking is required to render local scenes."
+        },
+        {
+          "signature": "weather_provider_absent",
+          "count": 2,
+          "first_line": 378,
+          "interpretation": "MIUI weather provider is unavailable on this ROM; rendering continues. Weather integration remains unavailable."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 93,
+          "first_line": 446,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    },
+    {
+      "pack": "pack-8",
+      "scene_index": 0,
+      "label": "Geometry",
+      "component": "com.miui.miwallpaper.geometry/com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper",
+      "apk_sha256": "e9023afe3457468a4ff6a09f11e92ef051ab75fa3da7a19bee83bb5853adc23e",
+      "evidence_directory": "pack-8/scene-0",
+      "logcat_sha256": "378019c98103992c70a3261ff879ef58a3cd691befef2f615bdac16b268a8a53",
+      "captured_log_start": "10-28 13:43:14.325",
+      "captured_log_end": "10-28 13:44:17.655",
+      "classification": "no_fatal_crash_captured_in_this_window",
+      "native_crash_count": 0,
+      "unity_allocator_error_count": 0,
+      "uncaught_java_exception_count": 0,
+      "filament_texture_94_panic_count": 0,
+      "android_crash_buffer_bytes": 0,
+      "port_process_starts": [
+        {
+          "line": 297,
+          "timestamp": "10-28 13:43:14.719",
+          "pid": 11474,
+          "process": "com.miui.miwallpaper.geometry:GeometrySuperWallpaper"
+        }
+      ],
+      "confirmed_port_process_deaths": [],
+      "restart_count": 0,
+      "native_crashes": [],
+      "nonfatal_compatibility_messages": [
+        {
+          "signature": "unity_splash_network_permission_denied",
+          "count": 1,
+          "first_line": 341,
+          "interpretation": "Logged by Unity splash WebRequest background task; process continues. Does not establish that networking is required to render local scenes."
+        },
+        {
+          "signature": "mesa_rendernode_probe_failed",
+          "count": 102,
+          "first_line": 458,
+          "interpretation": "Repeated graphics-device probe errors also occur in scenes that render without captured crashes; not sufficient on their own to classify a rendering failure."
+        }
+      ],
+      "application_component_confirmed": true,
+      "rendering_verdict": "Visual screenshots are reviewed separately; binding and absence of a captured fatal error do not prove rendering, transitions, or stability."
+    }
+  ]
+}

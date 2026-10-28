@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "assessment": "Final signed v1.0.1 idle, screen-off and real swipe-unlock checks passed on emulator; phone performance untested",
+  "final_release_verified": true,
+  "environment": {
+    "host": "Apple M2, macOS",
+    "runtime": "Android 17 API 37 ARM64 emulator",
+    "emulator_version": "37.2.12",
+    "display_pixels": [
+      1080,
+      2400
+    ],
+    "display_refresh_hz": 60,
+    "graphics": "Host Vulkan/MoltenVK with guest ANGLE and nonconformant exposeES32ForTesting override",
+    "physical_phone_tested": false
+  },
+  "tested_configuration": {
+    "actual_scene": "earth",
+    "quality": "Balanced",
+    "configuration": "Default Earth scene configuration, clock off",
+    "configuration_evidence": "Both visible engine dumps explicitly report scene=earth quality=Balanced; remaining defaults are the test setup rather than fields exposed by these dumps",
+    "intended_but_not_applied": "Cobalt layered-depth selection did not become the applied scene; excluded from benchmark naming",
+    "baseline_retired_depth_preview_excluded": true
+  },
+  "measurement_definition": "App-level render-loop frame-counter increments, not compositor presentation frames, CPU time, GPU time, battery drain or FPS measurements",
+  "visible_idle": {
+    "baseline": {
+      "samples": [
+        {
+          "file": "baseline/visible-0.txt",
+          "sha256": "d8d39d213813de90d8faf0e52500afa04b72a42bbc40968e9d5c8daa4bcf4ae1",
+          "process_id": 5483,
+          "selected_engine_dump": "DepthWall visible=true frames=264 quality=Balanced scene=earth surface=true error=none",
+          "frames": 264,
+          "visible": true,
+          "scene": "earth",
+          "quality": "Balanced",
+          "surface_ready": true,
+          "sensor_listener_registered": null,
+          "idle_on_demand": null,
+          "renderer_error": "none"
+        },
+        {
+          "file": "baseline/visible-1.txt",
+          "sha256": "f3d1516e2493fee7553f307b409eda60b8c4c7367ff8b0946611771fa37759b1",
+          "process_id": 5483,
+          "selected_engine_dump": "DepthWall visible=true frames=716 quality=Balanced scene=earth surface=true error=none",
+          "frames": 716,
+          "visible": true,
+          "scene": "earth",
+          "quality": "Balanced",
+          "surface_ready": true,
+          "sensor_listener_registered": null,
+          "idle_on_demand": null,
+          "renderer_error": "none"
+        }
+      ],
+      "nominal_interval_seconds": 15,
+      "measured_interval_seconds": null,
+      "frame_counter_delta": 452,
+      "timing_note": "Nominal wait reported by the test; no monotonic interval files in this baseline capture"
+    },
+    "updated": {
+      "samples": [
+        {
+          "file": "updated/visible-0.txt",
+          "sha256": "6fbde4adb000ab7c7f0f635c7c3f17b530ce20c4ee2d10df5320b2a40998cfe9",
+          "process_id": 5929,
+          "selected_engine_dump": "DepthWall visible=true frames=99 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true error=none",
+          "frames": 99,
+          "visible": true,
+          "scene": "earth",
+          "quality": "Balanced",
+          "surface_ready": true,
+          "sensor_listener_registered": true,
+          "idle_on_demand": true,
+          "renderer_error": "none"
+        },
+        {
+          "file": "updated/visible-1.txt",
+          "sha256": "6fbde4adb000ab7c7f0f635c7c3f17b530ce20c4ee2d10df5320b2a40998cfe9",
+          "process_id": 5929,
+          "selected_engine_dump": "DepthWall visible=true frames=99 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true error=none",
+          "frames": 99,
+          "visible": true,
+          "scene": "earth",
+          "quality": "Balanced",
+          "surface_ready": true,
+          "sensor_listener_registered": true,
+          "idle_on_demand": true,
+          "renderer_error": "none"
+        }
+      ],
+      "nominal_interval_seconds": 15,
+      "monotonic_start_seconds": 259060.177548541,
+      "monotonic_end_seconds": 259075.428792125,
+      "measured_interval_seconds": 15.251243584003532,
+      "frame_counter_delta": 0
+    },
+    "interpretation": "Stationary settled Earth stopped its idle draw loop in the updated observation. Visible parallax sensors remain registered and movement or other events can request frames."
+  },
+  "screen_off": {
+    "samples": [
+      {
+        "file": "updated/hidden-0.txt",
+        "sha256": "c39d6ccf3c9ae184770a75e309633875497e1ca9854139c8ec0ee25ad55fd4bf",
+        "process_id": 5929,
+        "selected_engine_dump": "DepthWall visible=false frames=99 quality=Balanced scene=earth surface=true sensors=false idleOnDemand=true error=none",
+        "frames": 99,
+        "visible": false,
+        "scene": "earth",
+        "quality": "Balanced",
+        "surface_ready": true,
+        "sensor_listener_registered": false,
+        "idle_on_demand": true,
+        "renderer_error": "none"
+      },
+      {
+        "file": "updated/hidden-1.txt",
+        "sha256": "c39d6ccf3c9ae184770a75e309633875497e1ca9854139c8ec0ee25ad55fd4bf",
+        "process_id": 5929,
+        "selected_engine_dump": "DepthWall visible=false frames=99 quality=Balanced scene=earth surface=true sensors=false idleOnDemand=true error=none",
+        "frames": 99,
+        "visible": false,
+        "scene": "earth",
+        "quality": "Balanced",
+        "surface_ready": true,
+        "sensor_listener_registered": false,
+        "idle_on_demand": true,
+        "renderer_error": "none"
+      }
+    ],
+    "nominal_interval_seconds": 10,
+    "measured_interval_seconds": null,
+    "frame_counter_delta": 0,
+    "timing_note": "Nominal wait reported by the test; no independent monotonic markers",
+    "sensor_listener_stopped_in_both_samples": true
+  },
+  "wake": {
+    "sample": {
+      "file": "updated/wake.txt",
+      "sha256": "73e46f11d3fce39073252e96e740930e17ca56e8b225a0701cf9c1fd881131c8",
+      "process_id": 5929,
+      "selected_engine_dump": "DepthWall visible=true frames=208 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true error=none",
+      "frames": 208,
+      "visible": true,
+      "scene": "earth",
+      "quality": "Balanced",
+      "surface_ready": true,
+      "sensor_listener_registered": true,
+      "idle_on_demand": true,
+      "renderer_error": "none"
+    },
+    "frame_counter_delta_from_hidden_end": 109,
+    "interpretation": "Rendering resumed after waking/unlocking; timing and transition FPS were not measured"
+  },
+  "memory": {
+    "comparable": false,
+    "observations": [
+      {
+        "file": "baseline/memory-0.txt",
+        "sha256": "39b1be7336f0b50c26a0feb99ac6e391ae57dae88bd8eda24253937ffd20e297",
+        "reported_pss_kb": 82680,
+        "reported_rss_kb": 230276
+      },
+      {
+        "file": "baseline/memory-1.txt",
+        "sha256": "aa55741947ae5d7652fb9a49dff4628006297d929bf0993643d1865339432a60",
+        "reported_pss_kb": 75197,
+        "reported_rss_kb": 222844
+      },
+      {
+        "file": "updated/memory-0.txt",
+        "sha256": "e116670b542505621cd113d1f0f4fbfaff5938e3f0d5b9ad05f47ff2b1363c31",
+        "reported_pss_kb": 32934,
+        "reported_rss_kb": 165384
+      },
+      {
+        "file": "updated/memory-1.txt",
+        "sha256": "8b894a3d961699e50bde834ad5086b5c58baf4730e7cd784fa3b2c57fe2a0cda",
+        "reported_pss_kb": 29041,
+        "reported_rss_kb": 162140
+      }
+    ],
+    "reason": "Baseline process retained earlier preview history; updated process had restarted. Process histories were not matched.",
+    "improvement_claim": null,
+    "percentage_change_computed": false
+  },
+  "implementation": {
+    "coil_memory_cache_limit_bytes": 33554432,
+    "thumbnail_request_size_pixels": [
+      480,
+      720
+    ],
+    "decoder_source_pixel_limit": 100000000,
+    "decoder_default_max_edge_pixels": 4096,
+    "decoder_sampling": "Power-of-two downsampling after a bounds-only read",
+    "layer_texture_limit": "Requested render dimensions bounded by GL maximum texture size and 4096 pixels",
+    "render_width_caps_pixels": {
+      "Battery": 720,
+      "Balanced": 960,
+      "High Quality": 1440,
+      "battery_saver_or_thermal_moderate": 720
+    },
+    "transition_fps_targets": {
+      "Battery": 30,
+      "Balanced": 60,
+      "High Quality": "Display refresh bounded to 30-90",
+      "battery_saver_or_thermal_moderate": 15
+    },
+    "continuous_idle_fps_targets": {
+      "Battery": 0,
+      "Balanced": 15,
+      "High Quality": 30,
+      "battery_saver_or_thermal_moderate": 0
+    },
+    "settled_event_driven_scenes": [
+      "depth",
+      "earth surface",
+      "mars surface",
+      "moon surface"
+    ],
+    "clock_redraw": "Minute boundary if enabled",
+    "scope": "Native DepthWall scenes and previews only; original external ports retain their own rendering behavior"
+  },
+  "evidence": {
+    "local_collection": "performance-1.0.1",
+    "files": [
+      {
+        "file": "baseline/home.png",
+        "bytes": 403511,
+        "sha256": "58629ee2a8cd94b57a5afb26e1a5028348217a6fdb1fcce0761f0f39664fb514"
+      },
+      {
+        "file": "baseline/memory-0.txt",
+        "bytes": 4564,
+        "sha256": "39b1be7336f0b50c26a0feb99ac6e391ae57dae88bd8eda24253937ffd20e297"
+      },
+      {
+        "file": "baseline/memory-1.txt",
+        "bytes": 4564,
+        "sha256": "aa55741947ae5d7652fb9a49dff4628006297d929bf0993643d1865339432a60"
+      },
+      {
+        "file": "baseline/visible-0.txt",
+        "bytes": 5526,
+        "sha256": "d8d39d213813de90d8faf0e52500afa04b72a42bbc40968e9d5c8daa4bcf4ae1"
+      },
+      {
+        "file": "baseline/visible-1.txt",
+        "bytes": 5526,
+        "sha256": "f3d1516e2493fee7553f307b409eda60b8c4c7367ff8b0946611771fa37759b1"
+      },
+      {
+        "file": "baseline/wallpaper.txt",
+        "bytes": 1942,
+        "sha256": "a402b940ca1c2f78465cf5f3a0507238da5136df034d63897dbd21c0fcecc8fc"
+      },
+      {
+        "file": "updated/apply-before-fix.txt",
+        "bytes": 5614,
+        "sha256": "84e54d2a3e0239d7c0467fb00d9f5679b009763daff6e7f92ea28ae5070da775"
+      },
+      {
+        "file": "updated/hidden-0.txt",
+        "bytes": 2865,
+        "sha256": "c39d6ccf3c9ae184770a75e309633875497e1ca9854139c8ec0ee25ad55fd4bf"
+      },
+      {
+        "file": "updated/hidden-1.txt",
+        "bytes": 2865,
+        "sha256": "c39d6ccf3c9ae184770a75e309633875497e1ca9854139c8ec0ee25ad55fd4bf"
+      },
+      {
+        "file": "updated/home.png",
+        "bytes": 403341,
+        "sha256": "386a8bfa349c024af40b486c16473098bd022f3582ecbaa84de6fd4e2aa3cace"
+      },
+      {
+        "file": "updated/memory-0.txt",
+        "bytes": 3957,
+        "sha256": "e116670b542505621cd113d1f0f4fbfaff5938e3f0d5b9ad05f47ff2b1363c31"
+      },
+      {
+        "file": "updated/memory-1.txt",
+        "bytes": 3957,
+        "sha256": "8b894a3d961699e50bde834ad5086b5c58baf4730e7cd784fa3b2c57fe2a0cda"
+      },
+      {
+        "file": "updated/native-fallback.png",
+        "bytes": 520571,
+        "sha256": "6eda41191f3d83a1ad0a2047e0ab1934464919aa312bcf88ec8482804c064657"
+      },
+      {
+        "file": "updated/settings-aod.png",
+        "bytes": 177336,
+        "sha256": "034b883e47b3f1c632631eac20da6de56301da615448c7b44db5e80de9faec82"
+      },
+      {
+        "file": "updated/time-0.txt",
+        "bytes": 16,
+        "sha256": "8b28c74ea897816d77225e27e7d00f504f949a40de57f890edaf77ba5f84d482"
+      },
+      {
+        "file": "updated/time-1.txt",
+        "bytes": 16,
+        "sha256": "2c7edbcd3288dce126bcd66c1314490b0ca4d7b391e0977ca938bfbb0df2b21f"
+      },
+      {
+        "file": "updated/visible-0.txt",
+        "bytes": 2859,
+        "sha256": "6fbde4adb000ab7c7f0f635c7c3f17b530ce20c4ee2d10df5320b2a40998cfe9"
+      },
+      {
+        "file": "updated/visible-1.txt",
+        "bytes": 2859,
+        "sha256": "6fbde4adb000ab7c7f0f635c7c3f17b530ce20c4ee2d10df5320b2a40998cfe9"
+      },
+      {
+        "file": "updated/wake.txt",
+        "bytes": 2860,
+        "sha256": "73e46f11d3fce39073252e96e740930e17ca56e8b225a0701cf9c1fd881131c8"
+      },
+      {
+        "file": "updated/wallpaper.txt",
+        "bytes": 1958,
+        "sha256": "4f3ea47d77d49a88167c7c8e71e855920267882295e157aa2ec6fa96a5054ed8"
+      }
+    ],
+    "raw_captures_in_repository": false
+  },
+  "remaining_checks": [
+    "Final recheck after application callback fix",
+    "Explicit application of intended scene and actual engine confirmation",
+    "Matched-history memory trials",
+    "Clock, sensor-motion, preview cancellation and lifecycle checks on final candidate",
+    "Physical OnePlus frame pacing, memory, thermal and energy measurements"
+  ],
+  "claims_not_established": [
+    "PSS improvement",
+    "Battery savings",
+    "Reduced device heat",
+    "Zero CPU consumption",
+    "Delivered transition frame rate",
+    "Physical crDroid compatibility"
+  ],
+  "final_release_check": {
+    "apk_sha256": "ce7a11d6dbc8e326f09a263734fb06d43babec0faca5583eb395138dd6de0454",
+    "raw_collection": "final-signed-checks",
+    "visible_idle_seconds": 15.308,
+    "visible_idle_frames": [
+      238,
+      238
+    ],
+    "hidden_nominal_seconds": 10,
+    "hidden_frames": [
+      238,
+      238
+    ],
+    "hidden_sensors": false,
+    "wake_frames": 386,
+    "wake_unlocked": true,
+    "wake_transition_progress": 1.0,
+    "unlock_events_after_two_cycles": 2,
+    "evidence": {
+      "12-fixed-idle-0": {
+        "file": "12-fixed-idle-0-engines.txt",
+        "sha256": "cc2811011e5b415a8bc8d49552058632116e095ba5d554689a02d458f4692aa3",
+        "active_surface_engines": [
+          "DepthWall visible=true frames=238 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true unlocked=true progress=1.0 userPresentEvents=1 error=none"
+        ]
+      },
+      "12-fixed-idle-1": {
+        "file": "12-fixed-idle-1-engines.txt",
+        "sha256": "cc2811011e5b415a8bc8d49552058632116e095ba5d554689a02d458f4692aa3",
+        "active_surface_engines": [
+          "DepthWall visible=true frames=238 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true unlocked=true progress=1.0 userPresentEvents=1 error=none"
+        ]
+      },
+      "13-fixed-hidden-0": {
+        "file": "13-fixed-hidden-0-engines.txt",
+        "sha256": "4d92ffda3471e30837afeafb30e8b22ca775c432568f100c10fd227568c695a3",
+        "active_surface_engines": [
+          "DepthWall visible=false frames=238 quality=Balanced scene=earth surface=true sensors=false idleOnDemand=true unlocked=false progress=0.0 userPresentEvents=1 error=none"
+        ]
+      },
+      "13-fixed-hidden-1": {
+        "file": "13-fixed-hidden-1-engines.txt",
+        "sha256": "4d92ffda3471e30837afeafb30e8b22ca775c432568f100c10fd227568c695a3",
+        "active_surface_engines": [
+          "DepthWall visible=false frames=238 quality=Balanced scene=earth surface=true sensors=false idleOnDemand=true unlocked=false progress=0.0 userPresentEvents=1 error=none"
+        ]
+      },
+      "14-fixed-wake": {
+        "file": "14-fixed-wake-engines.txt",
+        "sha256": "921e329d7e1d7fd6caf2437ae1ab0e91830bb4b718baf061a7fb93d2c67e8bb3",
+        "active_surface_engines": [
+          "DepthWall visible=true frames=386 quality=Balanced scene=earth surface=true sensors=true idleOnDemand=true unlocked=true progress=1.0 userPresentEvents=2 error=none"
+        ]
+      }
+    }
+  }
+}

@@ -5,7 +5,6 @@ import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -56,7 +55,6 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
-    var previewConfig by remember { mutableStateOf<SceneConfig?>(null) }
     val snackbar=remember { SnackbarHostState() }
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
     val owner=LocalLifecycleOwner.current
@@ -71,10 +69,12 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
         uri?.let { vm.run { report=vm.packs.inspect(it) } }
     }
     val applyLive=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        // Android 36+ commits in Engine.onApplyWallpaper with the user's selected destinations.
-        if(result.resultCode==Activity.RESULT_OK && Build.VERSION.SDK_INT<36) vm.repo.scenes.commit(vm.repo.scenes.pending(),1)
-        vm.repo.scenes.clearPending();previewConfig=null
-        if(result.resultCode==Activity.RESULT_OK)vm.message("Live wallpaper applied")
+        val accepted = result.resultCode == Activity.RESULT_OK
+        val flags = vm.repo.scenes.finishPreview(accepted,
+            if (accepted) WallpaperApplyState.capture(context) else null,
+            ComponentName(context,DepthWallpaperService::class.java).flattenToString())
+        if (flags != 0) vm.message("Live wallpaper applied")
+        else if (accepted) vm.message("Android did not confirm the wallpaper destination. Scene settings were preserved; try applying again.")
     }
     fun launch(intent:Intent) { runCatching { context.startActivity(intent) }.onFailure { vm.message("This action is unavailable: ${it.message}") } }
     fun openLink(url:String)=launch(Intent(Intent.ACTION_VIEW,Uri.parse(url)))
@@ -109,8 +109,12 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
     }
     selected?.let { item ->
         WallpaperPreview(items.firstOrNull { it.id==item.id } ?: item,vm,onClose={selected=null},onLive={ config ->
-            vm.repo.scenes.stage(config);previewConfig=config
-            try { applyLive.launch(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,ComponentName(context,DepthWallpaperService::class.java))) }
+            val before = WallpaperApplyState.capture(context)
+            if (before == null) vm.message("Cannot read the current wallpaper destinations. Please try again.")
+            else try {
+                vm.repo.scenes.stage(config, before)
+                applyLive.launch(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,ComponentName(context,DepthWallpaperService::class.java)))
+            }
             catch(e:Exception) { vm.repo.scenes.clearPending();vm.message("Wallpaper picker unavailable: ${e.message}") }
         })
     }
@@ -189,9 +193,13 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
     Text(label,modifier.clip(RoundedCornerShape(30.dp)).background(Color(0xCC1C1914)).padding(horizontal=11.dp,vertical=7.dp),color=Orange,fontSize=8.sp,letterSpacing=1.sp,fontWeight=FontWeight.Bold)
 }
 @Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit) {
+    val context = LocalContext.current
+    val thumbnail = remember(item.thumbnailModel) {
+        coil.request.ImageRequest.Builder(context).data(item.thumbnailModel).size(480, 720).build()
+    }
     Column(Modifier.clickable(onClick=onSelect).testTag("wall_${item.id}")) {
         Box(Modifier.fillMaxWidth().aspectRatio(.68f).clip(RoundedCornerShape(19.dp)).background(Surface)) {
-            AsyncImage(item.thumbnailModel,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+            AsyncImage(thumbnail,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             IconButton(onClick=onFavorite,modifier=Modifier.align(Alignment.TopEnd)) { Icon(if(item.favorite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Favorite ${item.title}",tint=if(item.favorite)Orange else Ivory,modifier=Modifier.size(19.dp)) }
             if(item.kind!="STATIC")BadgeLabel(if(item.kind=="NATIVE_SCENE")"LIVE" else "DEPTH",Modifier.align(Alignment.BottomStart).padding(9.dp))
             if(item.localPath.isNotEmpty())Icon(Icons.Outlined.OfflinePin,"Available offline",Modifier.align(Alignment.BottomEnd).padding(10.dp).size(16.dp),tint=Ivory)
@@ -241,6 +249,16 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
                         vm.packs.verifiedRelease(p.definition.packageName)?.let { evidence ->
                             Text("Original port · %.1f MB · %d scenes".format(evidence.getLong("bytes")/1048576.0,evidence.getJSONArray("scenes").length()),color=Orange,fontSize=12.sp)
                             Text("Archive inspected; installation checked on an Android 17 emulator. Phone rendering still needs testing.",color=Muted,fontSize=11.sp)
+                            if(p.version==evidence.getString("version") && p.signatures==listOf(evidence.getString("certificate"))) {
+                                val unstable=p.definition.packageName.endsWith("earth") || p.definition.packageName.endsWith("mars")
+                                Text(if(unstable) "This original release showed intermittent black previews and crashes on the emulator. Try the DepthWall original below if it fails."
+                                    else "Scene imagery verified with an emulator graphics workaround. Phone and AOD support remain unverified.",
+                                    color=if(unstable)Orange else Muted,fontSize=11.sp)
+                            }
+                        }
+                        val nativeScene = if(p.definition.packageName.endsWith("snowmountain")) "snow" else p.definition.packageName.substringAfterLast('.')
+                        items.firstOrNull { it.kind=="NATIVE_SCENE" && it.scene==nativeScene }?.let { native ->
+                            TextButton(onClick={onSelect(native)}) { Text("Use DepthWall original") }
                         }
                         p.error?.let { Text(it,color=Orange,fontSize=12.sp) }
                         p.services.forEach { info ->

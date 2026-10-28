@@ -18,6 +18,8 @@ class GlPainter(private val context:Context) {
     private val program:Int
     private val textures=IntArray(3)
     private var loaded:SceneConfig?=null
+    private var textureEdge=0
+    private var kind=0
     private var minute=-1L
     private var imageAspect=1440f/3120
     init {
@@ -30,6 +32,20 @@ class GlPainter(private val context:Context) {
         GLES20.glGenTextures(3,textures,0)
         for(i in 0..2) upload(i,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888))
     }
+    private val positionLocation=GLES20.glGetAttribLocation(program,"position")
+    private val resolutionLocation=GLES20.glGetUniformLocation(program,"resolution")
+    private val motionLocation=GLES20.glGetUniformLocation(program,"motion")
+    private val cropLocation=GLES20.glGetUniformLocation(program,"cropOffset")
+    private val zoomLocation=GLES20.glGetUniformLocation(program,"zoom")
+    private val aspectLocation=GLES20.glGetUniformLocation(program,"imageAspect")
+    private val timeLocation=GLES20.glGetUniformLocation(program,"time")
+    private val progressLocation=GLES20.glGetUniformLocation(program,"progress")
+    private val kindLocation=GLES20.glGetUniformLocation(program,"kind")
+    private val samplerLocations=intArrayOf(
+        GLES20.glGetUniformLocation(program,"backgroundTex"),
+        GLES20.glGetUniformLocation(program,"foregroundTex"),
+        GLES20.glGetUniformLocation(program,"clockTex"))
+    private val maxTextureSize=IntArray(1).also { GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE,it,0) }[0]
     private fun shader(type:Int,text:String):Int {
         val id=GLES20.glCreateShader(type);GLES20.glShaderSource(id,text);GLES20.glCompileShader(id)
         val status=IntArray(1);GLES20.glGetShaderiv(id,GLES20.GL_COMPILE_STATUS,status,0)
@@ -41,22 +57,35 @@ class GlPainter(private val context:Context) {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_MAG_FILTER,GLES20.GL_LINEAR)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_WRAP_S,GLES20.GL_CLAMP_TO_EDGE)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_WRAP_T,GLES20.GL_CLAMP_TO_EDGE)
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D,0,bitmap,0);bitmap.recycle()
+        try { GLUtils.texImage2D(GLES20.GL_TEXTURE_2D,0,bitmap,0) } finally { bitmap.recycle() }
     }
-    private fun load(config:SceneConfig) {
+    private fun load(config:SceneConfig,maxEdge:Int) {
         val repo=(context.applicationContext as DepthWallApp).repository
-        if(config.background!=loaded?.background && config.scene=="depth") {
-            val bitmap=repo.decode(config.background,4096);imageAspect=bitmap.width.toFloat()/bitmap.height;upload(0,bitmap)
-        }
-        if(config.foreground!=loaded?.foreground || loaded==null) {
-            val bitmap=if(config.foreground.isBlank()) Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888) else repo.decode(config.foreground,4096)
-            upload(1,bitmap)
+        if(config.scene=="depth") {
+            val changedBudget=textureEdge!=maxEdge
+            if(loaded?.scene!="depth" || config.background!=loaded?.background || changedBudget) {
+                val bitmap=repo.decode(config.background,maxEdge)
+                imageAspect=bitmap.width.toFloat()/bitmap.height
+                upload(0,bitmap)
+            }
+            if(loaded?.scene!="depth" || config.foreground!=loaded?.foreground || changedBudget) {
+                val bitmap=if(config.foreground.isBlank())Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888)
+                    else repo.decode(config.foreground,maxEdge)
+                upload(1,bitmap)
+            }
+        } else if(loaded?.scene=="depth") {
+            // Procedural scenes do not need to retain the previous layer textures.
+            upload(0,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888))
+            upload(1,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888))
         }
         if(config.clock!=loaded?.clock || config.clockY!=loaded?.clockY) minute=-1
+        textureEdge=maxEdge
+        kind=SCENE_KINDS[config.scene] ?: 0
         loaded=config
     }
+    fun invalidateClock() { minute=-1 }
     private fun clock(config:SceneConfig) {
-        val now=System.currentTimeMillis()/60000
+        val now=if(config.clock=="Off")Long.MIN_VALUE else System.currentTimeMillis()/60000
         if(now==minute)return
         minute=now
         if(config.clock=="Off") { upload(2,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888));return }
@@ -79,21 +108,31 @@ class GlPainter(private val context:Context) {
     }
     private fun Paint.letterSpacingCompat() { /* Paint has no letter-spacing API; leave system shaping intact. */ }
     fun draw(config:SceneConfig,w:Int,h:Int,time:Float,progress:Float,mx:Float,my:Float) {
-        if(loaded!=config)load(config);clock(config)
+        val edge=maxOf(w,h).coerceIn(256,minOf(4096,maxTextureSize).coerceAtLeast(256))
+        if(loaded!=config || (config.scene=="depth" && textureEdge!=edge))load(config,edge)
+        clock(config)
         GLES20.glViewport(0,0,w,h);GLES20.glClearColor(0f,0f,0f,1f);GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);GLES20.glUseProgram(program)
-        val pos=GLES20.glGetAttribLocation(program,"position");GLES20.glEnableVertexAttribArray(pos);GLES20.glVertexAttribPointer(pos,2,GLES20.GL_FLOAT,false,0,vertices)
-        fun f(n:String,v:Float)=GLES20.glUniform1f(GLES20.glGetUniformLocation(program,n),v)
-        fun v(n:String,x:Float,y:Float)=GLES20.glUniform2f(GLES20.glGetUniformLocation(program,n),x,y)
-        v("resolution",w.toFloat(),h.toFloat());v("motion",mx*config.parallax,my*config.parallax);v("cropOffset",config.offsetX,config.offsetY)
-        f("zoom",config.zoom);f("imageAspect",imageAspect);f("time",time);f("progress",progress)
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(program,"kind"),listOf("depth","earth","mars","saturn","moon","snow","geometry","sun").indexOf(config.scene).coerceAtLeast(0))
-        for((i,name) in listOf("backgroundTex","foregroundTex","clockTex").withIndex()) {
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0+i);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textures[i]);GLES20.glUniform1i(GLES20.glGetUniformLocation(program,name),i)
+        GLES20.glEnableVertexAttribArray(positionLocation)
+        GLES20.glVertexAttribPointer(positionLocation,2,GLES20.GL_FLOAT,false,0,vertices)
+        GLES20.glUniform2f(resolutionLocation,w.toFloat(),h.toFloat())
+        GLES20.glUniform2f(motionLocation,mx*config.parallax,my*config.parallax)
+        GLES20.glUniform2f(cropLocation,config.offsetX,config.offsetY)
+        GLES20.glUniform1f(zoomLocation,config.zoom)
+        GLES20.glUniform1f(aspectLocation,imageAspect)
+        GLES20.glUniform1f(timeLocation,time)
+        GLES20.glUniform1f(progressLocation,progress)
+        GLES20.glUniform1i(kindLocation,kind)
+        for(i in 0..2) {
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0+i);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textures[i]);GLES20.glUniform1i(samplerLocations[i],i)
         }
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4)
-        GLES20.glDisableVertexAttribArray(pos)
+        GLES20.glDisableVertexAttribArray(positionLocation)
     }
     fun close() { GLES20.glDeleteTextures(3,textures,0);GLES20.glDeleteProgram(program) }
+    companion object {
+        private val SCENE_KINDS=mapOf("depth" to 0,"earth" to 1,"mars" to 2,"saturn" to 3,
+            "moon" to 4,"snow" to 5,"geometry" to 6,"sun" to 7)
+    }
 }
 
 class WindowRenderer(context:Context,surface:Surface) {
@@ -106,6 +145,8 @@ class WindowRenderer(context:Context,surface:Surface) {
     private var targetW=0
     private var targetH=0
     private val blit:Int
+    private val blitPosition:Int
+    private val blitTexture:Int
     private val quad=ByteBuffer.allocateDirect(32).order(ByteOrder.nativeOrder()).asFloatBuffer().apply { put(floatArrayOf(-1f,-1f,1f,-1f,-1f,1f,1f,1f));position(0) }
     init {
         val version=IntArray(2);check(EGL14.eglInitialize(display,version,0,version,1))
@@ -119,6 +160,8 @@ class WindowRenderer(context:Context,surface:Surface) {
         val v=compile(GLES20.GL_VERTEX_SHADER,"attribute vec2 p;varying vec2 uv;void main(){uv=(p+1.0)*.5;gl_Position=vec4(p,0,1);}")
         val f=compile(GLES20.GL_FRAGMENT_SHADER,"precision mediump float;varying vec2 uv;uniform sampler2D tex;void main(){gl_FragColor=texture2D(tex,uv);}")
         blit=GLES20.glCreateProgram();GLES20.glAttachShader(blit,v);GLES20.glAttachShader(blit,f);GLES20.glLinkProgram(blit);GLES20.glDeleteShader(v);GLES20.glDeleteShader(f)
+        blitPosition=GLES20.glGetAttribLocation(blit,"p")
+        blitTexture=GLES20.glGetUniformLocation(blit,"tex")
         GLES20.glGenFramebuffers(1,target,0);GLES20.glGenTextures(1,color,0)
     }
     fun draw(c:SceneConfig,w:Int,h:Int,t:Float,p:Float,x:Float,y:Float,maxWidth:Int=960) {
@@ -134,10 +177,11 @@ class WindowRenderer(context:Context,surface:Surface) {
         }
         painter.draw(c,rw,rh,t,p,x,y)
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,0);GLES20.glViewport(0,0,w,h);GLES20.glUseProgram(blit)
-        val position=GLES20.glGetAttribLocation(blit,"p");GLES20.glEnableVertexAttribArray(position);GLES20.glVertexAttribPointer(position,2,GLES20.GL_FLOAT,false,0,quad)
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,color[0]);GLES20.glUniform1i(GLES20.glGetUniformLocation(blit,"tex"),0)
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);GLES20.glDisableVertexAttribArray(position)
+        GLES20.glEnableVertexAttribArray(blitPosition);GLES20.glVertexAttribPointer(blitPosition,2,GLES20.GL_FLOAT,false,0,quad)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,color[0]);GLES20.glUniform1i(blitTexture,0)
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);GLES20.glDisableVertexAttribArray(blitPosition)
         check(EGL14.eglSwapBuffers(display,eglSurface)) { "Wallpaper surface was lost." }
     }
+    fun invalidateClock()=painter.invalidateClock()
     fun close() { painter.close();GLES20.glDeleteFramebuffers(1,target,0);GLES20.glDeleteTextures(1,color,0);GLES20.glDeleteProgram(blit);EGL14.eglMakeCurrent(display,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_CONTEXT);EGL14.eglDestroySurface(display,eglSurface);EGL14.eglDestroyContext(display,eglContext);EGL14.eglReleaseThread();EGL14.eglTerminate(display) }
 }

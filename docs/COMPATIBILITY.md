@@ -1,6 +1,6 @@
 # Compatibility and verification
 
-Assessment date: **28 October 2026**. This is an emulator-tested personal preview, not final acceptance on crDroid.
+Assessment date: **28 October 2026**, **v1.0.1**. This is an emulator-tested personal preview, not final acceptance on crDroid.
 
 The requested phone is the OnePlus 7T Pro McLaren 4G (`hotdog`), nominally 1440 × 3120. It was not connected. The user explicitly chose emulator verification now and phone testing later. The exact crDroid build, its 32-bit support, live-wallpaper destinations and AOD interfaces remain unknown.
 
@@ -12,7 +12,8 @@ The requested phone is the OnePlus 7T Pro McLaren 4G (`hotdog`), nominally 1440 
 | Android tools | SDK platform `android-37.0`, build-tools 37.0.0, emulator 37.2.12 |
 | Runtime | Google APIs ARM64 emulator, Android 17, API 37 |
 | Display | 1080 × 2400, 60 Hz; app uses active display dimensions |
-| Graphics | SwiftShader software rendering with host CPU acceleration |
+| Current port-test graphics | Apple M2 host Vulkan/MoltenVK through guest ANGLE; nonconformant `exposeES32ForTesting` override |
+| Prior v1.0.0 graphics | SwiftShader software rendering with host CPU acceleration |
 | Application | `dev.srimi.depthwall`, minimum API 31, target/compile API 37 |
 | Build | Gradle 8.13, AGP 8.13.2, Kotlin 2.2.21 |
 
@@ -20,7 +21,30 @@ AGP warns that its officially tested maximum SDK is 36.1. API 37 builds and emul
 
 The older AVD creation tool wrote an incorrect API target and an undersized data partition. The task-specific emulator configuration was corrected before testing. These emulator setup failures were not app failures.
 
-## Verified application paths
+## v1.0.1 verification status
+
+| Check | Current result |
+|---|---|
+| Local unit tests | 13 passed, 0 failures/errors |
+| Original ports, cold fixture | All 18 home scenes visually present at 5 and 15 seconds with exact service binding; 17 previews visible by 40 seconds |
+| Remaining cold-preview failure | Bahram Vallis black at 20 and 40 seconds |
+| Known native crashes in cold logs | 4 SIGSEGV events across Croatia (1), Pahrump Hills (1), Bahram Vallis (2); visible home captures followed recovery |
+| Five-scene warm-switch check | All five preview/home captures showed imagery; Longji and Bahram each produced a SIGSEGV followed by a SIGTRAP during recovery |
+| Connected app tests | 14 passed; 1 opt-in destructive port-reset fixture skipped; 0 failures/errors |
+| v1.0.1 signed APK installation and launch | Passed, including an in-place upgrade from the same-key v1.0.0 APK |
+| Native rendering | Stationary Earth stops its idle frame loop; see [measured results](PERFORMANCE.md). No phone power/heat measurements |
+
+The updated automated app checks cover gallery/navigation, image import/export/static application, all seven native worlds plus depth, orbit/blend/terrain rendering, texture reloads, exact original-pack hashes/signatures and all 18 exported services. New picker regression tests cover successful results without the newer engine callback, activity/store recreation, separate destinations, cancellation, shared-home migration to lock, and callback ordering. Build and lint passed (0 lint errors, 35 warnings).
+
+A real signed-APK picker check applied Cobalt Valley to Both, Earth to Home while preserving Cobalt on Lock, then Mars to Lock while preserving Earth on Home. Cancelling a Saturn preview retained both selected scenes and wallpaper IDs. A separate lock-screen check visibly showed Mars while Earth remained assigned to Home. Final real swipe-unlock checks reached the native landscape, stopped idle draws, stopped sensors on screen-off, and resumed correctly; see the measured report. This fixes the v1.0.0 path that could show the correct depth preview but leave the active scene at its default: the stock API 37 LivePicker does not call `Engine.onApplyWallpaper`. The new fallback validates fresh wallpaper IDs and components after a successful picker result.
+
+Visible imagery and successful component binding are separate from process stability. Empty crash-buffer captures did not prove an absence of crashes: the full logcat records contained native faults. The [crash analysis](port-errors.json) records exact log lines, timestamps, process IDs and restarts. The original APKs were not modified or re-signed.
+
+The [diagnostic launcher](../tools/start_port_test_emulator.sh) successfully booted the emulator with `debug.angle.feature_overrides_enabled=exposeES32ForTesting` verified, without an extra manual `setprop`. The override bypasses normal GLES capability checks and does not establish GLES conformance. Although the launch requests ASTC emulation disabled, effective logs still report GPU ASTC decompression. See [AOD and emulator reproduction](AOD_AND_EMULATOR.md) for the exact configuration and its limits.
+
+## Prior v1.0.0 application verification baseline
+
+The following checks were completed for **v1.0.0**. They are retained as previous-version evidence, not claimed as a fresh v1.0.1 acceptance run.
 
 - Release APK installation and launch on API 37.
 - Automated Compose navigation, local search, full-screen preview and settings access.
@@ -33,11 +57,11 @@ The older AVD creation tool wrote an incorrect API target and an undersized data
 - Android's system picker offered Home, Lock, and Both. Applying Earth to Both created a live wallpaper with `mWhich=3` and the DepthWall service component.
 - Hidden engine counter stayed at 29 frames across repeated snapshots while another app covered the wallpaper; visibility was false and renderer error was `none`.
 - NASA search and a 0.5 MB Blue Marble download succeeded through the app. Credits, source URL, favourite state and the downloaded Library entry were retained.
-- Wikimedia search and a public-domain artwork download succeeded in the final signed release. Artist, public-domain status and the original Commons page remained visible in Image credits.
+- Wikimedia search and a public-domain artwork download succeeded in the signed v1.0.0 release. Artist, public-domain status and the original Commons page remained visible in Image credits.
 - Prepared depth preview with a digital clock was visually inspected. A manual mask stroke was saved as a foreground; the resulting custom layered wallpaper appeared under Library → Imports.
 - Dark theme and preview controls were visually reviewed; contrast and selected-chip colours were corrected.
 
-The automated suite comprises six local unit tests and eight device tests (all passed, none skipped). The final signed release was installed and launched separately. Lint completed with 0 errors and 31 warnings, principally dependency-update and Kotlin convenience suggestions. Build and test summaries are delivered with the release evidence. Static analysis and Android's installer validate the signed application package separately from runtime tests.
+The v1.0.0 automated suite comprised six local unit tests and eight device tests (all passed, none skipped). Its signed release was installed and launched separately. Its lint run completed with 0 errors and 31 warnings, principally dependency-update and Kotlin convenience suggestions. Fresh v1.0.1 results appear above.
 
 ## Original Super Wallpaper ports: inspected and emulator tested
 
@@ -47,34 +71,52 @@ All six modern packages install on the API 37 emulator. Both named linuxct packa
 
 These exact modern releases expose variants through public wallpaper services, with **no exported configuration activity**. DepthWall lists those services and opens Android's preview; private Unity/MainActivity components are not invoked. The legacy releases have exported MainActivity settings but could not be runtime tested here.
 
-### Every modern variant
+### Cold-process retest: every modern variant
 
-| Family | Exposed scene | Emulator preview | Applied component recorded |
-|---|---|---|---|
-| Earth | Croatia Cape Kamenjak | Imagery visible | Yes |
-| Earth | Guangxi, China Longji Terraced Fields | Black/loading after 30 seconds | Yes |
-| Earth | Greenland Ilulissat | Black/loading after 30 seconds | Yes |
-| Earth | Greece Navagio Beach | Black/loading after 30 seconds | Yes |
-| Earth | Italy Dolomites | Imagery visible | Yes |
-| Mars | Nilosyrtis Mensae Region | Imagery visible | Yes |
-| Mars | Gale Crater | Black/loading after 30 seconds | Yes |
-| Mars | Crater in Mawrth Vallis | Black/loading after 30 seconds | Yes |
-| Mars | Pahrump Hills | Black/loading after 30 seconds | Yes |
-| Mars | Bahram Vallis | Crash dialog | Not confirmed |
-| Saturn | Faraway rings | Imagery visible | Yes |
-| Moon | The Apennines | Black/loading after 30 seconds | Not confirmed |
-| Moon | Moon Palace | Black/loading after 30 seconds | Not confirmed |
-| Moon | The far side of the Moon | Black/loading after 30 seconds | Not confirmed |
-| Moon | Chang'e 5 | Black/loading after 30 seconds | Yes |
-| Moon | Tranquility Base | Black/loading after 30 seconds | Yes |
-| Snowmountain | Snowy peaks | Imagery visible | Not confirmed |
-| Geometry | Geometry | Imagery visible | Not confirmed |
+Before **each** scene, the harness applied a neutral static wallpaper to both destinations and force-stopped all original packs and the picker. It then opened the requested public service, sampled preview at 20/40 seconds, applied to Home, confirmed the exact active home component, and sampled Home at 5/15 seconds. Every home capture was visually checked for actual imagery. These process resets are a diagnostic fixture, not an app-side repair or ordinary phone usage.
 
-Six previews showed actual scene imagery, eleven remained black/loading after 30 seconds, and Bahram Vallis showed a crash dialog. A registered wallpaper component alone does not count as successful rendering. Snow Mountain and Geometry rendered in preview, but the attempted home-selection flow could not be confirmed. These are bounded observations, not full lifecycle support claims. Unity native crashes and graphics configuration errors occurred during port testing; the software GPU environment differs substantially from the phone's Adreno GPU. No family is certified for crDroid by these emulator observations.
+| Family | Exposed scene | Cold preview by 40 s | Home at 5/15 s; exact binding | Known cold native faults |
+|---|---|---|---|---|
+| Earth | Croatia Cape Kamenjak | Imagery visible | Imagery visible; yes | 1 SIGSEGV; recovered |
+| Earth | Guangxi, China Longji Terraced Fields | Imagery visible | Imagery visible; yes | None captured in this window |
+| Earth | Greenland Ilulissat | Imagery visible | Imagery visible; yes | None captured in this window |
+| Earth | Greece Navagio Beach | Imagery visible | Imagery visible; yes | None captured in this window |
+| Earth | Italy Dolomites | Imagery visible | Imagery visible; yes | None captured in this window |
+| Mars | Nilosyrtis Mensae Region | Imagery visible | Imagery visible; yes | None captured in this window |
+| Mars | Gale Crater | Imagery visible | Imagery visible; yes | None captured in this window |
+| Mars | Crater in Mawrth Vallis | Imagery visible | Imagery visible; yes | None captured in this window |
+| Mars | Pahrump Hills | Imagery visible | Imagery visible; yes | 1 SIGSEGV; recovered |
+| Mars | Bahram Vallis | Black at 20/40 s | Imagery visible; yes | 2 SIGSEGV; recovered |
+| Saturn | Faraway rings | Imagery visible | Imagery visible; yes | None captured in this window |
+| Moon | The Apennines | Imagery visible | Imagery visible; yes | None captured in this window |
+| Moon | Moon Palace | Imagery visible | Imagery visible; yes | None captured in this window |
+| Moon | The far side of the Moon | Imagery visible | Imagery visible; yes | None captured in this window |
+| Moon | Chang'e 5 | Imagery visible | Imagery visible; yes | None captured in this window |
+| Moon | Tranquility Base | Imagery visible | Imagery visible; yes | None captured in this window |
+| Snowmountain | Snowy peaks | Imagery visible | Imagery visible; yes | None captured in this window |
+| Geometry | Geometry | Imagery visible | Imagery visible; yes | None captured in this window |
 
-[Per-scene runtime records](port-runtime.json) retain the component identities and observed outcomes. Original APKs, extracted artwork and third-party screenshots are kept out of the repository/release. Sun has no verified original in this collection; its DepthWall scene is an original implementation.
+The graphics change removed the earlier broad black-output pattern, including Moon's unsupported-texture failure in the tested configuration. It did **not** establish stability for all ports: three scenes produced four native faults despite later visible home captures, and Bahram still had a black preview. The other 15 cold windows contained no captured fatal crashes; that is a bounded observation, not a long-term stability guarantee. These tests used a nonconformant emulator profile and do not establish crDroid support.
 
-The app's separate seven native alternatives remain available. Archive inspection compares SDK/ABI requirements, installed signer conflicts and downgrades before Android's installer is opened. Public settings must be exported, enabled and unprotected. Archive signature verification proves internal signing integrity, not endorsement or authorship.
+The cold failures followed Unity allocator errors and faulted at address `0x179`. The message about addresses spanning more than 16 GB concerns virtual-address regions; it does not prove that a port used 16 GB of physical RAM. The separately installed engine's allocator remains unresolved. DepthWall's own performance controls cannot repair it.
+
+### Warm-switch follow-up
+
+The follow-up reset to the neutral wallpaper only before its first scene, then preserved port processes and wallpaper state between switches. It tested these five scenes, in order:
+
+| Scene | Preview and Home | Stability observation |
+|---|---|---|
+| Croatia Cape Kamenjak | Imagery visible | No target-package fatal crash captured in this window |
+| Guangxi, China Longji Terraced Fields | Imagery visible | Null-pointer SIGSEGV, then restart SIGTRAP on duplicate Unity class registration |
+| Nilosyrtis Mensae Region | Imagery visible | No target-package fatal crash captured in this window |
+| Bahram Vallis | Imagery visible | Null-pointer SIGSEGV, then restart SIGTRAP on duplicate Unity class registration |
+| The Apennines | Imagery visible | No target-package fatal crash captured in this window |
+
+This five-scene check reproduced visible output after a fresh boot using the launcher alone. It does not prove stable switching across all 18 scenes. Both same-family switches, Croatia → Longji and Nilosyrtis → Bahram, produced native failures before later visible captures; those remain stability failures. Additional self-terminations and process restarts are recorded separately in the crash analysis; duplicate AndroidRuntime reports are not counted as extra native crashes.
+
+[Current per-scene runtime records](port-runtime.json) retain exact components, capture hashes and reviewed outcomes. The [original SwiftShader observations](port-runtime-baseline.json) are preserved separately: six visible previews, eleven black/loading previews, and one crash-dialog observation. Original APKs, extracted artwork and third-party screenshots are kept out of the repository/release. Sun has no verified original in this collection; its DepthWall scene is an original implementation.
+
+For a heavy, black or unreliable original, select **Use DepthWall original** on its pack card. Each theme has an independently implemented native alternative; DepthWall's quality/battery settings affect those scenes only. Archive inspection compares SDK/ABI requirements, installed signer conflicts and downgrades before Android's installer is opened. Public settings must be exported, enabled and unprotected. Archive signature verification proves internal signing integrity, not endorsement or authorship.
 
 To repeat static inspection:
 
@@ -88,6 +130,14 @@ To run the optional integration test with these exact six modern packages alread
 ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.ports=true
 ```
 
+To collect the scene matrix with the matching debug and androidTest APKs installed:
+
+```sh
+python3 tools/test_original_ports.py --serial emulator-5554 --output /tmp/depthwall-ports-cold --mode cold
+```
+
+This emulator-only harness replaces both current wallpapers with a neutral fixture. Use a fresh output directory, visually review captures, and correlate full logcat with process restarts before assigning a stability result. `--mode warm` preserves state after the initial neutral fixture.
+
 ## Physical-phone acceptance still required
 
 1. Record exact model, `hotdog` codename, crDroid build, Android API, supported ABIs, active resolution and refresh rate.
@@ -95,7 +145,7 @@ To run the optional integration test with these exact six modern packages alread
 3. Verify separate home/lock choices, unlock transitions, screen off/on, launcher changes, reboot, process recreation, time/timezone/theme changes, and battery saver.
 4. Exercise transparent foreground picking, erase/restore/undo, all clock styles, crop extremes, offline use after cache clearing, interrupted downloads, insufficient space, invalid APKs, signer conflicts and unavailable settings activities.
 5. Verify approximate WorkManager rotation at 1/6/24 hours, persisted configuration, favourites filtering, battery constraints and pausing when live wallpapers are active. Real elapsed schedule behaviour has not been established here.
-6. Compare a static baseline and each quality profile at fixed brightness/radio conditions. Measure frame pacing, PSS, thermal state and energy over repeated runs. Confirm hidden CPU/sensor activity stops. Emulator software rendering is unsuitable for phone battery or frame-rate claims.
+6. Compare a static baseline and each quality profile at fixed brightness/radio conditions. Measure frame pacing, PSS, thermal state and energy over repeated runs. Confirm hidden CPU/sensor activity stops. This emulator's graphics configuration is unsuitable for phone battery or frame-rate claims.
 7. Repeat the original-pack matrix above on the physical phone with every exposed location and variant. Keep failures visible and retain the native alternative.
 
-Use `tools/device_report.sh SERIAL OUTPUT_DIRECTORY` to collect a read-only snapshot. No root modules, ROM flashing, guaranteed HyperOS AOD transitions or native SystemUI-clock layering are part of this build. Phone thermal, battery and frame-pacing measurements are **not yet available**.
+Use `tools/device_report.sh SERIAL OUTPUT_DIRECTORY` to collect a read-only snapshot. Wallpaper AOD requires the restricted `signature|preinstalled` Android permission retained by current crDroid; a regular no-root installation cannot enable it, and adding ambient metadata without the permission can prevent wallpaper binding. See [AOD restrictions](AOD_AND_EMULATOR.md). No root modules, ROM flashing or native SystemUI-clock layering are part of this build. Phone thermal, battery and frame-pacing measurements are **not yet available**.

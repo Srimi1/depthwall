@@ -43,6 +43,9 @@ vec3 terrain(vec2 p, int k) {
     return outColor;
 }
 vec3 planets(vec2 p) {
+    bool hasTerrain=kind==1||kind==2||kind==4;
+    // Once the transition reaches land, orbital shading no longer contributes.
+    if(hasTerrain && progress>=1.0) return terrain(p,kind);
     vec3 col=sky(p);
     float close=progress;
     float scale=kind==3 ? .86 : mix(.78,1.85,close);
@@ -91,7 +94,8 @@ vec3 planets(vec2 p) {
         float limb=length(q);float corona=exp(-abs(limb-.78)*15.0);
         col+=vec3(.95,.23,.01)*corona*.2;
     }
-    if(kind==1||kind==2||kind==4) col=mix(col,terrain(p,kind),smoothstep(.88,1.0,progress));
+    // Avoid evaluating five terrain layers while their blend weight is zero.
+    if(hasTerrain && progress>.88) col=mix(col,terrain(p,kind),smoothstep(.88,1.0,progress));
     return col;
 }
 vec3 geometry(vec2 p) {

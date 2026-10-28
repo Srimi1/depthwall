@@ -11,3 +11,5 @@ keystore.properties
 private/
 artifacts/
 *.hprof
+__pycache__/
+*.pyc

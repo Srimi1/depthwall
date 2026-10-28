@@ -24,18 +24,43 @@ class RendererTest {
         assertTrue(EGL14.eglMakeCurrent(display,surface,surface,gl))
         val painter=GlPainter(context)
         try {
+            fun pixels():ByteArray {
+                val buffer=ByteBuffer.allocateDirect(96*208*4)
+                GLES20.glReadPixels(0,0,96,208,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,buffer)
+                return ByteArray(buffer.capacity()).also { buffer.get(it) }
+            }
             val hashes=mutableSetOf<Int>()
             for(scene in listOf("earth","mars","saturn","moon","snow","geometry","sun","depth")) {
                 val config=SceneConfig(scene=scene,background="wallpapers/depth_0_bg.webp",foreground=if(scene=="depth")"wallpapers/depth_0_fg.webp" else "",clock=if(scene=="depth")"Digital" else "Off")
                 painter.draw(config,96,208,10f,0f,0f,0f)
                 assertEquals("GL error in $scene",GLES20.GL_NO_ERROR,GLES20.glGetError())
-                val pixels=ByteBuffer.allocateDirect(96*208*4)
-                GLES20.glReadPixels(0,0,96,208,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,pixels)
-                val bytes=ByteArray(pixels.capacity());pixels.get(bytes)
+                val bytes=pixels()
                 assertTrue("Blank $scene",bytes.indices.any { it%4!=3 && (bytes[it].toInt() and 255)>45 })
                 hashes.add(bytes.contentHashCode())
             }
             assertEquals("Each scene must produce distinct pixels",8,hashes.size)
+            for(scene in listOf("earth","mars","moon")) {
+                val config=SceneConfig(scene=scene)
+                val phases=mutableSetOf<Int>()
+                for(progress in listOf(0f,.94f,1f)) {
+                    painter.draw(config,96,208,10f,progress,0f,0f)
+                    assertEquals("GL error in $scene transition",GLES20.GL_NO_ERROR,GLES20.glGetError())
+                    phases.add(pixels().contentHashCode())
+                }
+                assertEquals("Orbit, transition and terrain must remain distinct for $scene",3,phases.size)
+                val settled=pixels()
+                painter.draw(config,96,208,30f,1f,0f,0f)
+                assertArrayEquals("Settled $scene terrain is safe to render on demand",settled,pixels())
+            }
+            // Reusing an image path across scene kinds must still load the depth
+            // background, even when no foreground or clock masks missing pixels.
+            val shared=SceneConfig(scene="earth",background="wallpapers/depth_0_bg.webp")
+            painter.draw(shared,96,208,10f,0f,0f,0f)
+            painter.draw(shared.copy(scene="depth"),96,208,10f,0f,0f,0f)
+            val background=pixels()
+            assertTrue("Depth background was not loaded after a procedural scene",
+                background.indices.any { it%4!=3 && (background[it].toInt() and 255)>45 })
+            assertEquals(GLES20.GL_NO_ERROR,GLES20.glGetError())
         } finally {
             painter.close();EGL14.eglMakeCurrent(display,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_CONTEXT);EGL14.eglDestroySurface(display,surface);EGL14.eglDestroyContext(display,gl);EGL14.eglTerminate(display)
         }

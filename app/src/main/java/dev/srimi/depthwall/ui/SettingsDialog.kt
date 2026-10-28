@@ -23,7 +23,7 @@ import java.io.File
         Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             Text("Native scene quality",style=MaterialTheme.typography.titleSmall)
             ChoiceRow(listOf("Battery","Balanced","High Quality"),s.quality){s=s.copy(quality=it)}
-            Text("Balanced uses smooth transitions and restrained idle motion. Original Xiaomi packs control their own performance.",fontSize=12.sp,color=Muted)
+            Text("Battery stops idle animation. Balanced pauses settled landscapes and uses gentle motion elsewhere. These controls apply to DepthWall originals.",fontSize=12.sp,color=Muted)
             HorizontalDivider()
             Text("Automatic rotation",style=MaterialTheme.typography.titleSmall)
             ChoiceRow(listOf("Off","1 hour","6 hours","Daily"),when(s.rotationHours){1->"1 hour";6->"6 hours";24->"Daily";else->"Off"}){s=s.copy(rotationHours=when(it){"1 hour"->1;"6 hours"->6;"Daily"->24;else->0})}
@@ -37,7 +37,14 @@ import java.io.File
             Text("Saved images: %.1f MB".format(items.filter { it.localPath.isNotBlank() }.sumOf { it.bytes }/1048576.0),fontSize=12.sp,color=Muted)
             TextButton(onClick={vm.run("Thumbnail cache cleared. Saved wallpapers are kept.") { withContext(Dispatchers.IO) { coil.Coil.imageLoader(context).diskCache?.clear();coil.Coil.imageLoader(context).memoryCache?.clear() } }}){Text("Clear thumbnail cache")}
             HorizontalDivider()
-            Text("DepthWall 1.0.0",style=MaterialTheme.typography.titleSmall)
+            Text("Always-on display",style=MaterialTheme.typography.titleSmall)
+            Text("Wallpaper AOD is controlled by crDroid and is unavailable to this installed app. Use your ROM’s display settings for its clock and AOD options.",fontSize=12.sp,color=Muted)
+            TextButton(onClick={
+                runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)) }
+                    .onFailure { runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } }
+            }) { Text("Open display settings") }
+            HorizontalDivider()
+            Text("DepthWall ${dev.srimi.depthwall.BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.titleSmall)
             Text("Personal edition · Android 12+\nDesigned for the OnePlus 7T Pro\nNo ads. No accounts. No analytics.",fontSize=12.sp,color=Muted)
             Text("Phone-specific frame rate, battery and original-pack compatibility require testing on your crDroid build. AOD and native lock-screen clock layering are not enabled by this no-root app.",fontSize=12.sp,color=Muted)
         }

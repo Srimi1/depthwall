@@ -8,6 +8,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WallpaperLogicTest {
+    @Test fun settledLandscapesAndDepthNeedNoIdleAnimation() {
+        assertFalse(RenderBudget.hasContinuousMotion("depth",0f))
+        for(scene in listOf("earth","mars","moon")) {
+            assertTrue(RenderBudget.hasContinuousMotion(scene,.99f))
+            assertFalse(RenderBudget.hasContinuousMotion(scene,1f))
+        }
+        for(scene in listOf("sun","snow","saturn","geometry"))
+            assertTrue(RenderBudget.hasContinuousMotion(scene,1f))
+    }
+    @Test fun pressureLowersRenderResolutionRegardlessOfQuality() {
+        assertEquals(960,RenderBudget.renderWidth("Balanced",false,false))
+        assertEquals(1440,RenderBudget.renderWidth("High Quality",false,false))
+        assertEquals(720,RenderBudget.renderWidth("High Quality",true,false))
+        assertEquals(720,RenderBudget.renderWidth("High Quality",false,true))
+    }
+
     @Test fun lowFrameRateTransitionsStillReachTheirDestination() {
         assertEquals(0f,SceneTransition.progress(0f,1f,0),0f)
         assertEquals(.5f,SceneTransition.progress(0f,1f,900),.001f)

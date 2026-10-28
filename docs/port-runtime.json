@@ -1,9 +1,56 @@
 {
+  "schema_version": 2,
   "date": "2026-10-28",
-  "environment": "Android 17 API 37 ARM64-only Google APIs emulator, SwiftShader, 4 KB pages",
-  "method": "Fresh Android live-wallpaper preview per public service, up to 30 seconds observation, screenshot visual review, attempted home application and dumpsys component check. Binding confirmation is not proof of rendered home imagery.",
+  "application_version": "1.0.1",
+  "assessment_status": "Emulator retest complete; original Earth/Mars native faults remain; physical phone untested",
+  "environment": {
+    "ro.build.fingerprint": "google/sdk_gphone64_arm64/emu64a:17/CE2A.260420.051.A3/16571990:userdebug/dev-keys",
+    "ro.build.version.sdk": "37",
+    "ro.product.cpu.abilist": "arm64-v8a",
+    "ro.product.model": "sdk_gphone64_arm64",
+    "ro.hardware": "ranchu",
+    "ro.kernel.qemu": "1"
+  },
+  "graphics": {
+    "host": "Apple M2, macOS",
+    "emulator_version": "37.2.12",
+    "backend": "Host Vulkan/MoltenVK with guest ANGLE",
+    "requested_features": "GuestAngle,Vulkan,-VulkanAstcLdrEmulation",
+    "angle_feature_overrides_enabled": "exposeES32ForTesting",
+    "angle_feature_overrides_disabled": "supportsBlend*",
+    "limitation": "Nonconformant testing override bypasses GLES capability checks; not a production driver fix or physical-phone validation",
+    "effective_astc_observation": "GPU ASTC emulation/decompression reported despite requested disabled feature; native passthrough not established",
+    "launcher_verification": "Launcher boot and debug.angle.feature_overrides_enabled verified without additional manual setprop"
+  },
+  "method": "Before each cold scene, apply neutral static wallpaper to both destinations and force-stop all original ports and picker. Capture preview at 20/40 seconds; apply to Home; verify exact active component; visually inspect Home captures at 5/15 seconds.",
+  "fixture_is_app_fix": false,
+  "original_apks_modified": false,
   "modern_installation": "All six succeeded",
   "legacy_installation": "Both exact linuxct releases failed INSTALL_FAILED_NO_MATCHING_ABIS on this ARM64-only emulator",
+  "baseline_report": "port-runtime-baseline.json",
+  "baseline_sha256": "e996e637f6cb91327df4d7aa2369b5836fea5da7318f8d35246a13f26d5d345f",
+  "evidence": {
+    "local_collection": "retest-cold-metal-v2",
+    "raw_results_sha256": "519423b9c61c8db86be59985d78d006ffaeeff4a8c2da03b980f8cb375588d47",
+    "captures_in_repository": false
+  },
+  "summary": {
+    "scenes": 18,
+    "home_imagery_visible_at_both_samples": 18,
+    "exact_home_component_confirmed": 18,
+    "preview_imagery_visible_by_40_seconds": 17,
+    "black_preview_at_20_and_40_seconds": [
+      "Bahram Vallis"
+    ],
+    "known_native_sigsegv_events": 4,
+    "scenes_with_known_native_crashes": [
+      "Croatia Cape Kamenjak",
+      "Pahrump Hills",
+      "Bahram Vallis"
+    ],
+    "stable_18_of_18_claim": false,
+    "crash_evidence_note": "Empty crash buffers were false negatives; full logcat contains native crashes and recovery"
+  },
   "scenes": [
     {
       "pack": "pack-1",
@@ -11,10 +58,82 @@
       "label": "Croatia Cape Kamenjak",
       "exported": true,
       "scene_index": 0,
-      "preview_result": "Imagery visible",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "mode": "cold",
+      "artifact_dir": "pack-1/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "b743280106974dad55cbacd48a14a36017facd1d874ad9fb246cc630b51395bf",
+          "bytes": 93586
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "80a512f20f81700ef8f98c6a42423b764f746b45fa630becc30bdad9836c3d98",
+          "bytes": 3903747
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "3a156d92fab287ea532a24c9bcfabf949741ed64baafd4f69539ab7d6a90564d",
+          "bytes": 3956756
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.0,
+          "sha256": "3a156d92fab287ea532a24c9bcfabf949741ed64baafd4f69539ab7d6a90564d",
+          "bytes": 3956756
+        }
+      ],
+      "known_native_sigsegv_count": 1,
+      "stability_result": "Native crash observed; later imagery reflects recovery, not a stable pass",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 1,
+      "crash_classification": "native_crash_then_process_restart",
+      "logcat_sha256": "307e875b71b5709686e23a6c2ae97e58c50785c4b4929be5e780fa4ada503bb9",
+      "captured_log_window": {
+        "start": "10-28 13:23:57.349",
+        "end": "10-28 13:24:59.917"
+      },
+      "confirmed_process_deaths": [
+        {
+          "line": 811,
+          "timestamp": "10-28 13:24:15.747",
+          "pid": 5131,
+          "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "native_crashes": [
+        {
+          "line": 545,
+          "timestamp": "10-28 13:23:57.940",
+          "pid": 5131,
+          "tid": 5179,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 534,
+              "message": "10-28 13:23:57.939  5131  5179 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "libunity_backtrace_pcs": []
+        }
+      ]
     },
     {
       "pack": "pack-1",
@@ -22,10 +141,57 @@
       "label": "Guangxi, China Longji Terraced Fields",
       "exported": true,
       "scene_index": 1,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "mode": "cold",
+      "artifact_dir": "pack-1/scene-1",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "50f15249512bbe4c14d730c8dee6f43ac0c7f9d545de8280ab84829e9c9ef63f",
+          "bytes": 4441615
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "50f15249512bbe4c14d730c8dee6f43ac0c7f9d545de8280ab84829e9c9ef63f",
+          "bytes": 4441615
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.0,
+          "sha256": "4135277c7c8344cf646ef9055a454fa662afb09a8e7b0ffdc5a89be3b7eacdb0",
+          "bytes": 4586317
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.0,
+          "sha256": "9b72659dfd9930e41cbe6f8f50e942e9d800c2fc5459b17f1ad15823799a8ec7",
+          "bytes": 4586439
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "29b90a8107282820d9b448a0dc735538588250e8ae72b5cb83ec5efe4633ef66",
+      "captured_log_window": {
+        "start": "10-28 13:25:03.337",
+        "end": "10-28 13:26:05.568"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-1",
@@ -33,10 +199,57 @@
       "label": "Greenland Ilulissat",
       "exported": true,
       "scene_index": 2,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "mode": "cold",
+      "artifact_dir": "pack-1/scene-2",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper2",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "86e888065baff3918566a47e55c2261720863c7b8404e688fc33727e1df98555",
+          "bytes": 1372131
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "6337031b2b18c30b1add0d0ecb1baad3511b0c0f22d4ba26721270e877d1189b",
+          "bytes": 1372153
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "ce731cb46986ae54e9a65bdcab2b180cf6e5e7e688c98a94aa386d7a5c7071d8",
+          "bytes": 1407496
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.0,
+          "sha256": "c304ac48ea1bb599ed4a0ca8dee97611103bdfd1ca95d7cef06272f713ec7c31",
+          "bytes": 1406947
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "b60359bbc4eaf61693486f2d660537f73d13e55a308dc09dc5de6589f0273ff3",
+      "captured_log_window": {
+        "start": "10-28 13:26:08.903",
+        "end": "10-28 13:27:10.457"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-1",
@@ -44,10 +257,57 @@
       "label": "Greece Navagio Beach",
       "exported": true,
       "scene_index": 3,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "mode": "cold",
+      "artifact_dir": "pack-1/scene-3",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper3",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "04506b44491725ce6f60ff613cec2db801296f99076ca412278c0a49f4f4364f",
+          "bytes": 3856166
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "bbd314a9eda42b6b98fd2e3a7279c92100e3966c98eccf084f2149d931665dfb",
+          "bytes": 3855523
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "bd8f9f635b879d68dc7e9f5af4673ce56a177cbf247ad9f8ffc832d6672475a6",
+          "bytes": 3940733
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "bd8f9f635b879d68dc7e9f5af4673ce56a177cbf247ad9f8ffc832d6672475a6",
+          "bytes": 3940733
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "97a54d6b08a523ab9ccb2ea90892586a76d9cb6abdadd23ce0bcdbc2dbf39d4c",
+      "captured_log_window": {
+        "start": "10-28 13:27:13.816",
+        "end": "10-28 13:28:16.409"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-1",
@@ -55,10 +315,57 @@
       "label": "Italy Dolomites",
       "exported": true,
       "scene_index": 4,
-      "preview_result": "Imagery visible",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+      "mode": "cold",
+      "artifact_dir": "pack-1/scene-4",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper4",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "5ada95cbc921959a93fea7d2823b0b098a068ef18fcfdfd1403fcc26eff7176b",
+          "bytes": 2995515
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "e4714d0557bec851a0ab57a39183200b3688f3fadac3b91b6c343f125e0c829d",
+          "bytes": 3145290
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "b927da527223e0f15d88ab7d368bff5abb8d6d3b1aa2f5beeaacc1e7953ee2ca",
+          "bytes": 3145467
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "b927da527223e0f15d88ab7d368bff5abb8d6d3b1aa2f5beeaacc1e7953ee2ca",
+          "bytes": 3145467
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "1511e80fcffddffe96408626367bd94361993681c27d9ed1e6ed2816fecb8c16",
+      "captured_log_window": {
+        "start": "10-28 13:28:20.120",
+        "end": "10-28 13:29:22.680"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-3",
@@ -66,10 +373,57 @@
       "label": "Nilosyrtis Mensae Region",
       "exported": true,
       "scene_index": 0,
-      "preview_result": "Imagery visible",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "mode": "cold",
+      "artifact_dir": "pack-3/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "6dd83e8fa9a78c4f7f9b1cc7e3c458c0b027879da3778dd98ea4deef008c7edb",
+          "bytes": 3978304
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "c47138b16461090f945acef1e40009926000b36390af3344049ef7cf8e136088",
+          "bytes": 3978328
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "c3a12a546e91ade57e44cb5c9e0342e818cdf1ca92b3a8f9187d2888872f0778",
+          "bytes": 4069319
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "c3a12a546e91ade57e44cb5c9e0342e818cdf1ca92b3a8f9187d2888872f0778",
+          "bytes": 4069319
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "38bc4f1cdc185b91e9802ac8dd10a626043da104bafc33440999367bbfdbd92b",
+      "captured_log_window": {
+        "start": "10-28 13:29:26.068",
+        "end": "10-28 13:30:28.792"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-3",
@@ -77,10 +431,57 @@
       "label": "Gale Crater",
       "exported": true,
       "scene_index": 1,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "mode": "cold",
+      "artifact_dir": "pack-3/scene-1",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper1",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "a42e1e70e1ea7093f4947477d1f1cc3ac68c473834d242627351114babf15d1f",
+          "bytes": 3195199
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "a1a7d9737246ebb6d4417bb89282f43f8c090ab9c7e5eea46952fef926666762",
+          "bytes": 3194316
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "f416f1fa4e89fe9bd7b3950a46e27b58f66caa822786cd2729bbe9ad2ea0821a",
+          "bytes": 3293567
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.0,
+          "sha256": "f416f1fa4e89fe9bd7b3950a46e27b58f66caa822786cd2729bbe9ad2ea0821a",
+          "bytes": 3293567
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "cdff063e20848cd8190c744fffc66459ccd93890e1875ba7d238d4aa7bf1a72c",
+      "captured_log_window": {
+        "start": "10-28 13:30:32.253",
+        "end": "10-28 13:31:35.106"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-3",
@@ -88,10 +489,57 @@
       "label": "Crater in Mawrth Vallis",
       "exported": true,
       "scene_index": 2,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "mode": "cold",
+      "artifact_dir": "pack-3/scene-2",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper2",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "65119445d0790cc2dd2fdec182f827d531e1b97d6ae066a6a317920698149d51",
+          "bytes": 3856092
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "f508be16c5e842731b9bbc247975bb6893f718128af35cd698f2933f810bc76f",
+          "bytes": 3856457
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "eb890e85c103fd802b23a6a213263fa744598e7e9a31689e54e4c7f0e2a4a31e",
+          "bytes": 3949597
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "eb890e85c103fd802b23a6a213263fa744598e7e9a31689e54e4c7f0e2a4a31e",
+          "bytes": 3949597
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "b645878793118ad79a30d8ebddad4791bc1863c04727d9198053ffe3acfff4e6",
+      "captured_log_window": {
+        "start": "10-28 13:31:38.508",
+        "end": "10-28 13:32:44.184"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-3",
@@ -99,10 +547,82 @@
       "label": "Pahrump Hills",
       "exported": true,
       "scene_index": 3,
-      "preview_result": "Black/loading after 30 seconds",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "mode": "cold",
+      "artifact_dir": "pack-3/scene-3",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper3",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "9569a8e5be399d7c11e11fca9539fbda7efbfdc45f3bf307fa4babde952aaca9",
+          "bytes": 90400
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "83b7dc8e83f4b408b8a6b1cde2913006d3a1432088f06c4520b9f61f2fcab689",
+          "bytes": 3456571
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.0,
+          "sha256": "bd42a9acecd46e4a1f91778bc791a04d814e7d3b12c0dda7845a58aed157388c",
+          "bytes": 3545852
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "6eb68202130b1dccfcd49fcf344359c0cf67df9ca82127efaed86d47d99662d4",
+          "bytes": 3545649
+        }
+      ],
+      "known_native_sigsegv_count": 1,
+      "stability_result": "Native crash observed; later imagery reflects recovery, not a stable pass",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 1,
+      "crash_classification": "native_crash_then_process_restart",
+      "logcat_sha256": "38a7d07e1e64f45ff2bee32396c857f05ad0767e078a27a1c53cfbed91eec05f",
+      "captured_log_window": {
+        "start": "10-28 13:32:51.378",
+        "end": "10-28 13:34:06.789"
+      },
+      "confirmed_process_deaths": [
+        {
+          "line": 1197,
+          "timestamp": "10-28 13:33:10.729",
+          "pid": 8304,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "native_crashes": [
+        {
+          "line": 761,
+          "timestamp": "10-28 13:32:53.211",
+          "pid": 8304,
+          "tid": 8351,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 750,
+              "message": "10-28 13:32:53.210  8304  8351 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "libunity_backtrace_pcs": []
+        }
+      ]
     },
     {
       "pack": "pack-3",
@@ -110,10 +630,105 @@
       "label": "Bahram Vallis",
       "exported": true,
       "scene_index": 4,
-      "preview_result": "Crash dialog",
-      "applied_component_confirmed": false,
-      "error": "Picker action unavailable: Home screen",
-      "physical_phone_result": "Not tested"
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+      "mode": "cold",
+      "artifact_dir": "pack-3/scene-4",
+      "preview_result": "Black at both 20 and 40 seconds",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "d788bcdf9a8aba70589db60d324931687b197bc5c29f2ec57e1a753f9d164762",
+          "bytes": 83111
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "6cd7f758ec71248ace49a062fed38eb7b7d509f6a43ffda4040ec2f58d09c9c0",
+          "bytes": 83092
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "6ffc3d053cf8e5610fdbe58375cf7d90ec3f962d3082b2db54dbf1f3cbb4a564",
+          "bytes": 4021831
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "6ffc3d053cf8e5610fdbe58375cf7d90ec3f962d3082b2db54dbf1f3cbb4a564",
+          "bytes": 4021831
+        }
+      ],
+      "known_native_sigsegv_count": 2,
+      "stability_result": "Native crash observed; later imagery reflects recovery, not a stable pass",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 2,
+      "crash_classification": "native_crash_then_process_restart",
+      "logcat_sha256": "8a95291411ac1f35efd9ed4a43f937809eecca9cc3aab7f5079d54a4626cbc7b",
+      "captured_log_window": {
+        "start": "10-28 13:34:14.619",
+        "end": "10-28 13:35:16.466"
+      },
+      "confirmed_process_deaths": [
+        {
+          "line": 1020,
+          "timestamp": "10-28 13:34:33.559",
+          "pid": 8738,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        },
+        {
+          "line": 1553,
+          "timestamp": "10-28 13:34:52.861",
+          "pid": 8790,
+          "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+          "state": "vis BTOP"
+        }
+      ],
+      "native_crashes": [
+        {
+          "line": 579,
+          "timestamp": "10-28 13:34:16.071",
+          "pid": 8738,
+          "tid": 8784,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 568,
+              "message": "10-28 13:34:16.069  8738  8784 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "libunity_backtrace_pcs": []
+        },
+        {
+          "line": 1317,
+          "timestamp": "10-28 13:34:35.604",
+          "pid": 8790,
+          "tid": 8841,
+          "signal": 11,
+          "signal_name": "SIGSEGV",
+          "detail": "1 (SEGV_MAPERR), fault addr 0x179",
+          "allocator_error": [
+            {
+              "line": 1306,
+              "message": "10-28 13:34:35.602  8790  8841 E Unity   : Using memoryadresses from more than 16GB of memory "
+            }
+          ],
+          "libunity_backtrace_pcs": []
+        }
+      ]
     },
     {
       "pack": "pack-5",
@@ -121,10 +736,57 @@
       "label": "Faraway rings",
       "exported": true,
       "scene_index": 0,
-      "preview_result": "Imagery visible",
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "6b2651f25e34e1034d844a575a1213fb5d07b39ac5052c3cc1b7410110c347c9",
+      "mode": "cold",
+      "artifact_dir": "pack-5/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.saturn/com.miui.miwallpaper.saturn.superwallpaper.SaturnSuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "4c31c304286aec9992ac38a3836cd11aeb19c7c214ce970b84f46092f0444634",
+          "bytes": 2196376
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "3dac01569e5448031f661a7ae2448e4c4b449676ca394c527829452f5a9d7d54",
+          "bytes": 2195196
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.0,
+          "sha256": "729c82cb8e46f05d134e13ed425f453c4b8bb77ba8a37600e54c4ae031f0ce3e",
+          "bytes": 2250942
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.02,
+          "sha256": "407d074c640907470c8efd2c21b48b385f2ac073664b9fcd2c892d3e47fec360",
+          "bytes": 2250988
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "6b8d96d74a04aef7b8c98953570e817fed0c4ae04841e53d65c135771c8861cd",
+      "captured_log_window": {
+        "start": "10-28 13:35:20.250",
+        "end": "10-28 13:36:22.472"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-6",
@@ -132,10 +794,57 @@
       "label": "The Apennines",
       "exported": true,
       "scene_index": 0,
-      "preview_result": "Black/loading after 30 seconds",
-      "applied_component_confirmed": false,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+      "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "mode": "cold",
+      "artifact_dir": "pack-6/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "b7dd2374af99e94185bec242ea5cb86264ef6bf9593b7c0aad9ade9a3d4c9ac4",
+          "bytes": 4110199
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "819a1c5a8e7556e27c6d5434b1d8c57dcf5cb76135e684052eeef758eac8a0cc",
+          "bytes": 4109924
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "2522f864f1a7072aff209c6900ec90f764a05e0991875632d74c600813a62b26",
+          "bytes": 4243463
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "2522f864f1a7072aff209c6900ec90f764a05e0991875632d74c600813a62b26",
+          "bytes": 4243463
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "b4ed731fe510cd0deba76f20e326526c7396c4d8346f3654c7f6c4cdd72d8c55",
+      "captured_log_window": {
+        "start": "10-28 13:36:27.014",
+        "end": "10-28 13:37:29.670"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-6",
@@ -143,10 +852,57 @@
       "label": "Moon Palace",
       "exported": true,
       "scene_index": 1,
-      "preview_result": "Black/loading after 30 seconds",
-      "applied_component_confirmed": false,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+      "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "mode": "cold",
+      "artifact_dir": "pack-6/scene-1",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper1",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "ff72acf08d725edaeaeba2d41454b4434e5c6f974e72d4dae715cf260f216669",
+          "bytes": 3374331
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "1154600485c8e53625fb69830c5fd96e169d1bdae947621e4ac5a96634742620",
+          "bytes": 3374861
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "151c117eda0b1101a7f309d9751542cf545cf9550afcc03add65e220f37b8153",
+          "bytes": 3437957
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "151c117eda0b1101a7f309d9751542cf545cf9550afcc03add65e220f37b8153",
+          "bytes": 3437957
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "b6f2866d1bbb20e7e2886d7b22e1c1ae433744cfb7aa1ba7933f407d3ff86b28",
+      "captured_log_window": {
+        "start": "10-28 13:37:33.104",
+        "end": "10-28 13:38:35.785"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-6",
@@ -154,52 +910,777 @@
       "label": "The far side of the Moon",
       "exported": true,
       "scene_index": 2,
-      "preview_result": "Black/loading after 30 seconds",
-      "applied_component_confirmed": false,
-      "error": "",
-      "physical_phone_result": "Not tested"
+      "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+      "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "mode": "cold",
+      "artifact_dir": "pack-6/scene-2",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper2",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "e1ce7f1a23dbbf6111abd08fdc352fc0e459135d191025ba78f34e09780c3c29",
+          "bytes": 4396114
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "408479766ff404fa35d95abd9092023ada0b634bbf127860dcf90856be4ffd4f",
+          "bytes": 4396178
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.0,
+          "sha256": "f627f194e598271b6e62ddc0e7690efd2e2f039c8fb210fed29b43f88cb5df91",
+          "bytes": 4446899
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "74f33932b203fcd8f465f2176607ee5ad1d0624ce6a49d0cfbfddefe658723e9",
+          "bytes": 4450783
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "b5f14b8d1f479283ff15c773908928875d989d5580f992d6b387f4f67dec54f5",
+      "captured_log_window": {
+        "start": "10-28 13:38:40.486",
+        "end": "10-28 13:39:47.882"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-6",
       "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper3",
       "label": "Chang'e 5",
       "exported": true,
-      "preview_wait_seconds": 30,
-      "preview_result": "Black/loading after 30 seconds",
+      "scene_index": 3,
+      "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+      "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "mode": "cold",
+      "artifact_dir": "pack-6/scene-3",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper3",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "12c8c0e88315f8a6123c95c1cdfe4640e64ce9980ae0989164966564d64087fe",
+          "bytes": 3969871
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "1e6ee6f348e434a877fc1be2ab59531f7e31157c6da1f91966a6e13f29d0bcb8",
+          "bytes": 3970009
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.0,
+          "sha256": "ab3c7743b865cd675621058f4739f9d06d3f2516012606c4bf6f3ce131df4292",
+          "bytes": 4069845
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "ab3c7743b865cd675621058f4739f9d06d3f2516012606c4bf6f3ce131df4292",
+          "bytes": 4069845
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "f870b1c8615f474b0c37a94308518d919cf2a0afcc84e144ee54a7bf6240a814",
+      "captured_log_window": {
+        "start": "10-28 13:39:53.725",
+        "end": "10-28 13:40:59.163"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-6",
       "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper4",
       "label": "Tranquility Base",
       "exported": true,
-      "preview_wait_seconds": 30,
-      "preview_result": "Black/loading after 30 seconds",
+      "scene_index": 4,
+      "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+      "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+      "mode": "cold",
+      "artifact_dir": "pack-6/scene-4",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
       "applied_component_confirmed": true,
-      "physical_phone_result": "Not tested"
+      "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper4",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "1153ed6ac1484e96307f1635b49add37595cfdb8b8f14ac0ce102af7a353ade9",
+          "bytes": 4405004
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "1153ed6ac1484e96307f1635b49add37595cfdb8b8f14ac0ce102af7a353ade9",
+          "bytes": 4405004
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "5093f519b444a5df12872889e31acf720e4ff11dd4a2999dd1eec982d584661c",
+          "bytes": 4510322
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "dcc58184868203dce6b870d14d4b7382bdd5d8c7315ffc75ad4720cc59354669",
+          "bytes": 4510738
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "31d41e51b1fabae75efe66be4a06bf156a7c0f79d74f35ecb7571efafa035d52",
+      "captured_log_window": {
+        "start": "10-28 13:41:02.591",
+        "end": "10-28 13:42:05.052"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-7",
       "component": "com.miui.miwallpaper.snowmountain/com.miui.miwallpaper.snowmountain.superwallpaper.SnowmountainSuperWallpaper",
       "label": "Snowy peaks",
       "exported": true,
-      "preview_wait_seconds": 24,
-      "preview_result": "Imagery visible",
-      "error": "Picker action unavailable: Home screen",
-      "applied_component_confirmed": false,
-      "physical_phone_result": "Not tested"
+      "scene_index": 0,
+      "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+      "expected_apk_sha256": "f8a7e5450aaf4f8b0c03fab0c08002b12dd7741987a2e9a72d0922376ceaddcb",
+      "mode": "cold",
+      "artifact_dir": "pack-7/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.snowmountain/com.miui.miwallpaper.snowmountain.superwallpaper.SnowmountainSuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.01,
+          "sha256": "4b755c377cc98772a6b9a24b4034ccf4f2b9b2b0be9be5376f417f6ff8c1f4b5",
+          "bytes": 2846758
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.0,
+          "sha256": "84a1d68d466ee641a46564df5a0f347cd4b2cff27ceede1d7e4de11915fe42ee",
+          "bytes": 2820087
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "ce15c95ab5b68b3a8f4fa0ba8244e69b93127d59d0c89304ce591e3b4b7e34fd",
+          "bytes": 2830972
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.0,
+          "sha256": "a5fee45e6966df841534b82d3caf4e5e5b37003581b9a3320ee42c3329dcba75",
+          "bytes": 2831209
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "697743be57937866bcafb26aaf78ef89723734e65f359dce886690f35edddc16",
+      "captured_log_window": {
+        "start": "10-28 13:42:08.487",
+        "end": "10-28 13:43:10.681"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     },
     {
       "pack": "pack-8",
       "component": "com.miui.miwallpaper.geometry/com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper",
       "label": "Geometry",
       "exported": true,
-      "preview_wait_seconds": 9,
-      "preview_result": "Imagery visible",
-      "error": "Picker action unavailable: Home screen",
-      "applied_component_confirmed": false,
-      "physical_phone_result": "Not tested"
+      "scene_index": 0,
+      "version": "ALPHA-2.7.561-11211547-vulkan-fix1",
+      "expected_apk_sha256": "e9023afe3457468a4ff6a09f11e92ef051ab75fa3da7a19bee83bb5853adc23e",
+      "mode": "cold",
+      "artifact_dir": "pack-8/scene-0",
+      "preview_result": "Actual scene imagery visible by the 40-second sample",
+      "home_result": "Actual scene imagery visible at both 5 and 15 seconds",
+      "applied_component_confirmed": true,
+      "observed_home_component": "com.miui.miwallpaper.geometry/com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper",
+      "visual_review": "Preview and both home captures visually reviewed; binding and pixel brightness alone were not used as rendering proof",
+      "preview_samples": [
+        {
+          "file": "preview-20s.png",
+          "elapsed_seconds": 20.0,
+          "sha256": "a613451a06c2c235fe921ce5b59a08671483c121c307b653df7e6d76f7e34f3f",
+          "bytes": 765553
+        },
+        {
+          "file": "preview-40s.png",
+          "elapsed_seconds": 40.01,
+          "sha256": "9d4c9144e5853408b9092522962f1498cc822316310cfdb2b483485fb16e01b0",
+          "bytes": 765610
+        }
+      ],
+      "home_samples": [
+        {
+          "file": "home-5s.png",
+          "elapsed_seconds": 5.01,
+          "sha256": "5da63248c2e46d68257059be00f675519bc582c85d760e00f02a9eacae195f9e",
+          "bytes": 844859
+        },
+        {
+          "file": "home-15s.png",
+          "elapsed_seconds": 15.01,
+          "sha256": "5da63248c2e46d68257059be00f675519bc582c85d760e00f02a9eacae195f9e",
+          "bytes": 844859
+        }
+      ],
+      "known_native_sigsegv_count": 0,
+      "stability_result": "No fatal crash captured in this observation window; long-term stability not established",
+      "crash_review_status": "Full logcat reviewed and correlated with process deaths/restarts; see port-errors.json",
+      "diagnostic_capture_errors": [],
+      "physical_phone_result": "Not tested",
+      "native_crash_count": 0,
+      "crash_classification": "no_fatal_crash_captured_in_this_window",
+      "logcat_sha256": "378019c98103992c70a3261ff879ef58a3cd691befef2f615bdac16b268a8a53",
+      "captured_log_window": {
+        "start": "10-28 13:43:14.325",
+        "end": "10-28 13:44:17.655"
+      },
+      "confirmed_process_deaths": [],
+      "native_crashes": []
     }
-  ]
+  ],
+  "warm_followup": {
+    "mode": "warm",
+    "requested_scenes": 5,
+    "method": "Neutral wallpaper only before first scene; preserve port processes and wallpaper state across subsequent switches. No force-stops between scenes.",
+    "local_collection": "retest-warm-repro",
+    "raw_results_sha256": "16b15e8d4766c57d72683791b2ad63022c85430257cccd979f931c998c4a85b1",
+    "summary": "All five preview and home captures showed actual imagery with exact home binding. Longji and Bahram each produced a null-pointer SIGSEGV followed by a SIGTRAP on duplicate Unity class registration during recovery. This is not a stable switching pass.",
+    "scenes": [
+      {
+        "pack": "pack-1",
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+        "label": "Croatia Cape Kamenjak",
+        "exported": true,
+        "scene_index": 0,
+        "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+        "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+        "mode": "warm",
+        "artifact_dir": "pack-1/scene-0",
+        "preview_result": "Actual scene imagery visible by the 40-second sample",
+        "home_result": "Actual scene imagery visible in the reviewed 15-second home sample",
+        "applied_component_confirmed": true,
+        "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+        "visual_review": "Preview-40s and home-15s imagery reviewed separately from exact component binding and fatal-event classification; all sample hashes retained",
+        "preview_samples": [
+          {
+            "file": "preview-20s.png",
+            "elapsed_seconds": 20.01,
+            "sha256": "4d72ce537860447036410b4b10ac40d87df2d2c36d05e2bc0631e0cf1d65ec88",
+            "bytes": 3904278
+          },
+          {
+            "file": "preview-40s.png",
+            "elapsed_seconds": 40.0,
+            "sha256": "8a3b5cdcf398c8cb413e17b6eb3858b44f36beccde5f7986e19fab078f194d76",
+            "bytes": 3904191
+          }
+        ],
+        "home_samples": [
+          {
+            "file": "home-5s.png",
+            "elapsed_seconds": 5.0,
+            "sha256": "75e19fc2d69865f9ba9930c43f6ee550b6f8777b7a7275ced7e7ce49dd5215ee",
+            "bytes": 3954344
+          },
+          {
+            "file": "home-15s.png",
+            "elapsed_seconds": 15.01,
+            "sha256": "75e19fc2d69865f9ba9930c43f6ee550b6f8777b7a7275ced7e7ce49dd5215ee",
+            "bytes": 3954344
+          }
+        ],
+        "known_native_sigsegv_count": 0,
+        "stability_result": "No target-package fatal crash captured in this observation window; long-term stability not established",
+        "crash_review_status": "Full logcat reviewed; repeated native reports deduplicated and other-package events excluded; see port-errors.json",
+        "diagnostic_capture_errors": [],
+        "physical_phone_result": "Not tested",
+        "known_native_sigtrap_count": 0,
+        "native_crash_count": 0,
+        "crash_classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "logcat_sha256": "cccf025290bdb64e430733b6aa5e44cdfb47fd2024f98148dc9df64b5e7d3d1d",
+        "native_crashes": [],
+        "confirmed_process_deaths": [],
+        "self_sigkill_events": []
+      },
+      {
+        "pack": "pack-1",
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+        "label": "Guangxi, China Longji Terraced Fields",
+        "exported": true,
+        "scene_index": 1,
+        "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+        "expected_apk_sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+        "mode": "warm",
+        "artifact_dir": "pack-1/scene-1",
+        "preview_result": "Actual scene imagery visible by the 40-second sample",
+        "home_result": "Actual scene imagery visible in the reviewed 15-second home sample",
+        "applied_component_confirmed": true,
+        "observed_home_component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+        "visual_review": "Preview-40s and home-15s imagery reviewed separately from exact component binding and fatal-event classification; all sample hashes retained",
+        "preview_samples": [
+          {
+            "file": "preview-20s.png",
+            "elapsed_seconds": 20.01,
+            "sha256": "3aa35f1ce6f7fe5f1dcf66a5453543cd2b99681e35e2ab1920cd996b8013eff0",
+            "bytes": 4447729
+          },
+          {
+            "file": "preview-40s.png",
+            "elapsed_seconds": 40.01,
+            "sha256": "100af81aeb181c585983c3590efba4c050f3729d9ec7a82d72346ab7b1777839",
+            "bytes": 4453248
+          }
+        ],
+        "home_samples": [
+          {
+            "file": "home-5s.png",
+            "elapsed_seconds": 5.01,
+            "sha256": "980a9274ce01aaf4f06350413cdfc97c4f3202628a8a790bb0f92da7fc673cc6",
+            "bytes": 4567917
+          },
+          {
+            "file": "home-15s.png",
+            "elapsed_seconds": 15.01,
+            "sha256": "55bf965dd6015784519af67f8c4b4b6631cbbab8c68af934d822f2804e0f8479",
+            "bytes": 4565581
+          }
+        ],
+        "known_native_sigsegv_count": 1,
+        "stability_result": "Native faults and restart failures observed during same-package scene switching; later imagery is not a stable pass",
+        "crash_review_status": "Full logcat reviewed; repeated native reports deduplicated and other-package events excluded; see port-errors.json",
+        "diagnostic_capture_errors": [],
+        "physical_phone_result": "Not tested",
+        "known_native_sigtrap_count": 1,
+        "native_crash_count": 2,
+        "crash_classification": "fatal_same_package_switch_then_restarts",
+        "logcat_sha256": "3b0af62501bdd9ae0aa42fd6d97c9f8929b382e03ef0bbda2203d71a790b85f2",
+        "native_crashes": [
+          {
+            "line": 662,
+            "timestamp": "10-28 13:49:46.088",
+            "pid": 3315,
+            "tid": 3633,
+            "signal": 11,
+            "signal_name": "SIGSEGV",
+            "detail": "1 (SEGV_MAPERR), fault addr 0x0",
+            "signature": "unity_null_dereference_during_same_package_scene_switch",
+            "backtrace_pcs": [
+              "000000000048f698",
+              "0000000000510664",
+              "00000000005103bc",
+              "00000000005063c0",
+              "0000000000506b64",
+              "000000000063cd44",
+              "0000000000650428",
+              "00000000002e5c20"
+            ],
+            "note": "Repeated AndroidRuntime and am_crash copies of this event are not counted as additional crashes."
+          },
+          {
+            "line": 948,
+            "timestamp": "10-28 13:49:47.289",
+            "pid": 3641,
+            "signal": 5,
+            "signal_name": "SIGTRAP",
+            "detail": "code -1 (SI_QUEUE) in tid 3657 (UnityMain), pid 3641 (hSuperWallpaper)",
+            "signature": "unity_duplicate_class_registration_sigtrap",
+            "preceding_class_conflict_lines": [
+              945
+            ]
+          }
+        ],
+        "confirmed_process_deaths": [
+          {
+            "line": 746,
+            "timestamp": "10-28 13:49:46.163",
+            "pid": 3315,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 1150,
+            "timestamp": "10-28 13:49:47.484",
+            "pid": 3641,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 2808,
+            "timestamp": "10-28 13:49:49.097",
+            "pid": 3732,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "fg  BTOP"
+          },
+          {
+            "line": 3595,
+            "timestamp": "10-28 13:50:08.206",
+            "pid": 3808,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 6596,
+            "timestamp": "10-28 13:50:22.354",
+            "pid": 3877,
+            "process": "com.miui.miwallpaper.earth:earthSuperWallpaper",
+            "state": "vis BFGS"
+          }
+        ],
+        "self_sigkill_events": [
+          {
+            "line": 740,
+            "timestamp": "10-28 13:49:46.153",
+            "pid": 3315,
+            "message": "Sending signal. PID: 3315 SIG: 9",
+            "interpretation": "Process self-kill follows the already-counted native fatal report; not an additional independent crash.",
+            "same_pid_has_prior_native_fatal_event": true
+          },
+          {
+            "line": 2807,
+            "timestamp": "10-28 13:49:49.092",
+            "pid": 3732,
+            "message": "Sending signal. PID: 3732 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          },
+          {
+            "line": 3591,
+            "timestamp": "10-28 13:50:08.178",
+            "pid": 3808,
+            "message": "Sending signal. PID: 3808 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          },
+          {
+            "line": 6591,
+            "timestamp": "10-28 13:50:22.345",
+            "pid": 3877,
+            "message": "Sending signal. PID: 3877 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          }
+        ]
+      },
+      {
+        "pack": "pack-3",
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+        "label": "Nilosyrtis Mensae Region",
+        "exported": true,
+        "scene_index": 0,
+        "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+        "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+        "mode": "warm",
+        "artifact_dir": "pack-3/scene-0",
+        "preview_result": "Actual scene imagery visible by the 40-second sample",
+        "home_result": "Actual scene imagery visible in the reviewed 15-second home sample",
+        "applied_component_confirmed": true,
+        "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+        "visual_review": "Preview-40s and home-15s imagery reviewed separately from exact component binding and fatal-event classification; all sample hashes retained",
+        "preview_samples": [
+          {
+            "file": "preview-20s.png",
+            "elapsed_seconds": 20.0,
+            "sha256": "14b2451e01c371d763f07ec8b0fab3229c549bc234ba93b5fdd307cf4e21617e",
+            "bytes": 3978000
+          },
+          {
+            "file": "preview-40s.png",
+            "elapsed_seconds": 40.01,
+            "sha256": "e6c64a080f2e97c9849cc28cb0913166ad5c739c4783a18e902bb9db5ed99182",
+            "bytes": 3978234
+          }
+        ],
+        "home_samples": [
+          {
+            "file": "home-5s.png",
+            "elapsed_seconds": 5.01,
+            "sha256": "4dd9cd4b1b1d7b86b2c78ef2903992200b0da995b680f49cc55d11484e649be6",
+            "bytes": 4051223
+          },
+          {
+            "file": "home-15s.png",
+            "elapsed_seconds": 15.0,
+            "sha256": "4dd9cd4b1b1d7b86b2c78ef2903992200b0da995b680f49cc55d11484e649be6",
+            "bytes": 4051223
+          }
+        ],
+        "known_native_sigsegv_count": 0,
+        "stability_result": "No target-package fatal crash captured in this observation window; long-term stability not established",
+        "crash_review_status": "Full logcat reviewed; repeated native reports deduplicated and other-package events excluded; see port-errors.json",
+        "diagnostic_capture_errors": [],
+        "physical_phone_result": "Not tested",
+        "known_native_sigtrap_count": 0,
+        "native_crash_count": 0,
+        "crash_classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "logcat_sha256": "5134710bfd6ce9dbc2190bfbee45d7b15d312ddf6612196dd0564f6f0cfb3a1e",
+        "native_crashes": [],
+        "confirmed_process_deaths": [],
+        "self_sigkill_events": []
+      },
+      {
+        "pack": "pack-3",
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+        "label": "Bahram Vallis",
+        "exported": true,
+        "scene_index": 4,
+        "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+        "expected_apk_sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+        "mode": "warm",
+        "artifact_dir": "pack-3/scene-4",
+        "preview_result": "Actual scene imagery visible by the 40-second sample",
+        "home_result": "Actual scene imagery visible in the reviewed 15-second home sample",
+        "applied_component_confirmed": true,
+        "observed_home_component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+        "visual_review": "Preview-40s and home-15s imagery reviewed separately from exact component binding and fatal-event classification; all sample hashes retained",
+        "preview_samples": [
+          {
+            "file": "preview-20s.png",
+            "elapsed_seconds": 20.01,
+            "sha256": "3c982adee9eaf5d92075c3cb83987d5321de12ff8616d5bd0cb780b254e61f4d",
+            "bytes": 3927332
+          },
+          {
+            "file": "preview-40s.png",
+            "elapsed_seconds": 40.01,
+            "sha256": "d6c0da69edbaf5a1f47660d914cba43fbd6629cab50d5940f65f1af2c1e5963f",
+            "bytes": 3926000
+          }
+        ],
+        "home_samples": [
+          {
+            "file": "home-5s.png",
+            "elapsed_seconds": 5.01,
+            "sha256": "e0dab7bc634c7b1716ed30b3759b9b658db390fbbf9a737e5c639ed43eb7f5ca",
+            "bytes": 4022677
+          },
+          {
+            "file": "home-15s.png",
+            "elapsed_seconds": 15.0,
+            "sha256": "721da5e913147c88a7730783f0b112913f39434af5aa817372f6eb82aef7c4a9",
+            "bytes": 4022769
+          }
+        ],
+        "known_native_sigsegv_count": 1,
+        "stability_result": "Native faults and restart failures observed during same-package scene switching; later imagery is not a stable pass",
+        "crash_review_status": "Full logcat reviewed; repeated native reports deduplicated and other-package events excluded; see port-errors.json",
+        "diagnostic_capture_errors": [],
+        "physical_phone_result": "Not tested",
+        "known_native_sigtrap_count": 1,
+        "native_crash_count": 2,
+        "crash_classification": "fatal_same_package_switch_then_restarts",
+        "logcat_sha256": "21986c9692363658efe675f11cbd8938c41c669ddd6f3017b7f2d4f1562a9b39",
+        "native_crashes": [
+          {
+            "line": 647,
+            "timestamp": "10-28 14:05:26.022",
+            "pid": 4307,
+            "tid": 4673,
+            "signal": 11,
+            "signal_name": "SIGSEGV",
+            "detail": "1 (SEGV_MAPERR), fault addr 0x0",
+            "signature": "unity_null_dereference_during_same_package_scene_switch",
+            "backtrace_pcs": [
+              "000000000048f698",
+              "0000000000510664",
+              "00000000005103bc",
+              "00000000005063c0",
+              "0000000000506b64",
+              "000000000063cd44",
+              "0000000000650428",
+              "00000000002e5c20"
+            ],
+            "note": "Repeated AndroidRuntime and am_crash copies of this event are not counted as additional crashes."
+          },
+          {
+            "line": 974,
+            "timestamp": "10-28 14:05:27.194",
+            "pid": 4678,
+            "signal": 5,
+            "signal_name": "SIGTRAP",
+            "detail": "code -1 (SI_QUEUE) in tid 4703 (UnityMain), pid 4678 (sSuperWallpaper)",
+            "signature": "unity_duplicate_class_registration_sigtrap",
+            "preceding_class_conflict_lines": [
+              971
+            ]
+          }
+        ],
+        "confirmed_process_deaths": [
+          {
+            "line": 735,
+            "timestamp": "10-28 14:05:26.081",
+            "pid": 4307,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 1175,
+            "timestamp": "10-28 14:05:27.365",
+            "pid": 4678,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "vis BTOP"
+          },
+          {
+            "line": 2263,
+            "timestamp": "10-28 14:05:28.756",
+            "pid": 4745,
+            "process": "com.miui.miwallpaper.mars:marsSuperWallpaper",
+            "state": "fg  BTOP"
+          }
+        ],
+        "self_sigkill_events": [
+          {
+            "line": 725,
+            "timestamp": "10-28 14:05:26.069",
+            "pid": 4307,
+            "message": "Sending signal. PID: 4307 SIG: 9",
+            "interpretation": "Process self-kill follows the already-counted native fatal report; not an additional independent crash.",
+            "same_pid_has_prior_native_fatal_event": true
+          },
+          {
+            "line": 2229,
+            "timestamp": "10-28 14:05:28.728",
+            "pid": 4745,
+            "message": "Sending signal. PID: 4745 SIG: 9",
+            "interpretation": "Self-directed process kill; recorded separately from SIGSEGV/SIGTRAP native crashes. Nearby lifecycle/timeout context is retained in logcat.",
+            "same_pid_has_prior_native_fatal_event": false
+          }
+        ]
+      },
+      {
+        "pack": "pack-6",
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+        "label": "The Apennines",
+        "exported": true,
+        "scene_index": 0,
+        "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+        "expected_apk_sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+        "mode": "warm",
+        "artifact_dir": "pack-6/scene-0",
+        "preview_result": "Actual scene imagery visible by the 40-second sample",
+        "home_result": "Actual scene imagery visible in the reviewed 15-second home sample",
+        "applied_component_confirmed": true,
+        "observed_home_component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+        "visual_review": "Preview-40s and home-15s imagery reviewed separately from exact component binding and fatal-event classification; all sample hashes retained",
+        "preview_samples": [
+          {
+            "file": "preview-20s.png",
+            "elapsed_seconds": 20.01,
+            "sha256": "025924597da43b45fb7a4d25e3350288c4616249756d52e50109bdab59ad0057",
+            "bytes": 4110030
+          },
+          {
+            "file": "preview-40s.png",
+            "elapsed_seconds": 40.01,
+            "sha256": "9f969a3de1211146677b6c2c380cd871a8fa7d55d65bf70ebb47a6812c28562d",
+            "bytes": 4110021
+          }
+        ],
+        "home_samples": [
+          {
+            "file": "home-5s.png",
+            "elapsed_seconds": 5.01,
+            "sha256": "0256a0fa064fa885216f6cba3b576b53dddd72aa97aaab0d1bcdfc1998d06a4c",
+            "bytes": 4220567
+          },
+          {
+            "file": "home-15s.png",
+            "elapsed_seconds": 15.01,
+            "sha256": "0256a0fa064fa885216f6cba3b576b53dddd72aa97aaab0d1bcdfc1998d06a4c",
+            "bytes": 4220567
+          }
+        ],
+        "known_native_sigsegv_count": 0,
+        "stability_result": "No target-package fatal crash captured in this observation window; long-term stability not established",
+        "crash_review_status": "Full logcat reviewed; repeated native reports deduplicated and other-package events excluded; see port-errors.json",
+        "diagnostic_capture_errors": [],
+        "physical_phone_result": "Not tested",
+        "known_native_sigtrap_count": 0,
+        "native_crash_count": 0,
+        "crash_classification": "no_target_package_fatal_crash_captured_in_this_window",
+        "logcat_sha256": "4b534a12e538c2e6b59d45cd28ae0e3b5f3b843bf3f29c07810d6783893cedc4",
+        "native_crashes": [],
+        "confirmed_process_deaths": [],
+        "self_sigkill_events": []
+      }
+    ],
+    "known_native_crash_count": 4,
+    "crash_review_status": "Analyzed; exact per-scene evidence in port-errors.json",
+    "sigsegv_count": 2,
+    "sigtrap_count": 2,
+    "target_package_process_death_count": 8,
+    "interpretation": [
+      "Longji and Bahram each first fault at null address 0x0 on UnityMain during same-package scene switching, then a replacement process hits duplicate NavMeshAgent class registration and SIGTRAP. These differ from the cold allocator signature.",
+      "Logs show two Unity initialization threads in the restarted shared package process. Together with static service code constructing separate UnityPlayer instances, this supports a multi-engine lifecycle conflict; it does not prove every later process death has that cause.",
+      "Self-directed SIGKILL after lifecycle/timeout events is listed separately from native fatal signals. Other wallpaper packages still running during a capture are excluded from the target scene count.",
+      "A warm-window restart count includes the initial process inherited from an earlier scene when its death is present; starts-minus-one would undercount these transitions."
+    ]
+  },
+  "application_checks": {
+    "unit_passed": 13,
+    "device_passed": 14,
+    "device_skipped": 1,
+    "lint_errors": 0,
+    "lint_warnings": 35,
+    "signed_install_and_upgrade": "Passed",
+    "native_performance_report": "native-performance.json"
+  },
+  "physical_phone_result": "Not tested",
+  "crash_analysis_report": "port-errors.json"
 }
