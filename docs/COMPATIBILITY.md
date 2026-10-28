@@ -33,6 +33,7 @@ The older AVD creation tool wrote an incorrect API target and an undersized data
 - Android's system picker offered Home, Lock, and Both. Applying Earth to Both created a live wallpaper with `mWhich=3` and the DepthWall service component.
 - Hidden engine counter stayed at 29 frames across repeated snapshots while another app covered the wallpaper; visibility was false and renderer error was `none`.
 - NASA search and a 0.5 MB Blue Marble download succeeded through the app. Credits, source URL, favourite state and the downloaded Library entry were retained.
+- Wikimedia search and a public-domain artwork download succeeded in the final signed release. Artist, public-domain status and the original Commons page remained visible in Image credits.
 - Prepared depth preview with a digital clock was visually inspected. A manual mask stroke was saved as a foreground; the resulting custom layered wallpaper appeared under Library → Imports.
 - Dark theme and preview controls were visually reviewed; contrast and selected-chip colours were corrected.
 

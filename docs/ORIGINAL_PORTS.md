@@ -64,4 +64,3 @@ Several ARM64 libraries have 4 KB ELF load-segment alignment; others use 64 KB. 
 ### Geometry
 
 - Geometry — `com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper`
-
