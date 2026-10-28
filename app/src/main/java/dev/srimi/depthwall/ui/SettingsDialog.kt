@@ -54,7 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             HorizontalDivider()
             Text("Your phone & image quality",style=MaterialTheme.typography.titleSmall)
             ChoiceRow(listOf("OnePlus 7T Pro","Current screen"),s.deviceProfile){s=s.copy(deviceProfile=it)}
-            Text(if(s.deviceProfile=="OnePlus 7T Pro")"OnePlus 7T Pro McLaren · 1440 × 3120 · 19.5:9"
+            Text(if(s.deviceProfile=="OnePlus 7T Pro")"OnePlus 7T Pro McLaren 4G · 1440 × 3120 · 19.5:9"
                 else "Current screen · ${context.resources.displayMetrics.widthPixels} × ${context.resources.displayMetrics.heightPixels}",fontSize=12.sp,color=Muted)
             Text("Export size",fontSize=12.sp,color=Muted)
             ChoiceRow(listOf("Original","Phone optimized","4K portrait"),s.downloadSize){s=s.copy(downloadSize=it)}
@@ -89,12 +89,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             Text("Saved images: %.1f MB".format(items.filter { it.localPath.isNotBlank() }.sumOf { it.bytes }/1048576.0),fontSize=12.sp,color=Muted)
             TextButton(onClick={vm.run("Thumbnail cache cleared. Saved wallpapers are kept.") { withContext(Dispatchers.IO) { coil.Coil.imageLoader(context).diskCache?.clear();coil.Coil.imageLoader(context).memoryCache?.clear() } }}){Text("Clear thumbnail cache")}
             HorizontalDivider()
-            Text("Always-on display",style=MaterialTheme.typography.titleSmall)
-            Text("Wallpaper AOD is controlled by crDroid and is unavailable to this installed app. Use your ROM’s display settings for its clock and AOD options.",fontSize=12.sp,color=Muted)
-            TextButton(onClick={
-                runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)) }
-                    .onFailure { runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } }
-            }) { Text("Open display settings") }
+            AodSettingsSection()
             HorizontalDivider()
             Text("DepthWall ${dev.srimi.depthwall.BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.titleSmall)
             Text("Personal edition · Android 12+\nDesigned for the OnePlus 7T Pro\nNo ads. No accounts. No analytics.",fontSize=12.sp,color=Muted)

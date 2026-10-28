@@ -32,6 +32,9 @@ class DepthWallpaperService : WallpaperService() {
         private val sensors = getSystemService(SensorManager::class.java)
         private val displays = getSystemService(DisplayManager::class.java)
         @Volatile private var rendering = false
+        @Volatile private var interactive = false
+        @Volatile private var displayId = Display.INVALID_DISPLAY
+        @Volatile private var displayState = Display.STATE_UNKNOWN
         @Volatile private var surfaceReady = false
         @Volatile private var width = 1
         @Volatile private var height = 1
@@ -62,6 +65,7 @@ class DepthWallpaperService : WallpaperService() {
         private val events = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                    interactive = false
                     rendering = false
                     unlocked = false
                     handler.removeCallbacks(frame)
@@ -93,16 +97,20 @@ class DepthWallpaperService : WallpaperService() {
             updateDeviceState(); updateSensors(); schedule()
         }
         private val displayListener = object : DisplayManager.DisplayListener {
-            override fun onDisplayAdded(id: Int) = Unit
-            override fun onDisplayRemoved(id: Int) = Unit
-            override fun onDisplayChanged(id: Int) {
-                if (id == Display.DEFAULT_DISPLAY) { updateRefreshRate(); schedule() }
-            }
+            override fun onDisplayAdded(id: Int) = onTargetDisplayChanged(id)
+            override fun onDisplayRemoved(id: Int) = onTargetDisplayChanged(id)
+            override fun onDisplayChanged(id: Int) = onTargetDisplayChanged(id)
+        }
+        private fun onTargetDisplayChanged(id: Int) {
+            if (id != displayId) return
+            // A display can enter AOD while a different display keeps the device interactive.
+            updateDeviceState(); updateSensors(); schedule()
         }
 
         override fun onCreate(holder: SurfaceHolder) {
             super.onCreate(holder)
             setTouchEventsEnabled(false)
+            displayId = displayContext?.display?.displayId ?: Display.INVALID_DISPLAY
             ContextCompat.registerReceiver(this@DepthWallpaperService, events, IntentFilter().apply {
                 addAction(Intent.ACTION_SCREEN_ON)
                 addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_TIME_CHANGED)
@@ -112,21 +120,21 @@ class DepthWallpaperService : WallpaperService() {
                 IntentFilter(Intent.ACTION_USER_PRESENT), ContextCompat.RECEIVER_EXPORTED)
             power.addThermalStatusListener(thermal)
             displays.registerDisplayListener(displayListener, Handler(Looper.getMainLooper()))
-            updateRefreshRate()
             updateDeviceState()
             stopObservingScene = repo.scenes.listenForAppliedChanges {
                 if (!isPreview) { readConfig(); updateSensors(); schedule() }
             }
             scope.launch { repo.settings.flow.collect { quality = it.quality; updateSensors(); schedule() } }
         }
-        private fun updateRefreshRate() {
-            refresh = displays.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate ?: 60f
-        }
-        private fun updateDeviceState() {
+        private fun updateDeviceState(visible: Boolean = isVisible) {
+            val targetDisplay = displays.getDisplay(displayId)
+            displayState = targetDisplay?.state ?: Display.STATE_UNKNOWN
+            refresh = targetDisplay?.refreshRate ?: 60f
+            interactive = power.isInteractive
             saver = power.isPowerSaveMode
             hot = power.currentThermalStatus >= PowerManager.THERMAL_STATUS_MODERATE
             unlocked = !keyguard.isKeyguardLocked
-            rendering = isVisible && power.isInteractive
+            rendering = DisplayRenderPolicy.canRender(visible, interactive, displayState)
         }
         private fun readConfig() {
             val flags = if (Build.VERSION.SDK_INT >= 34) wallpaperFlags else 1
@@ -134,7 +142,7 @@ class DepthWallpaperService : WallpaperService() {
         }
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
-            readConfig(); surfaceReady = true; updateSensors()
+            readConfig(); surfaceReady = true; updateDeviceState(); updateSensors()
             handler.post {
                 runCatching { renderer?.close(); renderer = WindowRenderer(this@DepthWallpaperService, holder.surface) }
                     .onFailure { lastError = it.message.orEmpty(); Log.e("DepthWall", "Renderer init", it) }
@@ -147,8 +155,7 @@ class DepthWallpaperService : WallpaperService() {
         }
         override fun onSurfaceRedrawNeeded(holder: SurfaceHolder) { super.onSurfaceRedrawNeeded(holder); schedule() }
         override fun onVisibilityChanged(visible: Boolean) {
-            updateDeviceState()
-            rendering = visible && power.isInteractive
+            updateDeviceState(visible)
             if (rendering) readConfig()
             updateSensors(); schedule()
         }
@@ -234,7 +241,7 @@ class DepthWallpaperService : WallpaperService() {
         }
         override fun dump(prefix: String, fd: FileDescriptor, out: PrintWriter, args: Array<out String>?) {
             super.dump(prefix, fd, out, args)
-            out.println("${prefix}DepthWall visible=$rendering frames=$frames quality=$quality scene=${config.scene} surface=$surfaceReady sensors=$sensorListening idleOnDemand=$motionWakesFrame unlocked=$unlocked progress=$progress userPresentEvents=$userPresentEvents error=$lastError")
+            out.println("${prefix}DepthWall visible=$rendering engineVisible=$isVisible interactive=$interactive displayId=$displayId displayState=${DisplayRenderPolicy.stateLabel(displayState)} frames=$frames quality=$quality scene=${config.scene} surface=$surfaceReady sensors=$sensorListening idleOnDemand=$motionWakesFrame unlocked=$unlocked progress=$progress userPresentEvents=$userPresentEvents error=$lastError")
         }
     }
 }

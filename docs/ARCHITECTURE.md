@@ -35,7 +35,7 @@ The native clock belongs to SystemUI; DepthWall's clock is a separate optional w
 
 ## Always-on display
 
-The no-root app does not declare hidden ambient-wallpaper support. Android 17 and crDroid require the system-only `AMBIENT_WALLPAPER` permission for that flag, and reject ambient wallpaper binding without it (except watches). Screen-off rendering therefore stays stopped. The Settings screen explains the limitation and links to the ROM's display settings. AOD requires a supported ROM integration and physical-device verification, not a timer drawing while the screen is off.
+The no-root app does not declare hidden ambient-wallpaper support. Android 17 and crDroid require the system-only `AMBIENT_WALLPAPER` permission for that flag, and reject ambient wallpaper binding without it (except watches). Screen-off rendering therefore stays stopped. The Settings screen offers crDroid's exported native AOD activity, with display/settings fallbacks and read-only preference observations. Both the wallpaper and preview gate drawing on their own display being `STATE_ON` as well as global interactivity; ambient/off display changes cancel future frames and stop wallpaper sensors. AOD requires a supported ROM integration and physical-device verification, not a timer drawing while the screen is off.
 
 ## Original Super Wallpaper ports
 
