@@ -4,16 +4,20 @@ import android.content.Context
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
+import android.view.Display
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.core.content.ContextCompat
 import dev.srimi.depthwall.DepthWallApp
 import dev.srimi.depthwall.data.RenderBudget
+import dev.srimi.depthwall.data.DisplayRenderPolicy
 import dev.srimi.depthwall.data.SceneConfig
 import dev.srimi.depthwall.data.SceneTransition
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +55,9 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
     @Volatile private var quality="Balanced"
     @Volatile private var refreshRate=60f
     private val power=context.getSystemService(PowerManager::class.java)
+    private val displays=context.getSystemService(DisplayManager::class.java)
+    @Volatile private var displayId=Display.INVALID_DISPLAY
+    @Volatile private var displayState=Display.STATE_UNKNOWN
     @Volatile private var interactive=power.isInteractive
     @Volatile private var saver=power.isPowerSaveMode
     @Volatile private var hot=power.currentThermalStatus>=PowerManager.THERMAL_STATUS_MODERATE
@@ -77,6 +84,16 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
         hot=status>=PowerManager.THERMAL_STATUS_MODERATE
         requestDraw()
     }
+    private val displayListener=object:DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id:Int)=onTargetDisplayChanged(id)
+        override fun onDisplayRemoved(id:Int)=onTargetDisplayChanged(id)
+        override fun onDisplayChanged(id:Int)=onTargetDisplayChanged(id)
+    }
+    private fun onTargetDisplayChanged(id:Int) {
+        if(id!=displayId && id!=display?.displayId)return
+        updatePolicy()
+        requestDraw()
+    }
     init {
         holder.addCallback(this)
         ContextCompat.registerReceiver(context,events,IntentFilter().apply {
@@ -87,6 +104,7 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
             addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         },ContextCompat.RECEIVER_NOT_EXPORTED)
         power.addThermalStatusListener(thermal)
+        displays.registerDisplayListener(displayListener,Handler(Looper.getMainLooper()))
         scope.launch {
             (context.applicationContext as DepthWallApp).repository.settings.flow.collect {
                 if(quality!=it.quality) { quality=it.quality;requestDraw() }
@@ -95,12 +113,16 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
         initialized=true
     }
     private fun updatePolicy() {
+        displayId=display?.displayId ?: Display.INVALID_DISPLAY
+        val targetDisplay=displays.getDisplay(displayId)
+        displayState=targetDisplay?.state ?: Display.STATE_UNKNOWN
         interactive=power.isInteractive
         saver=power.isPowerSaveMode
         hot=power.currentThermalStatus>=PowerManager.THERMAL_STATUS_MODERATE
-        refreshRate=display?.refreshRate ?: 60f
+        refreshRate=targetDisplay?.refreshRate ?: 60f
     }
-    private fun canDraw()=ready && active && windowVisible && interactive && !closed
+    private fun canDraw()=ready && !closed &&
+        DisplayRenderPolicy.canRender(active && windowVisible,interactive,displayState)
     private fun requestDraw() {
         if(closed || !initialized)return
         handler.removeCallbacks(frame)
@@ -112,9 +134,14 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
         updatePolicy()
         requestDraw()
     }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if(initialized && !closed) { updatePolicy();requestDraw() }
+    }
     override fun onWindowVisibilityChanged(visibility:Int) {
         super.onWindowVisibilityChanged(visibility)
         windowVisible=visibility==VISIBLE
+        if(initialized && !closed)updatePolicy()
         requestDraw()
     }
     override fun surfaceCreated(holder:SurfaceHolder) {
@@ -131,7 +158,7 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
     override fun surfaceChanged(holder:SurfaceHolder,format:Int,width:Int,height:Int) {
         renderWidth=width.coerceAtLeast(1)
         renderHeight=height.coerceAtLeast(1)
-        refreshRate=display?.refreshRate ?: 60f
+        updatePolicy()
         requestDraw()
     }
     private fun reportError(error:Throwable) {
@@ -171,6 +198,7 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
         scope.cancel()
         runCatching { context.unregisterReceiver(events) }
         power.removeThermalStatusListener(thermal)
+        displays.unregisterDisplayListener(displayListener)
         handler.post { renderer?.close();renderer=null;thread.quitSafely() }
         super.onDetachedFromWindow()
     }
