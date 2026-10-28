@@ -122,7 +122,7 @@ class Repository(val context: Context) {
     }
     suspend fun export(item:WallpaperItem) = withContext(Dispatchers.IO) {
         val local=if(item.isLocal)item else download(item)
-        val values=ContentValues().apply { put(MediaStore.Images.Media.DISPLAY_NAME,"DepthWall_${item.title.replace(Regex("[^a-zA-Z0-9_-]"),"_")}.png");put(MediaStore.Images.Media.MIME_TYPE,"image/png");put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/DepthWall");put(MediaStore.Images.Media.IS_PENDING,1) }
+        val values=ContentValues().apply { put(MediaStore.Images.Media.DISPLAY_NAME,"DepthWall_${item.title.replace(Regex("[^a-zA-Z0-9_-]"),"_").take(100)}.png");put(MediaStore.Images.Media.MIME_TYPE,"image/png");put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/DepthWall");put(MediaStore.Images.Media.IS_PENDING,1) }
         val uri=context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values) ?: error("Cannot create image in Pictures.")
         try {
             val decoded=decode(local.localPath.ifBlank { local.asset })

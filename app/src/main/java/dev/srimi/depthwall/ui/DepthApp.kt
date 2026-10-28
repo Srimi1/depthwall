@@ -143,7 +143,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
             if(provider==requestedProvider && query==requestedQuery) { online=results;searched=true }
         }
     }
-    val source=if(provider=="Offline")items.filter { it.kind=="STATIC" && it.asset.isNotBlank() } else online.map { remote -> items.firstOrNull { it.id==remote.id } ?: remote }
+    val source=if(provider=="Offline")items.filter { it.kind=="STATIC" && it.isLocal } else online.map { remote -> items.firstOrNull { it.id==remote.id } ?: remote }
     val filtered=remember(source,query,category,color,provider) { source.filter { (provider!="Offline" || (it.title.contains(query,true)||it.category.contains(query,true))) && (category=="All" || it.category==category || provider!="Offline") && (color=="All colours"||it.color==color||provider!="Offline") } }
     LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=24.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(18.dp),modifier=Modifier.testTag("explore_grid")) {
         item(span={GridItemSpan(2)}) {
@@ -162,7 +162,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
                     Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
-                    Text(if(provider=="Offline")"48 originals" else provider,color=Muted,fontSize=11.sp)
+                    Text(if(provider=="Offline")"${source.size} wallpapers" else provider,color=Muted,fontSize=11.sp)
                 }
                 OutlinedTextField(query,{query=it},placeholder={Text(if(provider=="Offline")"Search your collection" else "Search $provider")},leadingIcon={Icon(Icons.Outlined.Search,null)},singleLine=true,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().testTag("search"),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={if(provider!="Offline")searchOnline()}))
                 ChoiceRow(listOf("Offline","NASA","Wikimedia"),provider) { provider=it;searched=false;online=emptyList();category="All";color="All colours" }
@@ -230,7 +230,7 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
         if(!original) CollectionScreen("","Built for DepthWall · adjustable performance",items.filter { it.kind=="NATIVE_SCENE" },onSelect,{vm.favorite(it)},"scene_grid")
         else LazyColumn(contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
             item {
-                Text("Original packs install separately. Their own settings expose locations and variants. Rendering on your exact crDroid build remains unverified until you try them.",color=Muted,fontSize=13.sp)
+                Text("Original ports install separately. Choose an exposed scene below; public settings appear when available. Rendering on your exact crDroid build remains unverified.",color=Muted,fontSize=13.sp)
                 OutlinedButton(onClick=onImport,modifier=Modifier.fillMaxWidth().padding(top=12.dp)) { Icon(Icons.Outlined.InstallMobile,null);Spacer(Modifier.width(8.dp));Text("Inspect / install downloaded APK") }
             }
             items(packs,key={it.definition.packageName}) { p ->
@@ -238,6 +238,10 @@ import dev.srimi.depthwall.wallpaper.DepthWallpaperService
                     Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment=Alignment.CenterVertically) { Text(p.definition.title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));Icon(Icons.Outlined.Public,null,tint=Orange) }
                         Text(p.version?.let { "Installed · $it" } ?: "Not installed",color=Muted,fontSize=12.sp)
+                        vm.packs.verifiedRelease(p.definition.packageName)?.let { evidence ->
+                            Text("Original port · %.1f MB · %d scenes".format(evidence.getLong("bytes")/1048576.0,evidence.getJSONArray("scenes").length()),color=Orange,fontSize=12.sp)
+                            Text("Archive inspected; installation checked on an Android 17 emulator. Phone rendering still needs testing.",color=Muted,fontSize=11.sp)
+                        }
                         p.error?.let { Text(it,color=Orange,fontSize=12.sp) }
                         p.services.forEach { info ->
                             Text(info.loadLabel(LocalContext.current.packageManager).toString(),fontSize=13.sp)

@@ -1,0 +1,68 @@
+{
+  "com.miui.miwallpaper.earth": {
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 201777270,
+    "sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "Croatia Cape Kamenjak",
+      "Guangxi, China Longji Terraced Fields",
+      "Greenland Ilulissat",
+      "Greece Navagio Beach",
+      "Italy Dolomites"
+    ]
+  },
+  "com.miui.miwallpaper.mars": {
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 168011517,
+    "sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "Nilosyrtis Mensae Region",
+      "Gale Crater",
+      "Crater in Mawrth Vallis",
+      "Pahrump Hills",
+      "Bahram Vallis"
+    ]
+  },
+  "com.miui.miwallpaper.saturn": {
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 70436712,
+    "sha256": "6b2651f25e34e1034d844a575a1213fb5d07b39ac5052c3cc1b7410110c347c9",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "Faraway rings"
+    ]
+  },
+  "com.miui.miwallpaper.moon": {
+    "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+    "bytes": 84707121,
+    "sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "The Apennines",
+      "Moon Palace",
+      "The far side of the Moon",
+      "Chang'e 5",
+      "Tranquility Base"
+    ]
+  },
+  "com.miui.miwallpaper.snowmountain": {
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 103571045,
+    "sha256": "f8a7e5450aaf4f8b0c03fab0c08002b12dd7741987a2e9a72d0922376ceaddcb",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "Snowy peaks"
+    ]
+  },
+  "com.miui.miwallpaper.geometry": {
+    "version": "ALPHA-2.7.561-11211547-vulkan-fix1",
+    "bytes": 54545993,
+    "sha256": "e9023afe3457468a4ff6a09f11e92ef051ab75fa3da7a19bee83bb5853adc23e",
+    "certificate": "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c",
+    "scenes": [
+      "Geometry"
+    ]
+  }
+}

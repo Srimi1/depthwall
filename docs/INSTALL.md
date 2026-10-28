@@ -19,7 +19,7 @@ The app's clock is separate from crDroid's native lock-screen clock. Leave the a
 2. Use **Get original pack** to visit the port author's linked release. Earth and Mars also have the exact older linuxct release links.
 3. After downloading, return to **Inspect / install downloaded APK**.
 4. Review archive checks. If required, enable **Allow from this source**, return and press Install again. Android's installer asks for final confirmation.
-5. The installed pack appears automatically. **Locations** opens its public settings; **Preview & apply** opens Android's picker.
+5. The installed pack appears automatically with its exposed scene list. Each **Preview & apply** button opens Android's picker for that scene. **Locations** appears only when the installed version provides public settings; the inspected modern OUXyl releases do not.
 
 Original ports are separate applications. A pack might install successfully but still fail to render on a particular crDroid build. DepthWall's original scene remains available for each theme. Signature conflicts are reported; the app does not uninstall or silently replace an existing port.
 

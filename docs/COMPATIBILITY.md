@@ -36,35 +36,56 @@ The older AVD creation tool wrote an incorrect API target and an undersized data
 - Prepared depth preview with a digital clock was visually inspected. A manual mask stroke was saved as a foreground; the resulting custom layered wallpaper appeared under Library → Imports.
 - Dark theme and preview controls were visually reviewed; contrast and selected-chip colours were corrected.
 
-The automated suite comprises five local unit tests and seven device tests. Build, lint and test summaries are delivered with the release evidence. Static analysis and Android's installer validate the signed application package separately from runtime tests.
+The automated suite comprises six local unit tests and eight device tests (all passed, none skipped). The final signed release was installed and launched separately. Lint completed with 0 errors and 31 warnings, principally dependency-update and Kotlin convenience suggestions. Build and test summaries are delivered with the release evidence. Static analysis and Android's installer validate the signed application package separately from runtime tests.
 
-## Original Super Wallpaper ports: explicit pending results
+## Original Super Wallpaper ports: inspected and emulator tested
 
-The [author's collection index](https://telegra.ph/Download-08-27-11) links six OUXyl package families. The [author's announcement](https://t.me/s/appports/19) describes 18 scenes. That count is an author statement, not a result reproduced here.
+The [author's collection index](https://telegra.ph/Download-08-27-11) links six OUXyl families. All six modern APKs and both exact linuxct legacy APKs were acquired and inspected. Their signatures verify. The modern manifests and installed PackageManager services independently reproduce **18 exposed scenes**. Full package IDs, version/SDK requirements, ABIs, SHA-256 digests, certificates, exported components and ELF dependencies are in [the binary inspection report](ORIGINAL_PORTS.md) and [machine-readable inspection](port-inspection.json).
 
-| Family / release | Source route in app | Binary inspection | API 37 installation / scenes |
+All six modern packages install on the API 37 emulator. Both named linuxct packages fail installation with `INSTALL_FAILED_NO_MATCHING_ABIS`: they contain ARMv7 libraries only, while this emulator supports ARM64 only. This does not establish the phone's ABI support. The authors use different certificates for the same Earth/Mars package IDs, so changing between their releases requires resolving the signing conflict. DepthWall reports conflicts and does not silently replace installed packs.
+
+These exact modern releases expose variants through public wallpaper services, with **no exported configuration activity**. DepthWall lists those services and opens Android's preview; private Unity/MainActivity components are not invoked. The legacy releases have exported MainActivity settings but could not be runtime tested here.
+
+### Every modern variant
+
+| Family | Exposed scene | Emulator preview | Applied component recorded |
 |---|---|---|---|
-| Earth — OUXyl ALPHA 2.6.561-11211547-ogl-64-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed locations pending |
-| Mars — OUXyl ALPHA 2.6.561-11211547-ogl-64-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed locations pending |
-| Saturn — OUXyl ALPHA 2.6.561-11211547-ogl-64-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed variants pending |
-| Moon — OUXyl ALPHA 2.6.563-08071126-ogl-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed locations pending |
-| Snow Mountain — OUXyl ALPHA 2.6.561-11211547-ogl-64-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed scenes pending |
-| Geometry — OUXyl ALPHA 2.7.561-11211547-vulkan-fix1 | Author-linked APKMirror release | Not acquired | Unverified; all exposed variants pending |
-| Earth — linuxct 2.6.260-08131844-211107 | Exact legacy release link | Not acquired | Unverified |
-| Mars — linuxct 2.6.260-08131855-211107 | Exact legacy release link | Not acquired | Unverified |
-| Sun | No verified original port identified | Not applicable | DepthWall original only |
+| Earth | Croatia Cape Kamenjak | Imagery visible | Yes |
+| Earth | Guangxi, China Longji Terraced Fields | Black/loading after 30 seconds | Yes |
+| Earth | Greenland Ilulissat | Black/loading after 30 seconds | Yes |
+| Earth | Greece Navagio Beach | Black/loading after 30 seconds | Yes |
+| Earth | Italy Dolomites | Imagery visible | Yes |
+| Mars | Nilosyrtis Mensae Region | Imagery visible | Yes |
+| Mars | Gale Crater | Black/loading after 30 seconds | Yes |
+| Mars | Crater in Mawrth Vallis | Black/loading after 30 seconds | Yes |
+| Mars | Pahrump Hills | Black/loading after 30 seconds | Yes |
+| Mars | Bahram Vallis | Crash dialog | Not confirmed |
+| Saturn | Faraway rings | Imagery visible | Yes |
+| Moon | The Apennines | Black/loading after 30 seconds | Not confirmed |
+| Moon | Moon Palace | Black/loading after 30 seconds | Not confirmed |
+| Moon | The far side of the Moon | Black/loading after 30 seconds | Not confirmed |
+| Moon | Chang'e 5 | Black/loading after 30 seconds | Yes |
+| Moon | Tranquility Base | Black/loading after 30 seconds | Yes |
+| Snowmountain | Snowy peaks | Imagery visible | Not confirmed |
+| Geometry | Geometry | Imagery visible | Not confirmed |
 
-The download pages returned HTTP 403 to the local retrieval client. Telegram links exposed a group/application route, not a directly retrievable APK. No original APK hashes, signatures, SDKs, ELF requirements, dependencies, exported components or runtime outcomes are invented. No location list is fabricated. **The plan's original-pack binary-inspection and every-variant acceptance criteria remain incomplete.**
+Six previews showed actual scene imagery, eleven remained black/loading after 30 seconds, and Bahram Vallis showed a crash dialog. A registered wallpaper component alone does not count as successful rendering. Snow Mountain and Geometry rendered in preview, but the attempted home-selection flow could not be confirmed. These are bounded observations, not full lifecycle support claims. Unity native crashes and graphics configuration errors occurred during port testing; the software GPU environment differs substantially from the phone's Adreno GPU. No family is certified for crDroid by these emulator observations.
 
-DepthWall provides source links and a local-file inspector so legally obtained packs can be assessed later. It compares SDK/ABI compatibility, installed signer conflicts and version downgrades, then delegates installation to Android. Installed services are discovered through PackageManager; settings are opened only when the activity is exported, enabled and not protected by a permission. Passing these archive checks is not source-authenticity verification.
+[Per-scene runtime records](port-runtime.json) retain the component identities and observed outcomes. Original APKs, extracted artwork and third-party screenshots are kept out of the repository/release. Sun has no verified original in this collection; its DepthWall scene is an original implementation.
 
-To record an acquired APK without executing it:
+The app's separate seven native alternatives remain available. Archive inspection compares SDK/ABI requirements, installed signer conflicts and downgrades before Android's installer is opened. Public settings must be exported, enabled and unprotected. Archive signature verification proves internal signing integrity, not endorsement or authorship.
+
+To repeat static inspection:
 
 ```sh
 python3 tools/inspect_apk.py /path/to/pack.apk artifacts/ports/earth
 ```
 
-Before describing a port as supported, record its SHA-256, signer(s), package/version, min/target SDK, native ABIs and ELF page-size needs, wallpaper service components, exported settings, external dependencies, each exposed scene, and actual installation/rendering results on Android 17 and the phone.
+To run the optional integration test with these exact six modern packages already installed:
+
+```sh
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.ports=true
+```
 
 ## Physical-phone acceptance still required
 
@@ -74,6 +95,6 @@ Before describing a port as supported, record its SHA-256, signer(s), package/ve
 4. Exercise transparent foreground picking, erase/restore/undo, all clock styles, crop extremes, offline use after cache clearing, interrupted downloads, insufficient space, invalid APKs, signer conflicts and unavailable settings activities.
 5. Verify approximate WorkManager rotation at 1/6/24 hours, persisted configuration, favourites filtering, battery constraints and pausing when live wallpapers are active. Real elapsed schedule behaviour has not been established here.
 6. Compare a static baseline and each quality profile at fixed brightness/radio conditions. Measure frame pacing, PSS, thermal state and energy over repeated runs. Confirm hidden CPU/sensor activity stops. Emulator software rendering is unsuitable for phone battery or frame-rate claims.
-7. Complete the original-pack matrix above with every actually exposed location and variant. Keep failures visible and retain the native alternative.
+7. Repeat the original-pack matrix above on the physical phone with every exposed location and variant. Keep failures visible and retain the native alternative.
 
 Use `tools/device_report.sh SERIAL OUTPUT_DIRECTORY` to collect a read-only snapshot. No root modules, ROM flashing, guaranteed HyperOS AOD transitions or native SystemUI-clock layering are part of this build. Phone thermal, battery and frame-pacing measurements are **not yet available**.

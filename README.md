@@ -16,7 +16,7 @@ A personal, no-root Android wallpaper app with AMOLED blacks and papaya-orange a
 
 The six Xiaomi/HyperOS families are **separate third-party applications**. DepthWall links their sources, inspects locally selected APKs, detects installed wallpaper services, and opens public configuration activities and Android's wallpaper picker. The exact linuxct Earth and Mars releases are linked as legacy options.
 
-Original pack APKs are not bundled. Their binaries and location variants have **not yet been runtime-validated**. An installed status is not a compatibility guarantee. The seven **DepthWall original** scenes are independently implemented, stylised alternatives. Sun has no verified original port in the linked collection.
+Original pack APKs are not bundled. All eight referenced binaries were inspected; the six modern packages install on the Android 17 emulator and expose 18 scenes. Preview results are mixed (six visible, eleven black/loading, one crash); see the [per-scene report](docs/COMPATIBILITY.md). The two ARMv7-only legacy releases cannot install on the ARM64-only emulator. Physical-phone support is unverified. The seven **DepthWall original** scenes are independently implemented, stylised alternatives. Sun has no verified original port in the linked collection.
 
 ## Install and build
 

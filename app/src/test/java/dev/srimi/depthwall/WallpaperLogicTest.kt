@@ -3,10 +3,20 @@ package dev.srimi.depthwall
 import dev.srimi.depthwall.data.CropMath
 import dev.srimi.depthwall.data.RenderBudget
 import dev.srimi.depthwall.data.WallpaperItem
+import dev.srimi.depthwall.data.SceneTransition
 import org.junit.Assert.*
 import org.junit.Test
 
 class WallpaperLogicTest {
+    @Test fun lowFrameRateTransitionsStillReachTheirDestination() {
+        assertEquals(0f,SceneTransition.progress(0f,1f,0),0f)
+        assertEquals(.5f,SceneTransition.progress(0f,1f,900),.001f)
+        for(fps in listOf(15,30,60,90)) {
+            val elapsed=(SceneTransition.DURATION_MS/(1000L/fps)+1)*(1000L/fps)
+            assertEquals(1f,SceneTransition.progress(0f,1f,elapsed),0f)
+            assertEquals(0f,SceneTransition.progress(.7f,0f,elapsed),.00001f)
+        }
+    }
     @Test fun downloadedLibraryImagesDoNotNeedRemoteThumbnailCache() {
         val item=WallpaperItem("remote","Moon","NASA",thumbnail="https://images-assets.nasa.gov/thumb.jpg",localPath="/saved/moon.img")
         assertEquals("/saved/moon.img",item.thumbnailModel)

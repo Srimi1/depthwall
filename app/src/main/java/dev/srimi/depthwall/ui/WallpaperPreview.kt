@@ -29,6 +29,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.text.style.TextOverflow
 import dev.srimi.depthwall.data.*
 import dev.srimi.depthwall.wallpaper.SceneView
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +48,9 @@ import kotlinx.coroutines.withContext
     var bitmap by remember(item.id) { mutableStateOf<Bitmap?>(null) }
     var local by remember(item.id) { mutableStateOf(item) }
     var favourite by remember(item.id) { mutableStateOf(item.favorite) }
+    val notice=remember { SnackbarHostState() }
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.messages.collect { notice.showSnackbar(it) } }
     val importForeground=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { vm.run("Foreground imported") { val fg=vm.repo.importImage(it,true);config=config.copy(foreground=fg.localPath,scene="depth");live=true } }
     }
@@ -63,7 +68,7 @@ import kotlinx.coroutines.withContext
             Box(Modifier.fillMaxWidth().height(160.dp).background(Brush.verticalGradient(listOf(Color.Black.copy(.8f),Color.Transparent))))
             Row(Modifier.statusBarsPadding().padding(12.dp).fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 IconButton(onClick=onClose,modifier=Modifier.testTag("close_preview")){Icon(Icons.Outlined.ArrowBack,"Close preview")}
-                Column(Modifier.weight(1f).padding(horizontal=8.dp)) { Text(local.title,style=MaterialTheme.typography.titleLarge);Text(if(item.kind=="NATIVE_SCENE")"DEPTHWALL ORIGINAL" else if(live)"LAYERED WALLPAPER" else "WALLPAPER",fontSize=9.sp,letterSpacing=1.4.sp,color=Orange) }
+                Column(Modifier.weight(1f).padding(horizontal=8.dp)) { Text(local.title,style=MaterialTheme.typography.titleLarge,maxLines=2,overflow=TextOverflow.Ellipsis);Text(if(item.kind=="NATIVE_SCENE")"DEPTHWALL ORIGINAL" else if(live)"LAYERED WALLPAPER" else "WALLPAPER",fontSize=9.sp,letterSpacing=1.4.sp,color=Orange) }
                 IconButton(onClick={favourite=!favourite;vm.favorite(local)}) { Icon(if(favourite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Toggle favourite",tint=if(favourite)Orange else Ivory) }
                 IconButton(onClick={credits=true}) { Icon(Icons.Outlined.Info,"Image credits") }
             }
@@ -77,10 +82,10 @@ import kotlinx.coroutines.withContext
                     if(!local.isLocal) {
                         Text("Download to crop, edit or apply offline.",color=Muted,fontSize=12.sp)
                         if(local.bytes>0)Text("Download size: %.1f MB".format(local.bytes/1048576.0),color=Muted,fontSize=11.sp)
-                        Button(onClick={vm.run("Saved for offline use"){local=vm.repo.download(local);config=vm.repo.config(local)}}){Text("Download image")}
+                        Button(enabled=!busy,onClick={vm.run("Saved for offline use"){local=vm.repo.download(local);config=vm.repo.config(local)}}){Text("Download image")}
                     }
                     if(item.kind!="NATIVE_SCENE") {
-                        ChoiceRow(listOf("Still","Depth + clock"),if(live)"Depth + clock" else "Still") { live=it=="Depth + clock" }
+                        if(local.kind=="STATIC")ChoiceRow(listOf("Still","Depth + clock"),if(live)"Depth + clock" else "Still") { live=it=="Depth + clock" }
                         LabelSlider("Zoom",config.zoom,1f..3f) { config=config.copy(zoom=it) }
                         LabelSlider("Horizontal position",config.offsetX,0f..1f) { config=config.copy(offsetX=it) }
                         LabelSlider("Vertical position",config.offsetY,0f..1f) { config=config.copy(offsetY=it) }
@@ -106,8 +111,8 @@ import kotlinx.coroutines.withContext
                     }
                 }
                 Row(Modifier.padding(top=12.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    OutlinedIconButton(onClick={vm.run("Saved to Pictures/DepthWall") { vm.repo.export(local) }},modifier=Modifier.size(52.dp)) { Icon(Icons.Outlined.Download,"Export image") }
-                    Button(onClick={
+                    OutlinedIconButton(enabled=!busy,onClick={vm.run("Saved to Pictures/DepthWall") { vm.repo.export(local) }},modifier=Modifier.size(52.dp)) { Icon(Icons.Outlined.Download,"Export image") }
+                    Button(enabled=!busy,onClick={
                         if(live) {
                             if(local.isLocal)onLive(config) else vm.message("Download this image before applying a live wallpaper.")
                         } else {
@@ -117,6 +122,8 @@ import kotlinx.coroutines.withContext
                     },modifier=Modifier.weight(1f).height(52.dp).testTag("apply_wallpaper")) { Icon(Icons.Outlined.Check,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(if(live)"Preview & apply" else "Set wallpaper") }
                 }
             }
+            if(busy)LinearProgressIndicator(modifier=Modifier.align(Alignment.TopCenter).statusBarsPadding().fillMaxWidth(),color=Orange)
+            SnackbarHost(notice,Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom=84.dp))
         }
     }
     if(mask)MaskEditor(local,vm,onDismiss={mask=false},onSaved={path->config=config.copy(foreground=path,scene="depth");mask=false;live=true})

@@ -40,6 +40,7 @@ class DepthWallpaperService:WallpaperService() {
         private var transitionAt=start
         private var lastUnlocked=false
         private var progress=0f
+        private var transitionFrom=0f
         private var previousRevision=-1L
         @Volatile private var frames=0L
         @Volatile private var lastError="none"
@@ -75,7 +76,11 @@ class DepthWallpaperService:WallpaperService() {
         override fun onSurfaceRedrawNeeded(holder:SurfaceHolder) { super.onSurfaceRedrawNeeded(holder);schedule() }
         override fun onVisibilityChanged(visible:Boolean) {
             rendering=visible && power.isInteractive
-            if(rendering) { readConfig();transitionAt=SystemClock.elapsedRealtime() }
+            if(rendering) {
+                readConfig();transitionAt=SystemClock.elapsedRealtime()
+                transitionFrom=if(keyguard.isKeyguardLocked)progress else 0f
+                progress=transitionFrom
+            }
             updateSensors();schedule()
         }
         override fun onOffsetsChanged(xOffset:Float,yOffset:Float,xStep:Float,yStep:Float,xPixels:Int,yPixels:Int) { mx=(xOffset-.5f)*.6f;schedule() }
@@ -99,11 +104,10 @@ class DepthWallpaperService:WallpaperService() {
                 val revision=repo.scenes.revision()
                 if(!isPreview && revision!=previousRevision) { previousRevision=revision;readConfig() }
                 val unlocked=!keyguard.isKeyguardLocked
-                if(unlocked!=lastUnlocked) { lastUnlocked=unlocked;transitionAt=now }
+                if(unlocked!=lastUnlocked) { lastUnlocked=unlocked;transitionAt=now;transitionFrom=progress }
                 val target=if(unlocked)1f else 0f
-                progress+=(target-progress)*.065f
-                if(abs(target-progress)<.001f)progress=target
-                val changing=now-transitionAt<2200
+                progress=SceneTransition.progress(transitionFrom,target,now-transitionAt)
+                val changing=now-transitionAt<SceneTransition.DURATION_MS
                 val refresh=getSystemService(android.hardware.display.DisplayManager::class.java).getDisplay(android.view.Display.DEFAULT_DISPLAY)?.refreshRate ?: 60f
                 val still=config.scene=="depth" && config.parallax==0f && !changing
                 val fps=if(still)0 else RenderBudget.fps(quality,changing,true,power.isPowerSaveMode,power.currentThermalStatus>=PowerManager.THERMAL_STATUS_MODERATE,refresh)

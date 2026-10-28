@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
 import java.util.zip.ZipFile
+import org.json.JSONObject
 
 data class PackDefinition(val title:String,val packageName:String,val url:String,val legacyUrl:String="")
 data class InstalledPack(val definition:PackDefinition,val version:String?,val services:List<WallpaperInfo>,val signatures:List<String>,val error:String?=null)
@@ -24,6 +25,8 @@ data class ApkInspection(val file:File,val packageName:String,val version:String
 
 class PackManager(private val context:Context) {
     private val pm=context.packageManager
+    private val verified by lazy { JSONObject(context.assets.open("port-verification.json").bufferedReader().use { it.readText() }) }
+    fun verifiedRelease(packageName:String):JSONObject?=verified.optJSONObject(packageName)
     val definitions=listOf(
         PackDefinition("Earth","com.miui.miwallpaper.earth","https://www.apkmirror.com/apk/ouxyl/superwallpaperearth-ouxyls-mod/superwallpaperearth-ouxyls-mod-alpha-2-6-561-11211547-ogl-64-fix1-release/","https://www.apkmirror.com/apk/linuxct/earth-super-wallpapers-default-linuxcts-port/earth-super-wallpapers-default-linuxcts-port-linuxct-2-6-260-08131844-211107-release/"),
         PackDefinition("Mars","com.miui.miwallpaper.mars","https://www.apkmirror.com/apk/ouxyl/superwallpapermars-ouxyls-mod/superwallpapermars-ouxyls-mod-alpha-2-6-561-11211547-ogl-64-fix1-release/","https://www.apkmirror.com/apk/linuxct/mars-super-wallpapers-default-linuxcts-port/mars-super-wallpapers-default-linuxcts-port-linuxct-2-6-260-08131855-211107-release/"),

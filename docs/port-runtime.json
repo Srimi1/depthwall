@@ -1,0 +1,205 @@
+{
+  "date": "2026-10-28",
+  "environment": "Android 17 API 37 ARM64-only Google APIs emulator, SwiftShader, 4 KB pages",
+  "method": "Fresh Android live-wallpaper preview per public service, up to 30 seconds observation, screenshot visual review, attempted home application and dumpsys component check. Binding confirmation is not proof of rendered home imagery.",
+  "modern_installation": "All six succeeded",
+  "legacy_installation": "Both exact linuxct releases failed INSTALL_FAILED_NO_MATCHING_ABIS on this ARM64-only emulator",
+  "scenes": [
+    {
+      "pack": "pack-1",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+      "label": "Croatia Cape Kamenjak",
+      "exported": true,
+      "scene_index": 0,
+      "preview_result": "Imagery visible",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-1",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+      "label": "Guangxi, China Longji Terraced Fields",
+      "exported": true,
+      "scene_index": 1,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-1",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper2",
+      "label": "Greenland Ilulissat",
+      "exported": true,
+      "scene_index": 2,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-1",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper3",
+      "label": "Greece Navagio Beach",
+      "exported": true,
+      "scene_index": 3,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-1",
+      "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper4",
+      "label": "Italy Dolomites",
+      "exported": true,
+      "scene_index": 4,
+      "preview_result": "Imagery visible",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-3",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+      "label": "Nilosyrtis Mensae Region",
+      "exported": true,
+      "scene_index": 0,
+      "preview_result": "Imagery visible",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-3",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper1",
+      "label": "Gale Crater",
+      "exported": true,
+      "scene_index": 1,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-3",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper2",
+      "label": "Crater in Mawrth Vallis",
+      "exported": true,
+      "scene_index": 2,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-3",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper3",
+      "label": "Pahrump Hills",
+      "exported": true,
+      "scene_index": 3,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-3",
+      "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+      "label": "Bahram Vallis",
+      "exported": true,
+      "scene_index": 4,
+      "preview_result": "Crash dialog",
+      "applied_component_confirmed": false,
+      "error": "Picker action unavailable: Home screen",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-5",
+      "component": "com.miui.miwallpaper.saturn/com.miui.miwallpaper.saturn.superwallpaper.SaturnSuperWallpaper",
+      "label": "Faraway rings",
+      "exported": true,
+      "scene_index": 0,
+      "preview_result": "Imagery visible",
+      "applied_component_confirmed": true,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-6",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+      "label": "The Apennines",
+      "exported": true,
+      "scene_index": 0,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": false,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-6",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper1",
+      "label": "Moon Palace",
+      "exported": true,
+      "scene_index": 1,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": false,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-6",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper2",
+      "label": "The far side of the Moon",
+      "exported": true,
+      "scene_index": 2,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": false,
+      "error": "",
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-6",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper3",
+      "label": "Chang'e 5",
+      "exported": true,
+      "preview_wait_seconds": 30,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-6",
+      "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper4",
+      "label": "Tranquility Base",
+      "exported": true,
+      "preview_wait_seconds": 30,
+      "preview_result": "Black/loading after 30 seconds",
+      "applied_component_confirmed": true,
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-7",
+      "component": "com.miui.miwallpaper.snowmountain/com.miui.miwallpaper.snowmountain.superwallpaper.SnowmountainSuperWallpaper",
+      "label": "Snowy peaks",
+      "exported": true,
+      "preview_wait_seconds": 24,
+      "preview_result": "Imagery visible",
+      "error": "Picker action unavailable: Home screen",
+      "applied_component_confirmed": false,
+      "physical_phone_result": "Not tested"
+    },
+    {
+      "pack": "pack-8",
+      "component": "com.miui.miwallpaper.geometry/com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper",
+      "label": "Geometry",
+      "exported": true,
+      "preview_wait_seconds": 9,
+      "preview_result": "Imagery visible",
+      "error": "Picker action unavailable: Home screen",
+      "applied_component_confirmed": false,
+      "physical_phone_result": "Not tested"
+    }
+  ]
+}

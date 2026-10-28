@@ -1,0 +1,1120 @@
+[
+  {
+    "pack": "pack-1",
+    "package": "com.miui.miwallpaper.earth",
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 201777270,
+    "sha256": "3eb16b110ca34529f4bae9abcae762b565b2f1ea72f8bcdf649dab7051fd616b",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "26",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+        "label": "Croatia Cape Kamenjak",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper1",
+        "label": "Guangxi, China Longji Terraced Fields",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper2",
+        "label": "Greenland Ilulissat",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper3",
+        "label": "Greece Navagio Beach",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper4",
+        "label": "Italy Dolomites",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libil2cpp.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libunity.so",
+        "needed": [
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE",
+      "android.permission.INTERNET"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-2",
+    "package": "com.miui.miwallpaper.earth",
+    "version": "linuxct-2.6.260-08131844-211107",
+    "bytes": 147057108,
+    "sha256": "654ef9e88dd18d6e4f725d3fb6c244964aceea78d97999d7817fd054fe46028a",
+    "certificate_sha256": [
+      "04d4b1ef6598760fc745ace65c7084e38cd9d74447bfea3b14af53ddd75adacc"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "29",
+    "abis": [
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.earth/com.miui.miwallpaper.earth.superwallpaper.EarthSuperWallpaper",
+        "label": "Earth Super Wallpapers by linuxct",
+        "exported": true
+      }
+    ],
+    "exported_activities": [
+      "com.miui.miwallpaper.earth.MainActivity"
+    ],
+    "native_dependencies": [
+      {
+        "library": "lib/armeabi-v7a/libMonoPosixHelper.so",
+        "needed": [
+          "libdl.so",
+          "libc.so",
+          "liblog.so",
+          "libm.so",
+          "libz.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmonobdwgc-2.0.so",
+        "needed": [
+          "libm.so",
+          "liblog.so",
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libunity.so",
+        "needed": [
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.VIBRATE",
+      "android.permission.INTERNET"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-3",
+    "package": "com.miui.miwallpaper.mars",
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 168011517,
+    "sha256": "ac5a8f0b554aa4bcc5cf83975ec0d1210a84633bcee70a2dc1ba77400d746229",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "26",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+        "label": "Nilosyrtis Mensae Region",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper1",
+        "label": "Gale Crater",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper2",
+        "label": "Crater in Mawrth Vallis",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper3",
+        "label": "Pahrump Hills",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper4",
+        "label": "Bahram Vallis",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libil2cpp.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libunity.so",
+        "needed": [
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libuwa.so",
+        "needed": [
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libGLESv2.so",
+          "libGLESv3.so",
+          "libGLESv1_CM.so",
+          "libjnigraphics.so",
+          "libc.so",
+          "libm.so",
+          "libstdc++.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE",
+      "android.permission.INTERNET",
+      "android.permission.WRITE_EXTERNAL_STORAGE"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-4",
+    "package": "com.miui.miwallpaper.mars",
+    "version": "linuxct-2.6.260-08131855-211107",
+    "bytes": 107655291,
+    "sha256": "671d96566bc439284fe57ea16826912ce36f06ba9115bf3392b77812fca5bc08",
+    "certificate_sha256": [
+      "04d4b1ef6598760fc745ace65c7084e38cd9d74447bfea3b14af53ddd75adacc"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "29",
+    "abis": [
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.mars/com.miui.miwallpaper.mars.superwallpaper.MarsSuperWallpaper",
+        "label": "Mars Super Wallpapers by linuxct",
+        "exported": true
+      }
+    ],
+    "exported_activities": [
+      "com.miui.miwallpaper.mars.MainActivity"
+    ],
+    "native_dependencies": [
+      {
+        "library": "lib/armeabi-v7a/libMonoPosixHelper.so",
+        "needed": [
+          "libdl.so",
+          "libc.so",
+          "liblog.so",
+          "libm.so",
+          "libz.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libmonobdwgc-2.0.so",
+        "needed": [
+          "libm.so",
+          "liblog.so",
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libunity.so",
+        "needed": [
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/armeabi-v7a/libuwa.so",
+        "needed": [
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libGLESv2.so",
+          "libGLESv3.so",
+          "libGLESv1_CM.so",
+          "libjnigraphics.so",
+          "libc.so",
+          "libm.so",
+          "libstdc++.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.VIBRATE",
+      "android.permission.INTERNET",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.READ_EXTERNAL_STORAGE"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-5",
+    "package": "com.miui.miwallpaper.saturn",
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 70436712,
+    "sha256": "6b2651f25e34e1034d844a575a1213fb5d07b39ac5052c3cc1b7410110c347c9",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "26",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.saturn/com.miui.miwallpaper.saturn.superwallpaper.SaturnSuperWallpaper",
+        "label": "Faraway rings",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libil2cpp.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libunity.so",
+        "needed": [
+          "libmain.so",
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-6",
+    "package": "com.miui.miwallpaper.moon",
+    "version": "ALPHA-2.6.563-08071126-ogl-fix1",
+    "bytes": 84707121,
+    "sha256": "12c942cf16dd914b1486548cdc5d2a9cb5767933b78f0cb9524581485f446fad",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "28",
+    "target_sdk": "28",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper",
+        "label": "The Apennines",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper1",
+        "label": "Moon Palace",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper2",
+        "label": "The far side of the Moon",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper3",
+        "label": "Chang'e 5",
+        "exported": true
+      },
+      {
+        "component": "com.miui.miwallpaper.moon/com.miui.miwallpaper.moon.superwallpaper.MoonSuperWallpaper4",
+        "label": "Tranquility Base",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libfilament-jni.so",
+        "needed": [
+          "liblog.so",
+          "libGLESv3.so",
+          "libEGL.so",
+          "libandroid.so",
+          "libjnigraphics.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libfilament-utils-jni.so",
+        "needed": [
+          "libgltfio-jni.so",
+          "libfilament-jni.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libgltfio-jni.so",
+        "needed": [
+          "libfilament-jni.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE",
+      "com.miui.miwallpaper.moon.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-7",
+    "package": "com.miui.miwallpaper.snowmountain",
+    "version": "ALPHA-2.6.561-11211547-ogl-64-fix1",
+    "bytes": 103571045,
+    "sha256": "f8a7e5450aaf4f8b0c03fab0c08002b12dd7741987a2e9a72d0922376ceaddcb",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "29",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.snowmountain/com.miui.miwallpaper.snowmountain.superwallpaper.SnowmountainSuperWallpaper",
+        "label": "Snowy peaks",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libil2cpp.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libunity.so",
+        "needed": [
+          "libmain.so",
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE"
+    ],
+    "uses_libraries": []
+  },
+  {
+    "pack": "pack-8",
+    "package": "com.miui.miwallpaper.geometry",
+    "version": "ALPHA-2.7.561-11211547-vulkan-fix1",
+    "bytes": 54545993,
+    "sha256": "e9023afe3457468a4ff6a09f11e92ef051ab75fa3da7a19bee83bb5853adc23e",
+    "certificate_sha256": [
+      "4f1ddf3c18f970903983f20126180032bd1021f643a773d8708685631733610c"
+    ],
+    "min_sdk": "26",
+    "target_sdk": "26",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "services": [
+      {
+        "component": "com.miui.miwallpaper.geometry/com.miui.miwallpaper.geometry.superwallpaper.GeometrySuperWallpaper",
+        "label": "Geometry",
+        "exported": true
+      }
+    ],
+    "exported_activities": [],
+    "native_dependencies": [
+      {
+        "library": "lib/arm64-v8a/libil2cpp.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libc++_shared.so",
+        "needed": [
+          "libc.so",
+          "libdl.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libbytehook.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmiuiblursdk.so",
+        "needed": [
+          "libGLESv3.so",
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libmain.so",
+        "needed": [
+          "liblog.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libs1threadhook.so",
+        "needed": [
+          "libbytehook.so",
+          "liblog.so",
+          "libEGL.so",
+          "libm.so",
+          "libc++_shared.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x1000",
+          "0x1000"
+        ]
+      },
+      {
+        "library": "lib/arm64-v8a/libunity.so",
+        "needed": [
+          "libmain.so",
+          "libandroid.so",
+          "liblog.so",
+          "libz.so",
+          "libEGL.so",
+          "libm.so",
+          "libdl.so",
+          "libc.so"
+        ],
+        "load_alignments": [
+          "0x10000",
+          "0x10000"
+        ]
+      }
+    ],
+    "permissions": [
+      "android.permission.AMBIENT_WALLPAPER",
+      "android.permission.WRITE_SECURE_SETTINGS",
+      "android.permission.WRITE_SETTINGS",
+      "android.permission.READ_SETTINGS",
+      "android.permission.SET_WALLPAPER",
+      "android.permission.VIBRATE"
+    ],
+    "uses_libraries": []
+  }
+]

@@ -82,3 +82,11 @@ object RenderBudget {
         }
     }
 }
+
+object SceneTransition {
+    const val DURATION_MS=1800L
+    fun progress(from:Float,to:Float,elapsedMs:Long):Float {
+        val t=(elapsedMs.toFloat()/DURATION_MS).coerceIn(0f,1f)
+        return from+(to-from)*t*t*(3f-2f*t)
+    }
+}
