@@ -20,8 +20,10 @@ jobs:
       - name: Install Android 17 SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Verify release tooling
+        run: python3 -m unittest discover -s tools -p 'test_verify_release.py'
       - name: Build and verify
-        run: ./gradlew assembleDebug testDebugUnitTest lintDebug
+        run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
       - uses: actions/upload-artifact@v4
         with:
           name: depthwall-debug-and-reports

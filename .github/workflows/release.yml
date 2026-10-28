@@ -1,0 +1,148 @@
+name: Signed Android release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: depthwall-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'Srimi1/depthwall' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_DIR: artifacts/release
+      BUILD_TOOLS: '37.0.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check signing configuration
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          names = ('ANDROID_KEYSTORE_BASE64', 'ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD')
+          missing = [name for name in names if not os.environ.get(name)]
+          if missing:
+              raise SystemExit('Missing signing secrets: ' + ', '.join(missing))
+          key = Path(os.environ['RUNNER_TEMP']) / 'depthwall-release.jks'
+          key.write_bytes(base64.b64decode(os.environ['ANDROID_KEYSTORE_BASE64'], validate=True))
+          key.chmod(0o600)
+          # Java Properties reads ISO-8859-1 and treats backslashes/separators specially.
+          def escape(value):
+              result = ''
+              for char in value:
+                  if char in '\\:=#! ':
+                      result += '\\' + char
+                  elif char == '\n': result += '\\n'
+                  elif char == '\r': result += '\\r'
+                  elif char == '\t': result += '\\t'
+                  elif ord(char) > 126 or ord(char) < 32:
+                      encoded = char.encode('utf-16-be')
+                      result += ''.join('\\u' + encoded[i:i+2].hex() for i in range(0, len(encoded), 2))
+                  else: result += char
+              return result
+          values = {'storeFile': str(key), 'storePassword': os.environ['ANDROID_KEYSTORE_PASSWORD'],
+                    'keyAlias': os.environ['ANDROID_KEY_ALIAS'], 'keyPassword': os.environ['ANDROID_KEY_PASSWORD']}
+          properties = Path('keystore.properties')
+          properties.write_text(''.join(k + '=' + escape(v) + '\n' for k, v in values.items()), encoding='ascii')
+          properties.chmod(0o600)
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install Android 17 SDK
+        run: sdkmanager 'platforms;android-37.0' "build-tools;$BUILD_TOOLS"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build optimized APK and run release checks
+        run: |
+          python3 -m unittest discover -s tools -p 'test_verify_release.py'
+          ./gradlew assembleRelease testReleaseUnitTest lintRelease
+      - name: Verify signer, package, alignment and test reports
+        id: verified
+        run: |
+          python3 tools/verify_release.py app/build/outputs/apk/release/app-release.apk \
+            --build-tools "$ANDROID_HOME/build-tools/$BUILD_TOOLS" --output "$RELEASE_DIR"
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          directory = Path(os.environ['RELEASE_DIR'])
+          data = json.loads((directory / 'verification.json').read_text())
+          version = data['versionName']
+          notes = Path('docs/releases') / (version + '.md')
+          if not notes.is_file(): raise SystemExit('Release notes are missing for ' + version)
+          body = notes.read_text()
+          prefix = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/blob/{os.environ['GITHUB_SHA']}/docs/"
+          body = re.sub(r'\]\(\.\./([^)]*)\)', lambda match: '](' + prefix + match[1] + ')', body)
+          (directory / 'release-notes.md').write_text(body)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('version=' + version + '\n')
+              output.write('tag=v' + version + '\n')
+          PY
+      - name: Create draft, upload and verify release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.verified.outputs.version }}
+          RELEASE_TAG: ${{ steps.verified.outputs.tag }}
+        run: |
+          existing=$(git ls-remote --tags https://github.com/Srimi1/depthwall.git "refs/tags/$RELEASE_TAG")
+          if [ -n "$existing" ]; then
+            git fetch --no-tags https://github.com/Srimi1/depthwall.git "refs/tags/$RELEASE_TAG"
+            test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$GITHUB_SHA" || { echo 'Release tag targets another commit.'; exit 1; }
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,targetCommitish,assets > "$RUNNER_TEMP/release-state.json"; then
+            # Resume only this commit's draft; never overwrite a public release or another build.
+            python3 - <<'PYDRAFT'
+          import json, os
+          from pathlib import Path
+          state = json.loads((Path(os.environ['RUNNER_TEMP']) / 'release-state.json').read_text())
+          if not state['isDraft'] or state['targetCommitish'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('Existing release is published or targets another commit; refusing to replace it.')
+          expected = {'DepthWall-' + os.environ['RELEASE_VERSION'] + '.apk', 'verification.json', 'SHA256SUMS'}
+          if any(asset['name'] not in expected for asset in state['assets']):
+              raise SystemExit('Draft contains unexpected assets; inspect it before retrying.')
+          PYDRAFT
+            gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+              "$RELEASE_DIR/DepthWall-$RELEASE_VERSION.apk" "$RELEASE_DIR/verification.json" "$RELEASE_DIR/SHA256SUMS"
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "DepthWall $RELEASE_VERSION" --notes-file "$RELEASE_DIR/release-notes.md"
+          else
+            test -z "$existing" || { echo 'This tag already exists without a matching draft; publish a new version.'; exit 1; }
+            gh release create "$RELEASE_TAG" \
+              "$RELEASE_DIR/DepthWall-$RELEASE_VERSION.apk" "$RELEASE_DIR/verification.json" "$RELEASE_DIR/SHA256SUMS" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+              --title "DepthWall $RELEASE_VERSION" --notes-file "$RELEASE_DIR/release-notes.md"
+          fi
+          downloaded="$RUNNER_TEMP/depthwall-release-download"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$downloaded"
+          (cd "$downloaded" && sha256sum --check SHA256SUMS)
+          cmp "$RELEASE_DIR/SHA256SUMS" "$downloaded/SHA256SUMS"
+          # A failed upload or round-trip check leaves a draft, never a public incomplete release.
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+      - name: Keep public build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-verification-and-reports
+          if-no-files-found: ignore
+          path: |
+            artifacts/release/
+            app/build/reports/tests/testReleaseUnitTest/
+            app/build/reports/lint-results-release.html
+      - name: Remove signing material
+        if: always()
+        run: rm -f keystore.properties "$RUNNER_TEMP/depthwall-release.jks"

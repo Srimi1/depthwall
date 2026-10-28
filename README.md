@@ -38,7 +38,7 @@ Build with JDK 17 and Android SDK platform **37.0**:
 ./gradlew connectedDebugAndroidTest
 ```
 
-For a personally signed release, run `python3 tools/create_personal_key.py`, then `./gradlew assembleRelease`. The key and credentials stay outside Git. Preserve them to sign future updates. Dependency versions, Gradle wrapper, source assets and artwork-generation code are checked in.
+For a personally signed release, run `python3 tools/create_personal_key.py`, then `./gradlew assembleRelease`. The key and credentials stay outside Git. Preserve them to sign future updates. Dependency versions, Gradle wrapper, source assets and artwork-generation code are checked in. Use the [signed release workflow](docs/RELEASING.md) to verify the existing signing identity, publish to this repository, and check the uploaded APK against its checksum.
 
 ## Artwork and identity
 
