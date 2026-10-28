@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.DepthWall" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">#000000</item>
+        <item name="android:colorAccent">#FF870A</item>
+    </style>
+    <color name="black">#000000</color>
+    <string name="wallpaper_description">Original planetary scenes, layered depth and clocks. Choose a scene in DepthWall before applying.</string>
+</resources>
