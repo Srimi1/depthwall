@@ -1,0 +1,117 @@
+name: Publish Android preview
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: depthwall-preview-release
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'Srimi1/depthwall' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_DIR: artifacts/preview
+      BUILD_TOOLS: '37.0.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install Android 17 SDK
+        run: sdkmanager 'platforms;android-37.0' "build-tools;$BUILD_TOOLS"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build optimized preview and run checks
+        run: |
+          python3 -m unittest discover -s tools -p 'test_verify*.py'
+          ./gradlew assemblePreview testPreviewUnitTest lintPreview
+      - name: Verify preview APK and prepare release notes
+        id: verified
+        run: |
+          python3 tools/verify_preview.py app/build/outputs/apk/preview/app-preview.apk \
+            --build-tools "$ANDROID_HOME/build-tools/$BUILD_TOOLS" --output "$RELEASE_DIR"
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          directory = Path(os.environ['RELEASE_DIR'])
+          data = json.loads((directory / 'verification.json').read_text())
+          version = data['versionName']
+          if not re.fullmatch(r'\d+\.\d+\.\d+-preview\.\d+', version):
+              raise SystemExit('Refusing a non-preview release version.')
+          if data['sourceCommit'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('Verification does not describe this workflow commit.')
+          notes = Path('docs/releases') / (version + '.md')
+          if not notes.is_file(): raise SystemExit('Release notes are missing for ' + version)
+          body = notes.read_text()
+          prefix = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/blob/{os.environ['GITHUB_SHA']}/docs/"
+          body = re.sub(r'\]\(\.\./([^)]*)\)', lambda match: '](' + prefix + match[1] + ')', body)
+          body += '\n\nVerified source: `' + data['sourceCommit'] + '`.'
+          body += '\n\nPreview checks: ' + str(data['unitTests']['tests']) + ' unit tests passed; lint errors: ' + str(data['lint'].get('Error', 0) + data['lint'].get('Fatal', 0)) + ', warnings: ' + str(data['lint'].get('Warning', 0)) + '. Physical-phone tests were not run.'
+          body += '\n\nAPK SHA-256: `' + data['apkSha256'] + '`.'
+          body += '\n\nDevelopment certificate SHA-256: `' + data['certificateSha256'] + '`.'
+          body += '\n\nThis workflow uses its runner’s development signing key. A future build from another runner may require a fresh preview installation; it cannot replace the stable app.\n'
+          (directory / 'release-notes.md').write_text(body)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('version=' + version + '\n')
+              output.write('tag=v' + version + '\n')
+          PY
+      - name: Upload, verify and publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.verified.outputs.version }}
+          RELEASE_TAG: ${{ steps.verified.outputs.tag }}
+        run: |
+          existing=$(git ls-remote --tags https://github.com/Srimi1/depthwall.git "refs/tags/$RELEASE_TAG")
+          if [ -n "$existing" ]; then
+            git fetch --no-tags https://github.com/Srimi1/depthwall.git "refs/tags/$RELEASE_TAG"
+            test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$GITHUB_SHA" || { echo 'Preview tag targets another commit.'; exit 1; }
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease,targetCommitish,assets > "$RUNNER_TEMP/preview-state.json"; then
+            # A retry can replace only this commit's unpublished preview assets.
+            python3 - <<'PYDRAFT'
+          import json, os
+          from pathlib import Path
+          state = json.loads((Path(os.environ['RUNNER_TEMP']) / 'preview-state.json').read_text())
+          if not state['isDraft'] or not state['isPrerelease'] or state['targetCommitish'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('Existing release is published, is not a preview, or targets another commit.')
+          expected = {'DepthWall-' + os.environ['RELEASE_VERSION'] + '.apk', 'verification.json', 'SHA256SUMS'}
+          if any(asset['name'] not in expected for asset in state['assets']):
+              raise SystemExit('Draft contains unexpected assets; inspect it before retrying.')
+          PYDRAFT
+            gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+              "$RELEASE_DIR/DepthWall-$RELEASE_VERSION.apk" "$RELEASE_DIR/verification.json" "$RELEASE_DIR/SHA256SUMS"
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "DepthWall $RELEASE_VERSION — installable test build" --notes-file "$RELEASE_DIR/release-notes.md"
+          else
+            test -z "$existing" || { echo 'Preview tag already exists without a matching draft.'; exit 1; }
+            gh release create "$RELEASE_TAG" \
+              "$RELEASE_DIR/DepthWall-$RELEASE_VERSION.apk" "$RELEASE_DIR/verification.json" "$RELEASE_DIR/SHA256SUMS" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --prerelease \
+              --title "DepthWall $RELEASE_VERSION — installable test build" --notes-file "$RELEASE_DIR/release-notes.md"
+          fi
+          downloaded="$RUNNER_TEMP/depthwall-preview-download"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$downloaded"
+          (cd "$downloaded" && sha256sum --check SHA256SUMS)
+          cmp "$RELEASE_DIR/SHA256SUMS" "$downloaded/SHA256SUMS"
+          # Failed verification leaves a draft; a preview must never become the latest stable release.
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
+      - name: Keep public preview evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-verification-and-reports
+          if-no-files-found: ignore
+          path: |
+            artifacts/preview/
+            app/build/reports/tests/testPreviewUnitTest/
+            app/build/reports/lint-results-preview.html
