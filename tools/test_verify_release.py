@@ -30,6 +30,23 @@ class ReleaseVerificationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "newer"):
             metadata_from_badging(badging.replace("versionName='1.1.0'", "versionName='1.0.1'"))
 
+    def test_android_37_scheme_label_retains_certificate_pin(self):
+        output = f"Number of signers: 1\nV2 Signer: certificate SHA-256 digest: {RELEASE_CERTIFICATE}\n"
+        self.assertEqual(RELEASE_CERTIFICATE, certificate_from_output(output))
+        with self.assertRaisesRegex(ValueError, "differs"):
+            certificate_from_output(output.replace(RELEASE_CERTIFICATE, "a" * 64))
+
+    def test_android_37_rejects_ambiguous_or_multiple_signers(self):
+        output = f"Number of signers: 1\nV2 Signer: certificate SHA-256 digest: {RELEASE_CERTIFICATE}\n"
+        invalid = [output.replace("signers: 1", "signers: 2"),
+                   output.replace("Number of signers: 1\n", ""),
+                   output + output.splitlines()[1] + "\n",
+                   output.replace("V2 Signer:", "V2 Signer #1:"),
+                   output.replace("V2 Signer:", "V3.1 Signer:")]
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "exactly one"):
+                certificate_from_output(value)
+
     def test_unsigned_apk_failure_creates_no_release_assets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -19,11 +19,24 @@ def run(*command: str) -> str:
     return subprocess.run(command, check=True, capture_output=True, text=True).stdout
 
 
-def certificate_from_output(output: str) -> str:
-    certificates = re.findall(r"^Signer #(\d+) certificate SHA-256 digest: ([0-9a-fA-F]{64})$", output, re.MULTILINE)
-    if len(certificates) != 1 or certificates[0][0] != "1":
+def single_signer_certificate(output: str) -> str:
+    # Build-tools 37 names the signing scheme ("V2 Signer:") instead of "Signer #1".
+    # Keep ambiguous, multiple and rotation signers fail-closed in either format.
+    counts = re.findall(r"^Number of signers: (\d+)\s*$", output, re.MULTILINE)
+    lines = [line.strip() for line in output.splitlines() if " certificate SHA-256 digest:" in line]
+    if len(lines) != 1 or (counts and counts != ["1"]):
         raise ValueError("Expected exactly one APK signing certificate.")
-    certificate = certificates[0][1].lower()
+    legacy = re.fullmatch(r"Signer #1 certificate SHA-256 digest: ([0-9a-fA-F]{64})", lines[0])
+    modern = re.fullmatch(r"(?:V1|V2|V3\.0) Signer: certificate SHA-256 digest: ([0-9a-fA-F]{64})", lines[0])
+    if legacy:
+        return legacy[1].lower()
+    if modern and counts == ["1"]:
+        return modern[1].lower()
+    raise ValueError("Expected exactly one APK signing certificate in a supported apksigner format.")
+
+
+def certificate_from_output(output: str) -> str:
+    certificate = single_signer_certificate(output)
     if certificate != RELEASE_CERTIFICATE:
         raise ValueError("APK signing certificate differs from v1.0.1; this APK cannot update the published app.")
     return certificate

@@ -10,7 +10,7 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-from verify_release import RELEASE_CERTIFICATE, run, sha256
+from verify_release import RELEASE_CERTIFICATE, run, sha256, single_signer_certificate
 
 PACKAGE_NAME = "dev.srimi.depthwall.preview"
 
@@ -37,10 +37,7 @@ def preview_metadata(badging: str, manifest: str) -> dict:
 
 
 def preview_certificate(output: str) -> str:
-    certificates = re.findall(r"^Signer #(\d+) certificate SHA-256 digest: ([0-9a-fA-F]{64})$", output, re.MULTILINE)
-    if len(certificates) != 1 or certificates[0][0] != "1":
-        raise ValueError("Expected one valid APK signer.")
-    certificate = certificates[0][1].lower()
+    certificate = single_signer_certificate(output)
     if certificate == RELEASE_CERTIFICATE:
         raise ValueError("Preview should use its separate development signing identity.")
     return certificate
