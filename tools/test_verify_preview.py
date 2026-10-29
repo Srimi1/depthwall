@@ -36,6 +36,12 @@ class PreviewVerificationTests(unittest.TestCase):
         certificate = "a" * 64
         self.assertEqual(preview_certificate("Signer #1 certificate SHA-256 digest: " + certificate), certificate)
 
+    def test_records_android_37_preview_certificate(self):
+        certificate = "a" * 64
+        self.assertEqual(preview_certificate("Number of signers: 1\nV2 Signer: certificate SHA-256 digest: " + certificate), certificate)
+        with self.assertRaises(ValueError):
+            preview_certificate("Number of signers: 1\nV2 Signer: certificate SHA-256 digest: " + RELEASE_CERTIFICATE)
+
     def test_rejects_production_and_ambiguous_certificates(self):
         for output in ["", "Signer #1 certificate SHA-256 digest: " + RELEASE_CERTIFICATE,
                        "Signer #1 certificate SHA-256 digest: " + "a" * 64 + "\nSigner #2 certificate SHA-256 digest: " + "b" * 64]:
