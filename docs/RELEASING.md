@@ -50,6 +50,10 @@ The `preview` build type provides an installable test build when the production 
 
 The output is `app/build/outputs/apk/preview/app-preview.apk`. Preserve the preview signing identity securely if later builds must update this preview; a different machine's debug keystore may have a different certificate. Never publish keystores or signing credentials.
 
+To publish from GitHub, run **Actions → Publish Android preview → Run workflow** on `main`. The workflow builds and tests the preview, runs `tools/verify_preview.py`, then uploads its APK, `verification.json` and `SHA256SUMS` to a draft. It downloads the assets and checks their hashes before publishing with **Pre-release** enabled and **Latest** disabled. It refuses public releases, drafts for another commit and unexpected draft assets. No production signing secrets are needed, and the stable signing workflow is unchanged.
+
+GitHub-hosted runners generate a development signing key for that run. The public verification record and release notes identify the actual certificate, but the workflow does not publish or retain its private key. Therefore, future preview builds from another runner are not guaranteed to update an already installed preview; preserving a preview signing identity requires separate secure setup. The stable app and its private data remain separate.
+
 Before publication, check the actual APK's signature, package/version, non-debuggable flag, ZIP alignment and embedded source revision, and record the preview test/lint results. Upload the clearly named preview APK, public verification evidence and checksums to a draft targeting that exact commit. Download the uploaded assets and verify their hashes before publishing with **Pre-release** enabled; keep the stable release as latest.
 
 Preview release notes must explain the separate installation, development certificate, lack of automatic data migration and remaining phone-test limitations. The stable `Signed Android release` workflow and `verify_release.py` retain their production certificate checks; do not weaken them to accept a preview APK.
