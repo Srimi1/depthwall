@@ -23,7 +23,7 @@ jobs:
       - name: Verify release tooling
         run: python3 -m unittest discover -s tools -p 'test_verify_release.py'
       - name: Build and verify
-        run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
+        run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest assemblePreview testPreviewUnitTest lintPreview
       - uses: actions/upload-artifact@v4
         with:
           name: depthwall-debug-and-reports
@@ -31,3 +31,10 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/testDebugUnitTest/
             app/build/reports/lint-results-debug.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: depthwall-preview-and-reports
+          path: |
+            app/build/outputs/apk/preview/*.apk
+            app/build/reports/tests/testPreviewUnitTest/
+            app/build/reports/lint-results-preview.html

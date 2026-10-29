@@ -10,6 +10,12 @@ Android accepts an in-place update only when the APK uses the same signing ident
 
 Historical v1.0.1 installation and upgrade from v1.0.0 were verified on the API 37 emulator using the same signing key. Those results do not establish v1.1.0 phone compatibility; see the [compatibility report](COMPATIBILITY.md).
 
+## Try the 1.1.0 preview
+
+The [1.1.0-preview.1 prerelease](https://github.com/Srimi1/depthwall/releases/tag/v1.1.0-preview.1) provides **DepthWall-1.1.0-preview.1.apk**. Install it and open **DepthWall Preview**. It uses package ID `dev.srimi.depthwall.preview` and installs alongside the existing app, with a separate library and preferences. Keep stable DepthWall installed; its data is not automatically migrated to the preview.
+
+This optimized, non-debuggable APK uses a development signing certificate. It is not a production update, and future preview updates need that same preview certificate. Physical OnePlus/crDroid testing remains pending. Read the [preview release notes](releases/1.1.0-preview.1.md) before installing.
+
 ## A first wallpaper
 
 - **Still:** Explore → choose an image → adjust crop → Home, Lock or Both → Set wallpaper.

@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application android:label="DepthWall Preview" tools:replace="android:label">
+        <activity android:name="dev.srimi.depthwall.WallpaperSettingsActivity"
+            android:label="DepthWall Preview settings" tools:replace="android:label" />
+        <service android:name="dev.srimi.depthwall.wallpaper.DepthWallpaperService"
+            android:label="DepthWall Preview live wallpaper" tools:replace="android:label" />
+    </application>
+</manifest>
