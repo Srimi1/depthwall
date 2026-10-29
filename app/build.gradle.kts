@@ -33,6 +33,15 @@ android {
             if (signing.isNotEmpty()) signingConfig = signingConfigs.getByName("personal")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        create("preview") {
+            initWith(getByName("release"))
+            // A separate test identity installs alongside the production app and keeps its data intact.
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-preview.1"
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            matchingFallbacks += "release"
+        }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }

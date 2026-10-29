@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0-preview.1 — 2026-10-29
+
+- Added an optimized, non-debuggable **DepthWall Preview** build using a separate application ID and development signing certificate, so the new 1.1.0 features can be tested alongside stable DepthWall.
+- Preview library and preferences are separate; the production signing requirements remain unchanged. Physical OnePlus/crDroid validation is still pending.
+
+See [preview release notes](docs/releases/1.1.0-preview.1.md).
+
 ## 1.1.0 — 2026-10-28
 
 ### Added
