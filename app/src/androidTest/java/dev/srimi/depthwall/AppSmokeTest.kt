@@ -61,7 +61,7 @@ class AppSmokeTest {
                 for(key in listOf("asset","thumbnail","foreground"))j.optString(key).takeIf { it.isNotEmpty() }?.let { path -> context.assets.open(path).use { assertTrue(it.read()!=-1) } }
             }
         }
-        assertEquals(64,counts["STATIC"]);assertEquals(12,counts["LAYERED_DEPTH"]);assertEquals(7,counts["NATIVE_SCENE"])
+        assertEquals(76,counts["STATIC"]);assertEquals(12,counts["LAYERED_DEPTH"]);assertEquals(7,counts["NATIVE_SCENE"])
         val picks=JSONArray(context.assets.open("device_picks.json").bufferedReader().use { it.readText() })
         for(i in 0 until picks.length())assertTrue(picks.getString(i) in ids)
     }
