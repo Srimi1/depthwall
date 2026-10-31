@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.0 (2026-10-31)
+
+Installs as a normal update over 1.3.0.
+
+### Fixed
+
+- **Xiaomi/HyperOS Super Wallpaper packs that crash.** Earth, Mars, Saturn, Snow Mountain and Geometry are built on Unity 2019, which crashes on 64-bit Android 11 and later ("Using memoryadresses from more than 16GB of memory"). Moon uses a different engine and works. **Live → Original Xiaomi / HyperOS packs → Install pack as 32-bit** rebuilds a downloaded pack without its 64-bit engine, signs it on the phone with a key kept in the Android Keystore, and opens Android's installer. The original pack must be uninstalled first, and the phone must support 32-bit apps.
+
+### Changed
+
+- **Super-wallpaper-style live scenes.** Earth, Mars and Moon start as a whole planet in orbit and zoom to a curved horizon on unlock. Earth adds oceans, clouds, an atmosphere rim and city lights. Saturn gets lit rings and shadows, Snow gets moonlit peaks with fog and falling snow, and Geometry gets glowing 3D rings.
+
+### Added
+
+- **12 new wallpapers** in Best for your phone: Aurora Peaks, Papaya Dunes, Earthrise, Papaya Lattice, Nebula Ribbon, Star Spiral, Prism Light, Contour Lines, Papaya Ring, Alpine Lake, Comet and Abyssal Bloom.
+
+See [release notes](docs/releases/1.4.0.md).
+
 ## 1.3.0 (2026-10-31)
 
 Installs as a normal update over 1.2.0, so there's no uninstall this time.

@@ -65,7 +65,7 @@ If Android replaced the wallpaper with its default image after unlocking, the po
 
 ## Offline content and downloads
 
-All **64 bundled static images**, 12 prepared depth scenes and seven native scenes work offline. Sixteen are 2160 × 4680 originals: two car illustrations, three papaya, carbon and space-blue themes, and the eleven designs in Explore's **Best for your phone** row (also under the **Papaya Edition** and **Space** filters).
+All **76 bundled static images**, 12 prepared depth scenes and seven native scenes work offline. Sixteen are 2160 × 4680 originals: two car illustrations, three papaya, carbon and space-blue themes, and the eleven designs in Explore's **Best for your phone** row (also under the **Papaya Edition** and **Space** filters).
 
 Online browsing includes NASA originals, SFW Wallhaven, Wikimedia, and clearly labeled ESA / ISRO / JAXA / CSA collections via Wikimedia Commons. Use **Load more wallpapers** to continue a search. **4K sources only** requires known source dimensions of at least 3840 × 2160 in either orientation; a tall crop can contain less detail than its landscape source.
 
