@@ -35,4 +35,16 @@ adb="$ANDROID_HOME/platform-tools/adb"
 # Some ROMs omit overlay lookup. Retain its error as unknown instead of assuming support.
 "$adb" -s "$serial" shell cmd overlay lookup --verbose android android:bool/config_dozeAlwaysOnDisplayAvailable > "$destination/aod-availability.txt" 2>&1 || true
 "$adb" -s "$serial" shell cmd overlay lookup --verbose android android:bool/config_dozeSupportsAodWallpaper > "$destination/aod-wallpaper-overlay.txt" 2>&1 || true
+# Reboot evidence. Android resets a live wallpaper whose service dies twice within 10 s or
+# reconnects too slowly, and shows its default image until first unlock for services that are
+# not direct-boot aware. Capture right after reboot + unlock to see which of these happened.
+"$adb" -s "$serial" logcat -d -b main,system 2>&1 | grep -E 'WallpaperManagerService|Reverting to built-in|reconnect timed out|direct boot aware|Wallpaper service gone|exitReason|due to lmk|Rebind fail|DepthWall' > "$destination/wallpaper-log.txt" || true
+"$adb" -s "$serial" logcat -d -b events 2>&1 | grep -E 'wp_wallpaper_crashed|am_proc_died|am_crash|am_kill' > "$destination/wallpaper-events.txt" || true
+"$adb" -s "$serial" logcat -d -b crash > "$destination/crash-buffer.txt" 2>&1 || true
+"$adb" -s "$serial" shell ps -A -o PID,STIME,NAME 2>&1 | grep -E 'miwallpaper|depthwall' > "$destination/wallpaper-processes.txt" || true
+"$adb" -s "$serial" shell settings get global boot_count > "$destination/boot-count.txt" 2>&1 || true
+for package in $("$adb" -s "$serial" shell pm list packages com.miui.miwallpaper | tr -d '\r' | sed 's/^package://'); do
+    "$adb" -s "$serial" shell dumpsys activity exit-info "$package" > "$destination/exit-info-$package.txt" 2>&1 || true
+    "$adb" -s "$serial" shell dumpsys package "$package" 2>&1 | grep -iE 'versionName|DIRECT_BOOT|codePath|pkgFlags|privateFlags' > "$destination/package-$package.txt" || true
+done
 echo "Read-only report saved in $destination"

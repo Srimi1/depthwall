@@ -1,12 +1,15 @@
 package dev.srimi.depthwall.data
 
 import android.content.Context
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
-private val Context.dataStore by preferencesDataStore("settings")
+// A file damaged by a power loss must not crash the process that also hosts the live wallpaper.
+private val Context.dataStore by preferencesDataStore("settings",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() })
 class SettingsStore(private val context: Context) {
     private val quality = stringPreferencesKey("quality")
     private val hours = intPreferencesKey("rotation_hours")

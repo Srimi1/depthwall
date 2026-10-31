@@ -138,6 +138,28 @@ python3 tools/test_original_ports.py --serial emulator-5554 --output /tmp/depthw
 
 This emulator-only harness replaces both current wallpapers with a neutral fixture. Use a fresh output directory, visually review captures, and correlate full logcat with process restarts before assigning a stability result. `--mode warm` preserves state after the initial neutral fixture.
 
+## After a restart
+
+This section describes framework behaviour read from crDroid 17.0 `WallpaperManagerService` (commit `d858d5b90926053eb39cdaa327a7c98efa90a181`, identical to the 17.0 branch head when checked). None of it has been reproduced on the phone yet.
+
+| Situation | What Android does | Log line |
+|---|---|---|
+| Live wallpaper is not direct-boot aware (DepthWall, all inspected ports) | Shows the default image until the first unlock, then binds the saved wallpaper again | `Wallpaper isn't direct boot aware; using fallback until unlocked` |
+| Service dies twice with the second death handled within 10 s of the first (any reason except low memory) | Permanently replaces it with the default wallpaper | `Reverting to built-in wallpaper!` |
+| Rebind does not connect within 10 s | Same permanent reset | `Wallpaper reconnect timed out for …` |
+| Low-memory kills exhaust three 5 s retries | Same permanent reset | `Reverting to built-in wallpaper due to lmk!` |
+| The same wallpaper is applied again | No new engine; the running engine receives `android.wallpaper.reapply` | none |
+
+Consequences for DepthWall:
+
+- A wallpaper that **stays selected but is black or frozen** is a running engine that is not drawing, not a reset. Before 1.2.0, DepthWall's engine never retried a failed renderer start and retried a lost surface forever on the same dead EGL objects. 1.2.0 retries creation with backoff, rebuilds EGL after a lost surface, draws a black placeholder for an unreadable depth layer, and rebuilds on `android.wallpaper.reapply`. `adb shell dumpsys wallpaper` prints `frames`, `msSinceLastFrame`, `rendererAttempts`, `stalled` and `error`.
+- Re-applying a port cannot restart it. The **Restart** helper replaces the port with plain black on its screens, which unbinds it, offers a force stop for a cached process, and opens the picker for a fresh bind.
+- The recorded port failures make this plausible: cold-start Unity allocator faults, and a SIGSEGV followed by a SIGTRAP when two scenes of one package start in the same process ([crash analysis](port-errors.json)). The emulator's cold-fault deaths were about 19 s apart, so they produced restart loops there rather than resets. Phone timing is unmeasured.
+- A normal app cannot apply a live wallpaper without the user's confirmation (`SET_WALLPAPER_COMPONENT` is `signature|privileged`), so every restore needs one tap on **Set wallpaper**.
+- Lock-only rotation used to treat a shared live lock screen as static and could replace it after boot. Rotation now uses the home wallpaper when the lock shares it.
+
+To check on the phone: reboot, unlock, wait a minute, then run `tools/device_report.sh SERIAL OUTPUT_DIRECTORY`. `wallpaper-log.txt` and `wallpaper-events.txt` show resets and service deaths, `wallpaper-processes.txt` shows port process IDs (they should change after a Restart with force stop), and `wallpaper-engine.txt` holds DepthWall's engine state.
+
 ## Physical-phone acceptance still required
 
 1. Record exact model, `hotdog` codename, crDroid build, Android API, supported ABIs, active resolution and refresh rate.

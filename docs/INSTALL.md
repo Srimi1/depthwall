@@ -48,6 +48,19 @@ Original ports are separate applications. A pack might install successfully but 
 
 The v1.0.1 emulator retest displayed all 18 original scenes on the home screen under a cold-process diagnostic fixture, but Croatia, Pahrump Hills and Bahram Vallis still produced native crashes. Bahram's preview remained black at 20 and 40 seconds. A five-scene warm-switch follow-up displayed all five scenes, but Longji and Bahram each produced two native failures during switching and recovery. Do not treat the diagnostic emulator graphics override or process resets as a phone-side fix. [Detailed outcomes](COMPATIBILITY.md)
 
+### Black or frozen after a restart
+
+Before you enter your PIN after a restart, Android shows its default wallpaper for every live wallpaper that is not direct-boot aware. That includes DepthWall and the original ports. Your choice comes back after unlocking.
+
+If the wallpaper stays black or frozen after unlocking:
+
+- **DepthWall originals:** open the scene and apply it again. Since 1.2.0 the engine rebuilds its graphics surface when the same wallpaper is applied again, and it retries automatically if the surface could not be created during start-up.
+- **Original ports:** applying the same port again does nothing, because Android only sends a command to the engine that is already running. On the pack card, tap **Black or frozen? Restart it**. DepthWall switches the affected screens to plain black so Android unbinds the stuck engine. It then offers the port's App info page so you can force stop it, and opens the picker so you can apply the scene fresh. Choose **Home and lock**.
+- Do not put two scenes from the same pack on Home and Lock separately. Both run in one process, and starting them together after a restart is the crash pattern recorded in [the compatibility report](COMPATIBILITY.md#after-a-restart).
+- If a port keeps failing, use **Use DepthWall original** on its card.
+
+If Android replaced the wallpaper with its default image after unlocking, the port crashed twice within ten seconds and Android removed it. Apply it again. `tools/device_report.sh` captures the log lines that show which case happened.
+
 ## Offline content and downloads
 
 All **53 bundled static images**, 12 prepared depth scenes and seven native scenes work offline. The five new 2160 × 4680 originals include two car illustrations and three papaya, carbon and space-blue themes.

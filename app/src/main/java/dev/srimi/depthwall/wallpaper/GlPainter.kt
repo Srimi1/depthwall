@@ -3,6 +3,7 @@ package dev.srimi.depthwall.wallpaper
 import android.content.Context
 import android.graphics.*
 import android.opengl.*
+import android.util.Log
 import android.view.Surface
 import dev.srimi.depthwall.DepthWallApp
 import dev.srimi.depthwall.data.SceneConfig
@@ -59,18 +60,24 @@ class GlPainter(private val context:Context) {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_WRAP_T,GLES20.GL_CLAMP_TO_EDGE)
         try { GLUtils.texImage2D(GLES20.GL_TEXTURE_2D,0,bitmap,0) } finally { bitmap.recycle() }
     }
-    private fun load(config:SceneConfig,maxEdge:Int) {
+    /** A missing or unreadable layer draws as black instead of failing every frame. */
+    private fun layer(path:String,maxEdge:Int):Bitmap {
         val repo=(context.applicationContext as DepthWallApp).repository
+        return try { repo.decode(path,maxEdge) }
+        catch(error:Exception) { Log.w("DepthWall","Layer unavailable",error);Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888) }
+        catch(error:OutOfMemoryError) { Log.w("DepthWall","Layer too large",error);Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888) }
+    }
+    private fun load(config:SceneConfig,maxEdge:Int) {
         if(config.scene=="depth") {
             val changedBudget=textureEdge!=maxEdge
             if(loaded?.scene!="depth" || config.background!=loaded?.background || changedBudget) {
-                val bitmap=repo.decode(config.background,maxEdge)
+                val bitmap=layer(config.background,maxEdge)
                 imageAspect=bitmap.width.toFloat()/bitmap.height
                 upload(0,bitmap)
             }
             if(loaded?.scene!="depth" || config.foreground!=loaded?.foreground || changedBudget) {
                 val bitmap=if(config.foreground.isBlank())Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888)
-                    else repo.decode(config.foreground,maxEdge)
+                    else layer(config.foreground,maxEdge)
                 upload(1,bitmap)
             }
         } else if(loaded?.scene=="depth") {
@@ -135,34 +142,50 @@ class GlPainter(private val context:Context) {
     }
 }
 
+/** The EGL window surface or context is gone; the owner must rebuild the renderer. */
+class SurfaceLostException(message:String):IllegalStateException(message)
+
 class WindowRenderer(context:Context,surface:Surface) {
     private val display=EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
-    private val eglContext:android.opengl.EGLContext
-    private val eglSurface:android.opengl.EGLSurface
-    private val painter:GlPainter
+    private var eglContext=EGL14.EGL_NO_CONTEXT
+    private var eglSurface=EGL14.EGL_NO_SURFACE
+    private lateinit var painter:GlPainter
     private val target=IntArray(1)
     private val color=IntArray(1)
     private var targetW=0
     private var targetH=0
-    private val blit:Int
-    private val blitPosition:Int
-    private val blitTexture:Int
+    private var blit=0
+    private var blitPosition=0
+    private var blitTexture=0
     private val quad=ByteBuffer.allocateDirect(32).order(ByteOrder.nativeOrder()).asFloatBuffer().apply { put(floatArrayOf(-1f,-1f,1f,-1f,-1f,1f,1f,1f));position(0) }
     init {
-        val version=IntArray(2);check(EGL14.eglInitialize(display,version,0,version,1))
-        val configs=arrayOfNulls<android.opengl.EGLConfig>(1);val count=IntArray(1)
-        check(EGL14.eglChooseConfig(display,intArrayOf(EGL14.EGL_RED_SIZE,8,EGL14.EGL_GREEN_SIZE,8,EGL14.EGL_BLUE_SIZE,8,EGL14.EGL_RENDERABLE_TYPE,EGL14.EGL_OPENGL_ES2_BIT,EGL14.EGL_NONE),0,configs,0,1,count,0) && count[0]>0)
-        eglContext=EGL14.eglCreateContext(display,configs[0],EGL14.EGL_NO_CONTEXT,intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION,2,EGL14.EGL_NONE),0)
-        eglSurface=EGL14.eglCreateWindowSurface(display,configs[0],surface,intArrayOf(EGL14.EGL_NONE),0)
-        check(eglContext!=EGL14.EGL_NO_CONTEXT && eglSurface!=EGL14.EGL_NO_SURFACE)
-        check(EGL14.eglMakeCurrent(display,eglSurface,eglSurface,eglContext));painter=GlPainter(context)
-        fun compile(type:Int,source:String):Int { val s=GLES20.glCreateShader(type);GLES20.glShaderSource(s,source);GLES20.glCompileShader(s);return s }
-        val v=compile(GLES20.GL_VERTEX_SHADER,"attribute vec2 p;varying vec2 uv;void main(){uv=(p+1.0)*.5;gl_Position=vec4(p,0,1);}")
-        val f=compile(GLES20.GL_FRAGMENT_SHADER,"precision mediump float;varying vec2 uv;uniform sampler2D tex;void main(){gl_FragColor=texture2D(tex,uv);}")
-        blit=GLES20.glCreateProgram();GLES20.glAttachShader(blit,v);GLES20.glAttachShader(blit,f);GLES20.glLinkProgram(blit);GLES20.glDeleteShader(v);GLES20.glDeleteShader(f)
-        blitPosition=GLES20.glGetAttribLocation(blit,"p")
-        blitTexture=GLES20.glGetUniformLocation(blit,"tex")
-        GLES20.glGenFramebuffers(1,target,0);GLES20.glGenTextures(1,color,0)
+        val version=IntArray(2);check(EGL14.eglInitialize(display,version,0,version,1)) { "EGL initialisation failed (0x%x)".format(EGL14.eglGetError()) }
+        try {
+            val configs=arrayOfNulls<android.opengl.EGLConfig>(1);val count=IntArray(1)
+            check(EGL14.eglChooseConfig(display,intArrayOf(EGL14.EGL_RED_SIZE,8,EGL14.EGL_GREEN_SIZE,8,EGL14.EGL_BLUE_SIZE,8,EGL14.EGL_RENDERABLE_TYPE,EGL14.EGL_OPENGL_ES2_BIT,EGL14.EGL_NONE),0,configs,0,1,count,0) && count[0]>0) { "No EGL config" }
+            eglContext=EGL14.eglCreateContext(display,configs[0],EGL14.EGL_NO_CONTEXT,intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION,2,EGL14.EGL_NONE),0)
+            eglSurface=EGL14.eglCreateWindowSurface(display,configs[0],surface,intArrayOf(EGL14.EGL_NONE),0)
+            check(eglContext!=EGL14.EGL_NO_CONTEXT && eglSurface!=EGL14.EGL_NO_SURFACE) { "EGL surface unavailable (0x%x)".format(EGL14.eglGetError()) }
+            check(EGL14.eglMakeCurrent(display,eglSurface,eglSurface,eglContext)) { "EGL context unavailable (0x%x)".format(EGL14.eglGetError()) }
+            painter=GlPainter(context)
+            fun compile(type:Int,source:String):Int { val s=GLES20.glCreateShader(type);GLES20.glShaderSource(s,source);GLES20.glCompileShader(s);return s }
+            val v=compile(GLES20.GL_VERTEX_SHADER,"attribute vec2 p;varying vec2 uv;void main(){uv=(p+1.0)*.5;gl_Position=vec4(p,0,1);}")
+            val f=compile(GLES20.GL_FRAGMENT_SHADER,"precision mediump float;varying vec2 uv;uniform sampler2D tex;void main(){gl_FragColor=texture2D(tex,uv);}")
+            blit=GLES20.glCreateProgram();GLES20.glAttachShader(blit,v);GLES20.glAttachShader(blit,f);GLES20.glLinkProgram(blit);GLES20.glDeleteShader(v);GLES20.glDeleteShader(f)
+            blitPosition=GLES20.glGetAttribLocation(blit,"p")
+            blitTexture=GLES20.glGetUniformLocation(blit,"tex")
+            GLES20.glGenFramebuffers(1,target,0);GLES20.glGenTextures(1,color,0)
+        } catch(error:Throwable) {
+            // A half-built renderer must not leak EGL objects into the next attempt.
+            releaseEgl();throw error
+        }
+    }
+    private fun releaseEgl() {
+        EGL14.eglMakeCurrent(display,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_CONTEXT)
+        if(eglSurface!=EGL14.EGL_NO_SURFACE)EGL14.eglDestroySurface(display,eglSurface)
+        if(eglContext!=EGL14.EGL_NO_CONTEXT)EGL14.eglDestroyContext(display,eglContext)
+        eglSurface=EGL14.EGL_NO_SURFACE;eglContext=EGL14.EGL_NO_CONTEXT
+        EGL14.eglReleaseThread();EGL14.eglTerminate(display)
     }
     fun draw(c:SceneConfig,w:Int,h:Int,t:Float,p:Float,x:Float,y:Float,maxWidth:Int=960) {
         val rw=minOf(w,maxWidth);val rh=(h.toFloat()*rw/w).toInt().coerceAtLeast(1)
@@ -180,8 +203,9 @@ class WindowRenderer(context:Context,surface:Surface) {
         GLES20.glEnableVertexAttribArray(blitPosition);GLES20.glVertexAttribPointer(blitPosition,2,GLES20.GL_FLOAT,false,0,quad)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,color[0]);GLES20.glUniform1i(blitTexture,0)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);GLES20.glDisableVertexAttribArray(blitPosition)
-        check(EGL14.eglSwapBuffers(display,eglSurface)) { "Wallpaper surface was lost." }
+        if(!EGL14.eglSwapBuffers(display,eglSurface))
+            throw SurfaceLostException("Wallpaper surface was lost (EGL 0x%x).".format(EGL14.eglGetError()))
     }
     fun invalidateClock()=painter.invalidateClock()
-    fun close() { painter.close();GLES20.glDeleteFramebuffers(1,target,0);GLES20.glDeleteTextures(1,color,0);GLES20.glDeleteProgram(blit);EGL14.eglMakeCurrent(display,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_SURFACE,EGL14.EGL_NO_CONTEXT);EGL14.eglDestroySurface(display,eglSurface);EGL14.eglDestroyContext(display,eglContext);EGL14.eglReleaseThread();EGL14.eglTerminate(display) }
+    fun close() { painter.close();GLES20.glDeleteFramebuffers(1,target,0);GLES20.glDeleteTextures(1,color,0);GLES20.glDeleteProgram(blit);releaseEgl() }
 }

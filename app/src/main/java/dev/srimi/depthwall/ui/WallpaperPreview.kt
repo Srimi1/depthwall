@@ -110,6 +110,7 @@ import kotlinx.coroutines.withContext
                             Text("This clock is drawn in the wallpaper. The crDroid clock is separate.",color=Muted,fontSize=11.sp)
                         }
                         LabelSlider("Parallax",config.parallax,0f..1f) { config=config.copy(parallax=it) }
+                        Text("Black or frozen after a restart? Apply it again to restart the live wallpaper.",color=Muted,fontSize=11.sp)
                         if(item.kind!="NATIVE_SCENE" && local.isLocal) {
                             Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
                                 OutlinedButton(onClick={importForeground.launch(arrayOf("image/png","image/webp"))}){Text("Import layer",fontSize=12.sp)}
