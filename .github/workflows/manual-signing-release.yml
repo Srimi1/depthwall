@@ -2,7 +2,9 @@ name: Release with manual signing
 # For releases when the signing key cannot be stored as repository secrets.
 # 1. stage=build attaches an unsigned APK to a draft release for this commit.
 # 2. The maintainer signs it offline (APK Signature Scheme v2 only, which keeps every
-#    ZIP record unchanged) and uploads DepthWall-<version>.apk to the same draft.
+#    ZIP record unchanged) and uploads DepthWall-<version>.apk to the same draft, or,
+#    where release uploads are unavailable, commits it as the only file on branch
+#    signed-release/v<version>.
 # 3. stage=publish proves the signed APK holds exactly the unsigned build, runs the
 #    same verify_release.py checks as the signed workflow, then publishes.
 on:
@@ -73,8 +75,18 @@ jobs:
           cp app/build/outputs/apk/release/app-release-unsigned.apk "$unsigned"
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -c -P 16 4 "$unsigned"
           (cd "$RELEASE_DIR" && sha256sum "$(basename "$unsigned")" > UNSIGNED.SHA256)
-          if gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id" | grep -q .; then
-            echo 'A release for this version already exists; inspect or delete the draft before rebuilding.'; exit 1
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,assets > "$RUNNER_TEMP/existing.json"; then
+            # Only an unpublished draft holding nothing but a previous unsigned build may be replaced.
+            python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          state = json.loads((Path(os.environ['RUNNER_TEMP']) / 'existing.json').read_text())
+          version = os.environ['RELEASE_VERSION']
+          unsigned = {f'DepthWall-{version}-unsigned.apk', 'UNSIGNED.SHA256'}
+          if not state['isDraft'] or not {asset['name'] for asset in state['assets']} <= unsigned:
+              raise SystemExit('A release for this version already holds published or signed files; refusing to replace it.')
+          PY
+            gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --yes
           fi
           gh release create "$RELEASE_TAG" "$unsigned" "$RELEASE_DIR/UNSIGNED.SHA256" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
@@ -85,6 +97,13 @@ jobs:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
+          signed="DepthWall-$RELEASE_VERSION.apk"
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -qx "$signed"; then
+            # Signers that cannot upload release assets push the signed APK to this branch instead.
+            gh api -H "Accept: application/vnd.github.raw" \
+              "repos/$GITHUB_REPOSITORY/contents/$signed?ref=signed-release/$RELEASE_TAG" > "$RUNNER_TEMP/$signed"
+            gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/$signed" --repo "$GITHUB_REPOSITORY"
+          fi
           gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,targetCommitish,assets > "$RUNNER_TEMP/state.json"
           python3 - <<'PY'
           import json, os
