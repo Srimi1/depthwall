@@ -22,6 +22,16 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
         <activity android:name=".WallpaperSettingsActivity" android:exported="true" android:label="DepthWall settings" />
+        <activity android:name=".standby.StandbyActivity" android:exported="false"
+            android:screenOrientation="sensorLandscape" android:excludeFromRecents="true" />
+        <activity android:name=".standby.StandbySettingsActivity" android:exported="true"
+            android:label="DepthWall StandBy" />
+        <service android:name=".standby.StandbyDreamService" android:exported="true"
+            android:label="DepthWall StandBy" android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter><action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" /></intent-filter>
+            <meta-data android:name="android.service.dream" android:resource="@xml/standby_dream" />
+        </service>
         <service android:name=".wallpaper.DepthWallpaperService" android:label="DepthWall live wallpaper"
             android:permission="android.permission.BIND_WALLPAPER" android:exported="true">
             <intent-filter><action android:name="android.service.wallpaper.WallpaperService" /></intent-filter>
