@@ -30,6 +30,8 @@ class MainViewModel(app:Application):AndroidViewModel(app) {
     }
     private val operations=Mutex()
     val wallpapers=repo.dao.observe().stateIn(viewModelScope,SharingStarted.WhileSubscribed(5000),emptyList())
+    val devicePicks=wallpapers.map { DevicePicks.resolve(repo.devicePicks,it) }
+        .stateIn(viewModelScope,SharingStarted.WhileSubscribed(5000),emptyList())
     private val _settingsReady=MutableStateFlow(false)
     val settingsReady=_settingsReady.asStateFlow()
     val settings=repo.settings.flow.onEach { _settingsReady.value=true }

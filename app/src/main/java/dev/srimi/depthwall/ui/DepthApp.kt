@@ -1,6 +1,7 @@
 package dev.srimi.depthwall.ui
 
 import android.app.Activity
+import android.app.WallpaperInfo
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
@@ -10,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,15 +56,19 @@ import kotlinx.coroutines.launch
     val busy by vm.busy.collectAsStateWithLifecycle()
     val installed by vm.installed.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val picks by vm.devicePicks.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
     val snackbar=remember { SnackbarHostState() }
+    var applied by remember { mutableStateOf(WallpaperApplyState.capture(context)) }
+    var restart by remember { mutableStateOf<WallpaperInfo?>(null) }
+    var sharedProcessWarning by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
     val owner=LocalLifecycleOwner.current
     DisposableEffect(owner) {
-        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_RESUME)vm.refreshPacks() }
+        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_RESUME) { vm.refreshPacks();applied=WallpaperApplyState.capture(context) } }
         owner.lifecycle.addObserver(observer);onDispose { owner.lifecycle.removeObserver(observer) }
     }
     val importImage=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -79,7 +85,12 @@ import kotlinx.coroutines.launch
         if (flags != 0) vm.message("Live wallpaper applied")
         else if (accepted) vm.message("Android did not confirm the wallpaper destination. Scene settings were preserved; try applying again.")
     }
+    val applyPortResult=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        applied=WallpaperApplyState.capture(context)
+        if(applied?.let(WallpaperRestart::sharesPortProcess)==true) sharedProcessWarning=true
+    }
     fun launch(intent:Intent) { runCatching { context.startActivity(intent) }.onFailure { vm.message("This action is unavailable: ${it.message}") } }
+    fun applyPort(info:WallpaperInfo) { runCatching { applyPortResult.launch(vm.packs.preview(info)) }.onFailure { vm.message("This action is unavailable: ${it.message}") } }
     fun openLink(url:String)=launch(Intent(Intent.ACTION_VIEW,Uri.parse(url)))
     Scaffold(containerColor=Ink,snackbarHost={SnackbarHost(snackbar)},bottomBar={
         NavigationBar(containerColor=Color(0xFF0C0C0C),tonalElevation=0.dp) {
@@ -102,8 +113,8 @@ import kotlinx.coroutines.launch
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
             Box(Modifier.weight(1f)) {
                 when(tab) {
-                    0 -> ExploreScreen(vm,items,{selected=it},{selected=items.firstOrNull { it.id=="scene_earth" }})
-                    1 -> SuperScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm)
+                    0 -> ExploreScreen(vm,items,picks,{selected=it},{selected=items.firstOrNull { it.id=="scene_earth" }})
+                    1 -> SuperScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
                     2 -> CollectionScreen("Make it dimensional.","Layered landscapes. Subtle movement. Your own sense of depth.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
                     else -> LibraryScreen(items,{selected=it},{vm.favorite(it)},{settingsOpen=true},{importImage.launch(arrayOf("image/*"))})
                 }
@@ -122,6 +133,10 @@ import kotlinx.coroutines.launch
         })
     }
     if(settingsOpen)SettingsDialog(items,vm,{settingsOpen=false})
+    restart?.let { info -> RestartPortDialog(info,vm,::launch,{ restart=null;applyPort(it) }) { restart=null;applied=WallpaperApplyState.capture(context) } }
+    if(sharedProcessWarning)AlertDialog(onDismissRequest={sharedProcessWarning=false},title={Text("Use one scene for Home and lock")},
+        text={Text("Your home and lock screens now show two scenes from the same pack. Both run in one app process, and starting them together after a restart can crash it, leaving the wallpaper black or reset. Apply one scene to Home and lock, or use a DepthWall original on one screen.")},
+        confirmButton={TextButton(onClick={sharedProcessWarning=false}){Text("OK")}})
     report?.let { info ->
         AlertDialog(onDismissRequest={report=null},title={Text("Review wallpaper pack")},text={
             Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -136,7 +151,7 @@ import kotlinx.coroutines.launch
     }
 }
 
-@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
+@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,picks:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
@@ -205,6 +220,17 @@ import kotlinx.coroutines.launch
                 BadgeLabel("7 LIVING WORLDS",Modifier.align(Alignment.TopStart).padding(18.dp))
             }
         }
+        // Curated for the 6.67" 1440 × 3120 AMOLED panel. A nested row keeps its own item keys,
+        // so picks that also appear in the grid below cannot collide with grid keys.
+        if(provider=="Offline" && query.isEmpty() && category=="All" && color=="All colours" && picks.isNotEmpty())item(span={GridItemSpan(2)}) {
+            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                Text("Best for your phone",style=MaterialTheme.typography.titleLarge)
+                Text("Tuned for OnePlus 7T Pro · 1440 × 3120 AMOLED · papaya, carbon and space",color=Muted,fontSize=13.sp)
+                LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp),modifier=Modifier.fillMaxWidth().testTag("device_picks")) {
+                    items(picks,key={it.id}) { item -> WallpaperCard(item,{onSelect(item)},{vm.favorite(item)},Modifier.width(148.dp),"pick_${item.id}") }
+                }
+            }
+        }
         item(span={GridItemSpan(2)}) {
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
@@ -227,7 +253,7 @@ import kotlinx.coroutines.launch
                 }
                 if(provider=="Offline") {
                     Text("${source.size} wallpapers available offline",color=Muted,fontSize=11.sp)
-                    ChoiceRow(listOf("All","Space","Cars","Themes","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
+                    ChoiceRow(listOf("All","Papaya Edition","Space","Cars","Themes","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
                     ChoiceRow(listOf("All colours","Orange","Blue","Green","Purple","Gold","Red","White"),color){color=it}
                 } else {
                     Card(colors=CardDefaults.cardColors(containerColor=Surface),shape=RoundedCornerShape(16.dp)) {
@@ -359,12 +385,12 @@ import kotlinx.coroutines.launch
 @Composable fun BadgeLabel(label:String,modifier:Modifier=Modifier) {
     Text(label,modifier.clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.85f)).padding(horizontal=11.dp,vertical=7.dp),color=Orange,fontSize=8.sp,letterSpacing=1.sp,fontWeight=FontWeight.Bold)
 }
-@Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit) {
+@Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit,modifier:Modifier=Modifier,tag:String="wall_${item.id}") {
     val context = LocalContext.current
     val thumbnail = remember(item.thumbnailModel) {
         coil.request.ImageRequest.Builder(context).data(item.thumbnailModel).size(480, 720).build()
     }
-    Column(Modifier.clickable(onClick=onSelect).testTag("wall_${item.id}")) {
+    Column(modifier.clickable(onClick=onSelect).testTag(tag)) {
         Box(Modifier.fillMaxWidth().aspectRatio(.68f).clip(RoundedCornerShape(19.dp)).background(Surface)) {
             AsyncImage(thumbnail,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             IconButton(onClick=onFavorite,modifier=Modifier.align(Alignment.TopEnd)) { Icon(if(item.favorite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Favorite ${item.title}",tint=if(item.favorite)Orange else Ivory,modifier=Modifier.size(19.dp)) }
@@ -395,7 +421,8 @@ import kotlinx.coroutines.launch
         if(items.isEmpty()) item(span={GridItemSpan(2)}) { EmptyState("Your collection starts here","Save a favourite or import a photo.") }
     }
 }
-@Composable private fun SuperScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,vm:MainViewModel) {
+@Composable private fun SuperScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,vm:MainViewModel,
+    applied:WallpaperApplyState?,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
     var original by rememberSaveable { mutableStateOf(false) }
     Column {
         Column(Modifier.padding(horizontal=20.dp)) {
@@ -432,9 +459,11 @@ import kotlinx.coroutines.launch
                         p.services.forEach { info ->
                             Text(info.loadLabel(LocalContext.current.packageManager).toString(),fontSize=13.sp)
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                                Button(onClick={launch(vm.packs.preview(info))}){Text("Preview & apply")}
+                                Button(onClick={apply(info)}){Text("Preview & apply")}
                                 vm.packs.configuration(info)?.let { intent -> OutlinedButton(onClick={launch(intent)}){Text("Locations")}}
                             }
+                            if(applied!=null && WallpaperRestart.destinations(applied,info.component.flattenToString())!=0)
+                                TextButton(onClick={onRestart(info)}) { Icon(Icons.Outlined.Refresh,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Black or frozen? Restart it") }
                         }
                         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick={open(p.definition.url)}){Text("Get original pack ↗")}
@@ -459,4 +488,29 @@ import kotlinx.coroutines.launch
         }
         CollectionScreen("","",chosen,onSelect,onFavorite,"library_grid")
     }
+}
+
+/** Re-applying the active wallpaper only re-sends a command, so a stuck engine is replaced first. */
+@Composable private fun RestartPortDialog(info:WallpaperInfo,vm:MainViewModel,launch:(Intent)->Unit,apply:(WallpaperInfo)->Unit,onClose:()->Unit) {
+    val context=LocalContext.current
+    val label=remember(info) { info.loadLabel(context.packageManager).toString() }
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    var released by remember(info) { mutableStateOf(false) }
+    AlertDialog(onDismissRequest=onClose,title={Text("Restart $label")},text={
+        Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text("Applying the same wallpaper again does not restart it. Android starts a fresh copy only after another wallpaper has replaced it.",fontSize=13.sp)
+            Text("1. Switch to plain black",style=MaterialTheme.typography.titleSmall)
+            OutlinedButton(enabled=!busy && !released,onClick={vm.run {
+                released=WallpaperRestart.release(context,info.component.flattenToString())
+                if(!released) vm.message("Android has not released the wallpaper yet. Please try again.")
+            } },modifier=Modifier.testTag("restart_release")) { Text(if(released)"Switched to black" else "Switch to black") }
+            Text("2. Force stop (recommended)",style=MaterialTheme.typography.titleSmall)
+            Text("Clears a stuck wallpaper process. Tap Force stop on the next screen, then come back here.",fontSize=12.sp,color=Muted)
+            OutlinedButton(enabled=released,onClick={launch(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.fromParts("package",info.packageName,null)))}) { Text("Open app info") }
+            Text("3. Apply again",style=MaterialTheme.typography.titleSmall)
+            Text("Choose Home and lock. Two scenes from one pack on separate screens share a process and can crash after a restart.",fontSize=12.sp,color=Muted)
+            Button(enabled=released,onClick={apply(info)}) { Text("Preview & apply") }
+            Text("If you close this after step 1, the screen stays black until you choose a wallpaper.",fontSize=11.sp,color=Muted)
+        }
+    },confirmButton={TextButton(onClick=onClose){Text("Close")}})
 }

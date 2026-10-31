@@ -1,10 +1,12 @@
 # Releasing an update
 
-Stable update APKs must retain application ID `dev.srimi.depthwall` and the signing identity used by v1.0.1. The public SHA-256 certificate fingerprint is:
+Stable update APKs must retain application ID `dev.srimi.depthwall` and the signing identity introduced in v1.2.0. The public SHA-256 certificate fingerprint is:
 
 ```text
-1086e392ec4b7b22b514eb747d6b00521fd69c5d2ecbbfc48b623db7fca39edf
+bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37
 ```
+
+The key that signed v1.0.1 (`1086e392ec4b7b22b514eb747d6b00521fd69c5d2ecbbfc48b623db7fca39edf`) was lost, so v1.2.0 started a new identity and needs a one-time uninstall of earlier versions. Every later release must use the v1.2.0 key.
 
 The signing key is not in Git. A new key, including a newly generated “personal” key, cannot update the published app. Restore the existing keystore and credentials from their secure backup. Do not put signing passwords, keystores or tokens in issues, pull-request comments, source files or release assets.
 
@@ -24,6 +26,14 @@ Update `versionCode` and `versionName` in `app/build.gradle.kts`, add `docs/rele
 The manual workflow builds the optimized release, runs release unit tests and lint, then checks the APK's signing certificate, package, version, non-debuggable flag and ZIP/native-library alignment. It creates a draft GitHub release in this repository, uploads the APK, `verification.json` and `SHA256SUMS`, downloads them again and checks their hashes before publishing. An upload or validation failure leaves the release unpublished. Published releases and unrelated tags are never overwritten. A retry may replace only the three expected assets in an unpublished draft targeting the exact same source commit. A draft for another commit or with unexpected assets requires inspection; do not delete a published version to retry.
 
 The workflow deliberately fails if the original signing configuration is unavailable. It does not replace the key or publish a debug APK as an update. Signing files are temporary and removed in the final step; public build artifacts contain no keystore or passwords.
+
+## Manual signing without repository secrets
+
+Use **Actions → Release with manual signing** when the signing key cannot be stored as repository secrets. v1.2.0 was released this way.
+
+1. Merge the version bump and `docs/releases/<version>.md` into `main`. Run the workflow on `main` with **stage = build**. It runs release unit tests and lint, builds the unsigned release APK, checks 16 KiB native-library alignment, and attaches `DepthWall-<version>-unsigned.apk` and `UNSIGNED.SHA256` to a draft release for that commit.
+2. Download the unsigned APK, check it against `UNSIGNED.SHA256`, and sign it offline with the release key using APK Signature Scheme **v2 only** (minimum SDK 31). v2-only signing adds a signing block and leaves every ZIP record unchanged, so alignment is kept. Upload the result to the same draft as `DepthWall-<version>.apk`. Never upload the keystore or passwords.
+3. Run the workflow again with **stage = publish**. `tools/check_signed_apk.py` proves the signed APK contains exactly the unsigned build's records. `tools/verify_release.py` then checks the certificate pin, package, version, non-debuggable flag and alignment against fresh release test and lint reports. The workflow uploads `verification.json` and `SHA256SUMS`, removes the unsigned files, verifies a download round trip and publishes the release as latest. Any failure leaves the release unpublished.
 
 ## Local preparation
 

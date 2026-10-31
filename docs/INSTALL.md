@@ -1,10 +1,12 @@
 # Install DepthWall
 
-These instructions target **v1.1.0** (Android 12 or newer), with the OnePlus 7T Pro McLaren as the default phone profile. Download release APKs only from this repository's [Releases page](https://github.com/Srimi1/depthwall/releases), and read the selected release's signing and validation notes.
+These instructions target **v1.2.0** (Android 12 or newer), with the OnePlus 7T Pro McLaren as the default phone profile. Download release APKs only from this repository's [Releases page](https://github.com/Srimi1/depthwall/releases), and read the selected release's signing and validation notes.
 
 1. Download the APK attached to the release and copy it to your phone.
 2. Open it from Files and allow installation from that source when Android asks.
 3. Open DepthWall. Browse **Explore**, **Super**, **Depth Studio**, or **Library**.
+
+**Coming from 1.0.1 or 1.1.0:** 1.2.0 uses a new signing key because the earlier key was lost. Uninstall the old DepthWall first, then install 1.2.0. Its favourites, downloads and settings do not carry over. Updates after 1.2.0 install normally.
 
 Android accepts an in-place update only when the APK uses the same signing identity as the installed version. A debug APK or a release signed with a new key cannot update an older personal release. If Android reports a signature mismatch, keep the installed app and obtain a build signed with its original key; uninstalling would remove its private library and preferences. The v1.1.0 database migration preserves existing favourites and saved image paths, but installation and upgrade still need validation on a physical phone.
 
@@ -48,9 +50,22 @@ Original ports are separate applications. A pack might install successfully but 
 
 The v1.0.1 emulator retest displayed all 18 original scenes on the home screen under a cold-process diagnostic fixture, but Croatia, Pahrump Hills and Bahram Vallis still produced native crashes. Bahram's preview remained black at 20 and 40 seconds. A five-scene warm-switch follow-up displayed all five scenes, but Longji and Bahram each produced two native failures during switching and recovery. Do not treat the diagnostic emulator graphics override or process resets as a phone-side fix. [Detailed outcomes](COMPATIBILITY.md)
 
+### Black or frozen after a restart
+
+Before you enter your PIN after a restart, Android shows its default wallpaper for every live wallpaper that is not direct-boot aware. That includes DepthWall and the original ports. Your choice comes back after unlocking.
+
+If the wallpaper stays black or frozen after unlocking:
+
+- **DepthWall originals:** open the scene and apply it again. Since 1.2.0 the engine rebuilds its graphics surface when the same wallpaper is applied again, and it retries automatically if the surface could not be created during start-up.
+- **Original ports:** applying the same port again does nothing, because Android only sends a command to the engine that is already running. On the pack card, tap **Black or frozen? Restart it**. DepthWall switches the affected screens to plain black so Android unbinds the stuck engine. It then offers the port's App info page so you can force stop it, and opens the picker so you can apply the scene fresh. Choose **Home and lock**.
+- Do not put two scenes from the same pack on Home and Lock separately. Both run in one process, and starting them together after a restart is the crash pattern recorded in [the compatibility report](COMPATIBILITY.md#after-a-restart).
+- If a port keeps failing, use **Use DepthWall original** on its card.
+
+If Android replaced the wallpaper with its default image after unlocking, the port crashed twice within ten seconds and Android removed it. Apply it again. `tools/device_report.sh` captures the log lines that show which case happened.
+
 ## Offline content and downloads
 
-All **53 bundled static images**, 12 prepared depth scenes and seven native scenes work offline. The five new 2160 × 4680 originals include two car illustrations and three papaya, carbon and space-blue themes.
+All **64 bundled static images**, 12 prepared depth scenes and seven native scenes work offline. Sixteen are 2160 × 4680 originals: two car illustrations, three papaya, carbon and space-blue themes, and the eleven designs in Explore's **Best for your phone** row (also under the **Papaya Edition** and **Space** filters).
 
 Online browsing includes NASA originals, SFW Wallhaven, Wikimedia, and clearly labeled ESA / ISRO / JAXA / CSA collections via Wikimedia Commons. Use **Load more wallpapers** to continue a search. **4K sources only** requires known source dimensions of at least 3840 × 2160 in either orientation; a tall crop can contain less detail than its landscape source.
 

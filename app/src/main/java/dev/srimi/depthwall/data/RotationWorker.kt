@@ -15,9 +15,11 @@ class RotationWorker(context:Context,params:WorkerParameters):CoroutineWorker(co
         if(prefs.rotationHours==0) return Result.success()
         val manager=WallpaperManager.getInstance(applicationContext)
         // Choosing a live wallpaper suspends static rotation; never replace it silently.
-        val live=if(Build.VERSION.SDK_INT>=34) {
-            listOf(1,2).filter { prefs.rotationTarget and it != 0 }.any { manager.getWallpaperInfo(it)!=null }
-        } else manager.wallpaperInfo!=null
+        val live=if(Build.VERSION.SDK_INT>=34) RotationPolicy.liveActive(prefs.rotationTarget,
+            manager.getWallpaperInfo(WallpaperManager.FLAG_SYSTEM)!=null,
+            manager.getWallpaperInfo(WallpaperManager.FLAG_LOCK)!=null,
+            manager.getWallpaperId(WallpaperManager.FLAG_LOCK)<0)
+        else manager.wallpaperInfo!=null
         if(live) return Result.success()
         val candidates=repo.dao.rotationCandidates().filter { !prefs.favoritesOnly || it.favorite }
         if(candidates.isEmpty()) return Result.success()
@@ -41,4 +43,13 @@ class RotationWorker(context:Context,params:WorkerParameters):CoroutineWorker(co
                     .setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).build()).build())
         }
     }
+}
+
+object RotationPolicy {
+    /**
+     * Android reports no lock wallpaper info when lock shares the home wallpaper. In that case the
+     * lock screen shows the home wallpaper, so a live home also protects a lock-only rotation.
+     */
+    fun liveActive(target:Int,homeLive:Boolean,lockLive:Boolean,lockShared:Boolean):Boolean =
+        (target and 1!=0 && homeLive) || (target and 2!=0 && (if(lockShared)homeLive else lockLive))
 }
