@@ -1,5 +1,8 @@
 package dev.srimi.depthwall
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.os.SystemClock
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.Espresso
@@ -42,6 +45,19 @@ class StandbyUiTest {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("standby_preview").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("standby_preview").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("standby_screen").fetchSemanticsNodes().isNotEmpty() }
+        dismissImmersivePrompt()
+    }
+
+    /** Fresh devices show Android's full-screen tutorial above the app and steal window focus. */
+    private fun dismissImmersivePrompt() {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        automation.serviceInfo = automation.serviceInfo.apply { flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS }
+        val deadline = SystemClock.uptimeMillis() + 5_000
+        while (SystemClock.uptimeMillis() < deadline) {
+            val button = automation.rootInActiveWindow?.findAccessibilityNodeInfosByViewId("android:id/ok")?.firstOrNull()
+            if (button?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
+            SystemClock.sleep(100)
+        }
     }
 
     private fun face(design: StandbyDesign) = compose.onNode(hasTestTag("standby_face_${design.name}") and
