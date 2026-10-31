@@ -15,7 +15,7 @@ ASSETS = Path(__file__).resolve().parents[1] / "app/src/main/assets"
 
 class DeviceArtTest(unittest.TestCase):
     def test_render_is_deterministic_and_respects_panel_rules(self):
-        for create in (art.rise, art.edge_glow):
+        for create in (art.rise, art.edge_glow, art.papaya_ring):
             first = np.asarray(art.render(create))
             second = np.asarray(art.render(create))
             self.assertTrue(np.array_equal(first, second))
