@@ -27,6 +27,7 @@ class Repository(val context: Context) {
         .addMigrations(MIGRATION_1_2).build()
     val dao = db.wallpapers()
     val settings = SettingsStore(context)
+    val standbySettings = StandbySettingsStore(context)
     val scenes = SceneStore(context)
     val http = OkHttpClient.Builder().connectTimeout(20,TimeUnit.SECONDS).readTimeout(40,TimeUnit.SECONDS).callTimeout(120,TimeUnit.SECONDS).build()
     private val catalog = OnlineCatalog(http)

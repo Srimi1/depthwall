@@ -33,6 +33,18 @@ Frame rates are targets, not measured OnePlus results. The idle rate applies onl
 
 The native clock belongs to SystemUI; DepthWall's clock is a separate optional wallpaper layer. The application does not request overlay, accessibility, root, device administration or broad storage permissions.
 
+## StandBy charging display
+
+StandBy uses a separate preferences DataStore and shared Compose faces hosted by
+an internal landscape activity or a system-bound interactive `DreamService`.
+The main activity observes charging and debounced physical orientation only while
+resumed and enabled. A dismissal gate prevents immediate re-entry until charging
+or orientation eligibility changes. The dream has explicit lifecycle, saved-state
+and ViewModel owners; its sensors, receivers and composition stop with the dream.
+Neither entry route launches from a persistent foreground service or replaces AOD.
+System screensaver selection is a one-time user action in Android settings.
+See [StandBy setup and behaviour](STANDBY.md).
+
 ## Always-on display
 
 The no-root app does not declare hidden ambient-wallpaper support. Android 17 and crDroid require the system-only `AMBIENT_WALLPAPER` permission for that flag, and reject ambient wallpaper binding without it (except watches). Screen-off rendering therefore stays stopped. The Settings screen offers crDroid's exported native AOD activity, with display/settings fallbacks and read-only preference observations. Both the wallpaper and preview gate drawing on their own display being `STATE_ON` as well as global interactivity; ambient/off display changes cancel future frames and stop wallpaper sensors. AOD requires a supported ROM integration and physical-device verification, not a timer drawing while the screen is off.

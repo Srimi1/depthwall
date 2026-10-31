@@ -52,6 +52,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             ChoiceRow(listOf("Papaya","Space blue","AMOLED monochrome"),s.appTheme){s=s.copy(appTheme=it)}
             Text("Papaya orange and deep black, inspired by your McLaren Edition. These palettes change DepthWall’s interface; system icons and colours stay in Android’s theme settings.",fontSize=12.sp,color=Muted)
             HorizontalDivider()
+            Text("StandBy",style=MaterialTheme.typography.titleSmall)
+            Text("Turn your charging phone sideways for a clock, calendar or favourite wallpaper.",fontSize=12.sp,color=Muted)
+            OutlinedButton(onClick={ (context as? dev.srimi.depthwall.MainActivity)?.openStandbySettings() },
+                modifier=Modifier.fillMaxWidth().testTag("standby_settings")) { Text("Designs & charging setup") }
+            HorizontalDivider()
             Text("Your phone & image quality",style=MaterialTheme.typography.titleSmall)
             ChoiceRow(listOf("OnePlus 7T Pro","Current screen"),s.deviceProfile){s=s.copy(deviceProfile=it)}
             Text(if(s.deviceProfile=="OnePlus 7T Pro")"OnePlus 7T Pro McLaren 4G · 1440 × 3120 · 19.5:9"
