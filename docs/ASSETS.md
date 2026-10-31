@@ -8,7 +8,7 @@ Three generators create the artwork. They require Python, Pillow and NumPy. The 
 |---|---|---|
 | `tools/generate_art.py` | 48 statics, 12 depth pairs and 7 scene previews at 1440 × 3120. Rewrites every file, so do not re-run it for a single change. | `catalog.json` |
 | `tools/generate_extra_art.py` | Five car and theme originals at 2160 × 4680 | `extra_catalog.json` |
-| `tools/generate_device_art.py` | Eleven "Best for your phone" originals at 2160 × 4680, plus the ordered picks list | `device_catalog.json`, `device_picks.json` |
+| `tools/generate_device_art.py` | Twenty-three "Best for your phone" originals at 2160 × 4680, plus the ordered picks list | `device_catalog.json`, `device_picks.json` |
 
 The phone collection follows the OnePlus 7T Pro panel: luma at or below 3 is true black, the status bar band and clock zone stay dark, subjects sit in the 40 to 80% height band, fine detail stays off the curved outer 5% of each side, and woven patterns repeat no finer than 36 px so they do not shimmer under parallax. `python3 -m unittest tools/test_generate_device_art.py` checks those rules and that rendering is deterministic. Carbon weave is authored geometry, not a texture, and no design uses a marque, car silhouette, logo or brand name.
 

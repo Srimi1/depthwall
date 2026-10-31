@@ -24,14 +24,14 @@ class BundledCatalogTest {
             val path = entry.optString(key)
             if (path.isNotEmpty()) assertTrue("$path is missing", File(assets, path).isFile)
         }
-        assertEquals(64, all.count { it.getString("kind") == "STATIC" })
+        assertEquals(76, all.count { it.getString("kind") == "STATIC" })
         assertEquals(12, all.count { it.getString("kind") == "LAYERED_DEPTH" })
         assertEquals(7, all.count { it.getString("kind") == "NATIVE_SCENE" })
     }
 
     @Test fun phoneCollectionUsesTheFullPanelRatioAtFourK() {
         val device = catalog("device_catalog.json")
-        assertEquals(11, device.size)
+        assertEquals(23, device.size)
         for (entry in device) {
             assertTrue(entry.getString("id").startsWith("device_"))
             assertEquals(2160, entry.getInt("width"))
