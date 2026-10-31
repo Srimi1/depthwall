@@ -20,7 +20,7 @@ import java.util.zip.ZipFile
 import org.json.JSONObject
 
 data class PackDefinition(val title:String,val packageName:String,val url:String,val legacyUrl:String="")
-data class InstalledPack(val definition:PackDefinition,val version:String?,val services:List<WallpaperInfo>,val signatures:List<String>,val error:String?=null)
+data class InstalledPack(val definition:PackDefinition,val version:String?,val services:List<WallpaperInfo>,val signatures:List<String>,val error:String?=null,val installed:Boolean=false)
 data class ApkInspection(val file:File,val packageName:String,val version:String,val minSdk:Int,val targetSdk:Int,val abis:List<String>,val signatures:List<String>,val sha256:String,val services:List<String>,val activities:List<String>,val problem:String?)
 
 class PackManager(private val context:Context) {
@@ -41,7 +41,7 @@ class PackManager(private val context:Context) {
         if(p==null) InstalledPack(d,null,emptyList(),emptyList()) else {
             val infos=pm.queryIntentServices(Intent(WallpaperService.SERVICE_INTERFACE).setPackage(d.packageName),PackageManager.GET_META_DATA)
             val services=infos.mapNotNull { runCatching { WallpaperInfo(context,it) }.getOrNull() }
-            InstalledPack(d,p.versionName,services,signatures(p),if(services.isEmpty())"Installed, but no usable wallpaper service was discovered." else null)
+            InstalledPack(d,p.versionName,services,signatures(p),if(services.isEmpty())"Installed, but no usable wallpaper service was discovered." else null,installed=true)
         }
     } }
     suspend fun inspect(uri:Uri):ApkInspection = withContext(Dispatchers.IO) {

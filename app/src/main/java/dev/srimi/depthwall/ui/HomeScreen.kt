@@ -43,23 +43,28 @@ fun cardBadge(item: WallpaperItem): String? = when {
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
-@Composable fun HomeScreen(items: List<WallpaperItem>, picks: List<WallpaperItem>, onSelect: (WallpaperItem) -> Unit, onOpenTab: (Int) -> Unit) {
+@Composable fun HomeScreen(items: List<WallpaperItem>, picks: List<WallpaperItem>, onSelect: (WallpaperItem) -> Unit, onBrowse: (String) -> Unit, onOpenTab: (Int) -> Unit) {
     val scenes = items.filter { it.kind == "NATIVE_SCENE" }
     val papaya = items.filter { it.category == "Papaya Edition" }
     val space = items.filter { it.kind == "STATIC" && it.category == "Space" && it.isLocal }
     val depth = items.filter { it.kind == "LAYERED_DEPTH" }
-    val hero = picks.filter { it.id.startsWith("device_") }.ifEmpty { picks }.take(5)
+    val hero = picks.filter { it.id.startsWith("device_") }.ifEmpty { items.filter { it.id.startsWith("device_") } }.take(5)
     LazyColumn(Modifier.fillMaxSize().testTag("home"), contentPadding = PaddingValues(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(26.dp)) {
-        if (hero.isNotEmpty()) item(key = "hero") {
-            val pager = rememberPagerState { hero.size }
-            Column {
-                HorizontalPager(pager, contentPadding = PaddingValues(horizontal = 20.dp), pageSpacing = 12.dp, modifier = Modifier.testTag("home_hero")) { page ->
-                    HeroCard(hero[page]) { onSelect(hero[page]) }
-                }
-                Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.Center) {
-                    repeat(hero.size) { index ->
-                        Box(Modifier.padding(horizontal = 3.dp).size(if (index == pager.currentPage) 18.dp else 6.dp, 6.dp)
-                            .clip(CircleShape).background(if (index == pager.currentPage) Orange else Hairline))
+        // Always first and always keyed: the catalogue arrives after the first frame, and shelves
+        // inserted above the first visible item would otherwise leave Home scrolled to the bottom.
+        item(key = "hero") {
+            if (hero.isEmpty()) Box(Modifier.padding(horizontal = 20.dp).fillMaxWidth().height(458.dp).clip(RoundedCornerShape(30.dp)).background(Raised))
+            else {
+                val pager = rememberPagerState { hero.size }
+                Column {
+                    HorizontalPager(pager, contentPadding = PaddingValues(horizontal = 20.dp), pageSpacing = 12.dp, modifier = Modifier.testTag("home_hero")) { page ->
+                        HeroCard(hero[page]) { onSelect(hero[page]) }
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.Center) {
+                        repeat(hero.size) { index ->
+                            Box(Modifier.padding(horizontal = 3.dp).size(if (index == pager.currentPage) 18.dp else 6.dp, 6.dp)
+                                .clip(CircleShape).background(if (index == pager.currentPage) Orange else Hairline))
+                        }
                     }
                 }
             }
@@ -71,16 +76,16 @@ fun cardBadge(item: WallpaperItem): String? = when {
             Shelf("Living worlds", "Built-in live wallpapers that move with you", scenes, "live", onSelect, width = 168.dp) { onOpenTab(Tabs.LIVE) }
         }
         if (papaya.isNotEmpty()) item(key = "papaya") {
-            Shelf("Papaya Edition", "Papaya, carbon and true black", papaya, "papaya", onSelect)
+            Shelf("Papaya Edition", "Papaya, carbon and true black", papaya, "papaya", onSelect) { onBrowse("Papaya Edition") }
         }
         if (space.isNotEmpty()) item(key = "space") {
-            Shelf("Into space", "Planets, orbits and quiet starfields", space, "space", onSelect) { onOpenTab(Tabs.BROWSE) }
+            Shelf("Into space", "Planets, orbits and quiet starfields", space, "space", onSelect) { onBrowse("Space") }
         }
         if (depth.isNotEmpty()) item(key = "depth") {
             Shelf("Depth", "Layered scenes with parallax and an optional clock", depth, "depth", onSelect) { onOpenTab(Tabs.DEPTH) }
         }
         item(key = "browse") {
-            Card(onClick = { onOpenTab(Tabs.BROWSE) }, colors = CardDefaults.cardColors(containerColor = Raised), shape = RoundedCornerShape(24.dp),
+            Card(onClick = { onBrowse("All") }, colors = CardDefaults.cardColors(containerColor = Raised), shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth().testTag("home_browse")) {
                 Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Explore, null, Modifier.size(28.dp), tint = Orange)

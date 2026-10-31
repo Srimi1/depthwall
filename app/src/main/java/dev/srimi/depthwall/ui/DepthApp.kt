@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +60,9 @@ import kotlinx.coroutines.launch
     val settings by vm.settings.collectAsStateWithLifecycle()
     val picks by vm.devicePicks.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var browseCategory by rememberSaveable { mutableStateOf("All") }
+    // Keeps each tab's scroll position, search and filters while you switch between tabs.
+    val tabStates=rememberSaveableStateHolder()
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
@@ -109,22 +113,22 @@ import kotlinx.coroutines.launch
                         Text("DEPTHWALL",Modifier.padding(start=7.dp),fontSize=11.sp,letterSpacing=2.4.sp,fontWeight=FontWeight.Bold,color=Muted)
                         Text("v${BuildConfig.VERSION_NAME}",Modifier.padding(start=8.dp).clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal=8.dp,vertical=3.dp).testTag("app_version"),color=Orange,fontSize=10.sp,fontWeight=FontWeight.Bold)
                     }
-                    Text(when(tab){Tabs.HOME->"Made for your screen";Tabs.LIVE->"Live wallpapers";Tabs.BROWSE->"Browse";Tabs.DEPTH->"Depth";else->"Your library"},
-                        Modifier.padding(top=6.dp),style=MaterialTheme.typography.displaySmall,maxLines=1)
+                    Text(when(tab){Tabs.HOME->"For your screen";Tabs.LIVE->"Live";Tabs.BROWSE->"Browse";Tabs.DEPTH->"Depth";else->"Library"},
+                        Modifier.padding(top=6.dp),style=MaterialTheme.typography.displaySmall,maxLines=1,softWrap=false,overflow=TextOverflow.Ellipsis)
                 }
                 IconButton(onClick={importImage.launch(arrayOf("image/*"))}) { Icon(Icons.Outlined.AddPhotoAlternate,"Import image",tint=Ivory) }
                 IconButton(onClick={settingsOpen=true},modifier=Modifier.testTag("settings")) { Icon(Icons.Outlined.Tune,"Settings") }
             }
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
-            Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f)) { tabStates.SaveableStateProvider(tab) {
                 when(tab) {
-                    Tabs.HOME -> HomeScreen(items,picks,{selected=it}) { tab=it }
+                    Tabs.HOME -> HomeScreen(items,picks,{selected=it},{ category -> browseCategory=category;tab=Tabs.BROWSE }) { tab=it }
                     Tabs.LIVE -> LiveScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
-                    Tabs.BROWSE -> ExploreScreen(vm,items,{selected=it})
+                    Tabs.BROWSE -> ExploreScreen(vm,items,browseCategory,{selected=it})
                     Tabs.DEPTH -> CollectionScreen("","Layered landscapes with subtle parallax and an optional clock. Make your own in the preview with Import layer or Edit mask.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
                     else -> LibraryScreen(items,{selected=it},{vm.favorite(it)},{settingsOpen=true},{importImage.launch(arrayOf("image/*"))})
                 }
-            }
+            } }
         }
     }
     selected?.let { item ->
@@ -157,11 +161,12 @@ import kotlinx.coroutines.launch
     }
 }
 
-@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit) {
+@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,initialCategory:String,onSelect:(WallpaperItem)->Unit) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
-    var category by rememberSaveable { mutableStateOf("All") }
+    // A Home "See all" link opens Browse on its category; a new link resets the filter.
+    var category by rememberSaveable(initialCategory) { mutableStateOf(initialCategory) }
     var color by rememberSaveable { mutableStateOf("All colours") }
     var provider by rememberSaveable { mutableStateOf("Offline") }
     var topic by rememberSaveable { mutableStateOf("") }
@@ -409,8 +414,8 @@ import kotlinx.coroutines.launch
     // installed ones are listed; the rest stay in an optional, collapsed section.
     var showPacks by rememberSaveable { mutableStateOf(false) }
     val scenes=items.filter { it.kind=="NATIVE_SCENE" }
-    val installedPacks=packs.filter { it.version!=null }
-    val otherPacks=packs.filter { it.version==null }
+    val installedPacks=packs.filter { it.installed }
+    val otherPacks=packs.filter { !it.installed }
     LazyVerticalGrid(GridCells.Fixed(2),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=28.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(14.dp),modifier=Modifier.testTag("scene_grid")) {
         item(span={GridItemSpan(2)}) {
             Text("Seven living worlds built into DepthWall. Smooth at 90 Hz, gentle on battery, and no extra apps to install.",color=Muted,fontSize=13.sp)
@@ -450,7 +455,8 @@ import kotlinx.coroutines.launch
     open:(String)->Unit,launch:(Intent)->Unit,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
     Card(colors=CardDefaults.cardColors(containerColor=Raised),shape=RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment=Alignment.CenterVertically) { Text(p.definition.title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));Text("Installed · ${p.version}",color=Muted,fontSize=12.sp) }
+            Text(p.definition.title,style=MaterialTheme.typography.titleLarge)
+            Text("Installed · ${p.version ?: "unknown version"}",color=Muted,fontSize=12.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
             vm.packs.verifiedRelease(p.definition.packageName)?.let { evidence ->
                 if(p.version==evidence.getString("version") && p.signatures==listOf(evidence.getString("certificate"))) {
                     val unstable=p.definition.packageName.endsWith("earth") || p.definition.packageName.endsWith("mars")
@@ -471,7 +477,10 @@ import kotlinx.coroutines.launch
                 if(applied!=null && WallpaperRestart.destinations(applied,info.component.flattenToString())!=0)
                     TextButton(onClick={onRestart(info)}) { Icon(Icons.Outlined.Refresh,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Black or frozen? Restart it") }
             }
-            TextButton(onClick={open(p.definition.url)}){Text("Pack source ↗")}
+            Row {
+                TextButton(onClick={open(p.definition.url)}){Text("Pack source ↗")}
+                if(p.definition.legacyUrl.isNotEmpty())TextButton(onClick={open(p.definition.legacyUrl)}){Text("linuxct ↗")}
+            }
         }
     }
 }
