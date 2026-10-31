@@ -27,6 +27,14 @@ The manual workflow builds the optimized release, runs release unit tests and li
 
 The workflow deliberately fails if the original signing configuration is unavailable. It does not replace the key or publish a debug APK as an update. Signing files are temporary and removed in the final step; public build artifacts contain no keystore or passwords.
 
+## Manual signing without repository secrets
+
+Use **Actions → Release with manual signing** when the signing key cannot be stored as repository secrets. v1.2.0 was released this way.
+
+1. Merge the version bump and `docs/releases/<version>.md` into `main`. Run the workflow on `main` with **stage = build**. It runs release unit tests and lint, builds the unsigned release APK, checks 16 KiB native-library alignment, and attaches `DepthWall-<version>-unsigned.apk` and `UNSIGNED.SHA256` to a draft release for that commit.
+2. Download the unsigned APK, check it against `UNSIGNED.SHA256`, and sign it offline with the release key using APK Signature Scheme **v2 only** (minimum SDK 31). v2-only signing adds a signing block and leaves every ZIP record unchanged, so alignment is kept. Upload the result to the same draft as `DepthWall-<version>.apk`. Never upload the keystore or passwords.
+3. Run the workflow again with **stage = publish**. `tools/check_signed_apk.py` proves the signed APK contains exactly the unsigned build's records. `tools/verify_release.py` then checks the certificate pin, package, version, non-debuggable flag and alignment against fresh release test and lint reports. The workflow uploads `verification.json` and `SHA256SUMS`, removes the unsigned files, verifies a download round trip and publishes the release as latest. Any failure leaves the release unpublished.
+
 ## Local preparation
 
 Restore the gitignored `keystore.properties` and its referenced keystore. Build with JDK 17 and Android SDK 37.0:

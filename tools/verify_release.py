@@ -10,7 +10,8 @@ import subprocess
 from pathlib import Path
 from xml.etree import ElementTree
 
-# This is the public certificate fingerprint of the published v1.0.1 APK, not a secret.
+# Public certificate fingerprint of the signing identity introduced in v1.2.0 (not a secret).
+# The v1.0.1 key was lost; see docs/RELEASING.md.
 RELEASE_CERTIFICATE = "bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37"
 PACKAGE_NAME = "dev.srimi.depthwall"
 
@@ -38,7 +39,7 @@ def single_signer_certificate(output: str) -> str:
 def certificate_from_output(output: str) -> str:
     certificate = single_signer_certificate(output)
     if certificate != RELEASE_CERTIFICATE:
-        raise ValueError("APK signing certificate differs from v1.0.1; this APK cannot update the published app.")
+        raise ValueError("APK signing certificate differs from the release identity; this APK cannot update installed releases.")
     return certificate
 
 

@@ -1,0 +1,139 @@
+name: Release with manual signing
+# For releases when the signing key cannot be stored as repository secrets.
+# 1. stage=build attaches an unsigned APK to a draft release for this commit.
+# 2. The maintainer signs it offline (APK Signature Scheme v2 only, which keeps every
+#    ZIP record unchanged) and uploads DepthWall-<version>.apk to the same draft.
+# 3. stage=publish proves the signed APK holds exactly the unsigned build, runs the
+#    same verify_release.py checks as the signed workflow, then publishes.
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: build attaches an unsigned APK; publish verifies the uploaded signed APK and publishes
+        required: true
+        type: choice
+        options: [build, publish]
+permissions:
+  contents: read
+concurrency:
+  group: depthwall-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'Srimi1/depthwall' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_DIR: artifacts/release
+      BUILD_TOOLS: '37.0.0'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install Android 17 SDK
+        run: sdkmanager 'platforms;android-37.0' "build-tools;$BUILD_TOOLS"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Read version and check the draft
+        id: version
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'versionName\s*=\s*"([^"]+)"', Path('app/build.gradle.kts').read_text())[1]
+          if not re.fullmatch(r'\d+\.\d+\.\d+', version): raise SystemExit('Expected a stable version.')
+          if not Path('docs/releases', version + '.md').is_file(): raise SystemExit('Release notes are missing for ' + version)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'version={version}\ntag=v{version}\n')
+          PY
+          tag="v$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)"
+          existing=$(git ls-remote --tags https://github.com/Srimi1/depthwall.git "refs/tags/$tag")
+          test -z "$existing" || { echo 'This version is already tagged; publish a new version.'; exit 1; }
+      - name: Build unsigned APK and attach it to a draft
+        if: inputs.stage == 'build'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          test ! -e keystore.properties
+          python3 -m unittest discover -s tools -p 'test_*signed*.py'
+          python3 -m unittest discover -s tools -p 'test_verify_release.py'
+          ./gradlew assembleRelease testReleaseUnitTest lintRelease
+          unsigned="$RELEASE_DIR/DepthWall-$RELEASE_VERSION-unsigned.apk"
+          mkdir -p "$RELEASE_DIR"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "$unsigned"
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -c -P 16 4 "$unsigned"
+          (cd "$RELEASE_DIR" && sha256sum "$(basename "$unsigned")" > UNSIGNED.SHA256)
+          if gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id" | grep -q .; then
+            echo 'A release for this version already exists; inspect or delete the draft before rebuilding.'; exit 1
+          fi
+          gh release create "$RELEASE_TAG" "$unsigned" "$RELEASE_DIR/UNSIGNED.SHA256" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+            --title "DepthWall $RELEASE_VERSION" --notes "Unsigned build from $GITHUB_SHA awaiting offline signing. Do not install."
+      - name: Verify the signed APK and publish
+        if: inputs.stage == 'publish'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,targetCommitish,assets > "$RUNNER_TEMP/state.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          state = json.loads((Path(os.environ['RUNNER_TEMP']) / 'state.json').read_text())
+          version = os.environ['RELEASE_VERSION']
+          if not state['isDraft'] or state['targetCommitish'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('The release is published or targets another commit; refusing to continue.')
+          names = {asset['name'] for asset in state['assets']}
+          expected = {f'DepthWall-{version}.apk', f'DepthWall-{version}-unsigned.apk', 'UNSIGNED.SHA256'}
+          if names != expected:
+              raise SystemExit(f'Draft assets must be exactly {sorted(expected)}, found {sorted(names)}.')
+          PY
+          incoming="$RUNNER_TEMP/incoming"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$incoming"
+          (cd "$incoming" && sha256sum --check UNSIGNED.SHA256)
+          python3 -m unittest discover -s tools -p 'test_*signed*.py'
+          python3 tools/check_signed_apk.py "$incoming/DepthWall-$RELEASE_VERSION-unsigned.apk" "$incoming/DepthWall-$RELEASE_VERSION.apk"
+          ./gradlew testReleaseUnitTest lintRelease
+          python3 tools/verify_release.py "$incoming/DepthWall-$RELEASE_VERSION.apk" \
+            --build-tools "$ANDROID_HOME/build-tools/$BUILD_TOOLS" --output "$RELEASE_DIR"
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          directory = Path(os.environ['RELEASE_DIR'])
+          body = Path('docs/releases', os.environ['RELEASE_VERSION'] + '.md').read_text()
+          prefix = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/blob/{os.environ['GITHUB_SHA']}/docs/"
+          body = re.sub(r'\]\(\.\./([^)]*)\)', lambda match: '](' + prefix + match[1] + ')', body)
+          (directory / 'release-notes.md').write_text(body)
+          PY
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            "$RELEASE_DIR/verification.json" "$RELEASE_DIR/SHA256SUMS"
+          gh release delete-asset "$RELEASE_TAG" "DepthWall-$RELEASE_VERSION-unsigned.apk" --repo "$GITHUB_REPOSITORY" --yes
+          gh release delete-asset "$RELEASE_TAG" UNSIGNED.SHA256 --repo "$GITHUB_REPOSITORY" --yes
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --title "DepthWall $RELEASE_VERSION" --notes-file "$RELEASE_DIR/release-notes.md"
+          downloaded="$RUNNER_TEMP/depthwall-release-download"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$downloaded"
+          (cd "$downloaded" && sha256sum --check SHA256SUMS)
+          cmp "$RELEASE_DIR/SHA256SUMS" "$downloaded/SHA256SUMS"
+          # A failed check leaves an unpublished draft, never a public incomplete release.
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+      - name: Keep build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-signing-${{ inputs.stage }}-evidence
+          if-no-files-found: ignore
+          path: |
+            artifacts/release/
+            app/build/reports/tests/testReleaseUnitTest/
+            app/build/reports/lint-results-release.html
