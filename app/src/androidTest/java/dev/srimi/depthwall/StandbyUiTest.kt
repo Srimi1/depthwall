@@ -72,6 +72,17 @@ class StandbyUiTest {
         return brightness
     }
 
+    @Test fun enableSwitchPersistsWithoutChangingTheSelectedDesign() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("standby_enabled").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("standby_enabled").performClick()
+        compose.waitUntil(10_000) { runBlocking { store.flow.first().enabled } }
+        compose.onNodeWithTag("standby_enabled").assertIsOn()
+        compose.onNodeWithTag("standby_enabled").performClick()
+        compose.waitUntil(10_000) { runBlocking { !store.flow.first().enabled } }
+        compose.onNodeWithTag("standby_enabled").assertIsOff()
+        assertEquals(StandbyDesign.DIGITAL, runBlocking { store.flow.first().design })
+    }
+
     @Test fun unrestrictedPreviewSwipesAllDesignsAndRemembersSelection() {
         preview()
         face(StandbyDesign.DIGITAL).assertIsDisplayed()

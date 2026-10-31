@@ -1,5 +1,6 @@
 package dev.srimi.depthwall.standby
 
+import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.service.dreams.DreamService
 import android.view.WindowManager
@@ -45,6 +46,9 @@ class StandbyDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOw
             host.decorView.setViewTreeLifecycleOwner(this)
             host.decorView.setViewTreeSavedStateRegistryOwner(this)
             host.decorView.setViewTreeViewModelStoreOwner(this)
+            // Android 12+ hosts dreams in an Activity. Keep its orientation request in
+            // sync with the window so rotation lock cannot cause opposing relaunches.
+            (host.context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             // StandBy rotates independently from the user's normal rotation-lock preference.
             host.attributes = host.attributes.apply { screenOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE }
             prepareStandbyWindow(host)
