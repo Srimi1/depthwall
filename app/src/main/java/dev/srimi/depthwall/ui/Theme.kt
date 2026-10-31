@@ -14,6 +14,9 @@ val Orange: Color
     @Composable get() = MaterialTheme.colorScheme.primary
 val Ink=Color(0xFF000000)
 val Surface=Color(0xFF131313)
+/** Cards and shelves sit one step above the AMOLED background. */
+val Raised=Color(0xFF181716)
+val Hairline=Color(0xFF34312D)
 val Muted=Color(0xFF9D9B97)
 val Ivory=Color(0xFFF4EEE5)
 @Composable fun DepthTheme(theme:String="Papaya",content:@Composable ()->Unit) {
@@ -29,9 +32,11 @@ val Ivory=Color(0xFFF4EEE5)
     }
     MaterialTheme(colorScheme=darkColorScheme(primary=accent,onPrimary=Ink,primaryContainer=accentSurface,onPrimaryContainer=Ivory,secondary=accent,onSecondary=Ink,secondaryContainer=accentSurface,onSecondaryContainer=accent,tertiary=Ivory,background=Ink,onBackground=Ivory,surface=Surface,onSurface=Ivory,surfaceVariant=Color(0xFF242321),onSurfaceVariant=Muted,outline=Color(0xFF393734)),
         typography=Typography(
+            displaySmall=TextStyle(fontWeight=FontWeight.Black,fontSize=34.sp,lineHeight=36.sp,letterSpacing=(-1.4).sp),
             headlineLarge=TextStyle(fontFamily=FontFamily.SansSerif,fontWeight=FontWeight.Bold,fontSize=36.sp,lineHeight=39.sp,letterSpacing=(-1).sp),
             headlineMedium=TextStyle(fontWeight=FontWeight.Bold,fontSize=28.sp,letterSpacing=(-.7).sp),
-            titleLarge=TextStyle(fontWeight=FontWeight.SemiBold,fontSize=21.sp),
+            titleLarge=TextStyle(fontWeight=FontWeight.Bold,fontSize=20.sp,letterSpacing=(-.3).sp),
+            titleMedium=TextStyle(fontWeight=FontWeight.SemiBold,fontSize=16.sp),
             bodyLarge=TextStyle(fontSize=16.sp,lineHeight=23.sp),
             bodyMedium=TextStyle(fontSize=14.sp,lineHeight=21.sp)
         ),content={ CompositionLocalProvider(LocalContentColor provides Ivory,content=content) })

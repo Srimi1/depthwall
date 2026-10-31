@@ -42,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import dev.srimi.depthwall.BuildConfig
 import dev.srimi.depthwall.R
 import dev.srimi.depthwall.data.*
 import dev.srimi.depthwall.wallpaper.DepthWallpaperService
@@ -72,7 +73,7 @@ import kotlinx.coroutines.launch
         owner.lifecycle.addObserver(observer);onDispose { owner.lifecycle.removeObserver(observer) }
     }
     val importImage=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let { vm.run("Image added to your library") { selected=vm.repo.importImage(it);tab=3 } }
+        uri?.let { vm.run("Image added to your library") { selected=vm.repo.importImage(it);tab=Tabs.LIBRARY } }
     }
     val importApk=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { vm.run { report=vm.packs.inspect(it) } }
@@ -93,19 +94,23 @@ import kotlinx.coroutines.launch
     fun applyPort(info:WallpaperInfo) { runCatching { applyPortResult.launch(vm.packs.preview(info)) }.onFailure { vm.message("This action is unavailable: ${it.message}") } }
     fun openLink(url:String)=launch(Intent(Intent.ACTION_VIEW,Uri.parse(url)))
     Scaffold(containerColor=Ink,snackbarHost={SnackbarHost(snackbar)},bottomBar={
-        NavigationBar(containerColor=Color(0xFF0C0C0C),tonalElevation=0.dp) {
-            val icons=listOf(Icons.Outlined.GridView,Icons.Outlined.Public,Icons.Outlined.Layers,Icons.Outlined.CollectionsBookmark)
-            listOf("Explore","Super","Depth Studio","Library").forEachIndexed { i,label ->
-                NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Orange,selectedTextColor=Ivory,indicatorColor=MaterialTheme.colorScheme.primaryContainer),modifier=Modifier.testTag("tab_$i"))
+        NavigationBar(containerColor=Color(0xFF0A0A0A),tonalElevation=0.dp) {
+            val icons=listOf(Icons.Outlined.Home,Icons.Outlined.AutoAwesome,Icons.Outlined.Explore,Icons.Outlined.Layers,Icons.Outlined.CollectionsBookmark)
+            listOf("Home","Live","Browse","Depth","Library").forEachIndexed { i,label ->
+                NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp,fontWeight=if(tab==i)FontWeight.SemiBold else FontWeight.Normal)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Orange,selectedTextColor=Ivory,unselectedIconColor=Muted,unselectedTextColor=Muted,indicatorColor=MaterialTheme.colorScheme.primaryContainer),modifier=Modifier.testTag("tab_$i"))
             }
         }
     }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            Row(Modifier.padding(horizontal=20.dp,vertical=10.dp).fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.depthwall_logo),"DepthWall logo",Modifier.size(38.dp))
-                Column(Modifier.padding(start=9.dp).weight(1f)) {
-                    Text("DepthWall",fontWeight=FontWeight.Bold,fontSize=22.sp,letterSpacing=(-.8).sp)
-                    Text("MADE FOR AMOLED",fontSize=8.sp,letterSpacing=2.sp,color=Muted)
+            Row(Modifier.padding(start=20.dp,end=8.dp,top=12.dp,bottom=14.dp).fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment=Alignment.CenterVertically) {
+                        Image(painterResource(R.drawable.depthwall_logo),"DepthWall logo",Modifier.size(22.dp))
+                        Text("DEPTHWALL",Modifier.padding(start=7.dp),fontSize=11.sp,letterSpacing=2.4.sp,fontWeight=FontWeight.Bold,color=Muted)
+                        Text("v${BuildConfig.VERSION_NAME}",Modifier.padding(start=8.dp).clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal=8.dp,vertical=3.dp).testTag("app_version"),color=Orange,fontSize=10.sp,fontWeight=FontWeight.Bold)
+                    }
+                    Text(when(tab){Tabs.HOME->"Made for your screen";Tabs.LIVE->"Live wallpapers";Tabs.BROWSE->"Browse";Tabs.DEPTH->"Depth";else->"Your library"},
+                        Modifier.padding(top=6.dp),style=MaterialTheme.typography.displaySmall,maxLines=1)
                 }
                 IconButton(onClick={importImage.launch(arrayOf("image/*"))}) { Icon(Icons.Outlined.AddPhotoAlternate,"Import image",tint=Ivory) }
                 IconButton(onClick={settingsOpen=true},modifier=Modifier.testTag("settings")) { Icon(Icons.Outlined.Tune,"Settings") }
@@ -113,9 +118,10 @@ import kotlinx.coroutines.launch
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
             Box(Modifier.weight(1f)) {
                 when(tab) {
-                    0 -> ExploreScreen(vm,items,picks,{selected=it},{selected=items.firstOrNull { it.id=="scene_earth" }})
-                    1 -> SuperScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
-                    2 -> CollectionScreen("Make it dimensional.","Layered landscapes. Subtle movement. Your own sense of depth.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
+                    Tabs.HOME -> HomeScreen(items,picks,{selected=it}) { tab=it }
+                    Tabs.LIVE -> LiveScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
+                    Tabs.BROWSE -> ExploreScreen(vm,items,{selected=it})
+                    Tabs.DEPTH -> CollectionScreen("","Layered landscapes with subtle parallax and an optional clock. Make your own in the preview with Import layer or Edit mask.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
                     else -> LibraryScreen(items,{selected=it},{vm.favorite(it)},{settingsOpen=true},{importImage.launch(arrayOf("image/*"))})
                 }
             }
@@ -151,7 +157,7 @@ import kotlinx.coroutines.launch
     }
 }
 
-@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,picks:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
+@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
@@ -209,32 +215,8 @@ import kotlinx.coroutines.launch
     }
     LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=24.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(18.dp),modifier=Modifier.testTag("explore_grid")) {
         item(span={GridItemSpan(2)}) {
-            Box(Modifier.fillMaxWidth().height(255.dp).clip(RoundedCornerShape(26.dp)).background(Surface).clickable(onClick=onHero)) {
-                AsyncImage("file:///android_asset/wallpapers/scene_earth.webp",null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop,alignment=Alignment.CenterEnd)
-                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color.Black.copy(.55f),Color.Transparent))))
-                Column(Modifier.padding(22.dp).align(Alignment.BottomStart)) {
-                    Text("YOUR SCREEN, REIMAGINED",fontSize=9.sp,letterSpacing=1.7.sp,color=Orange)
-                    Spacer(Modifier.height(9.dp));Text("A little space.\nA lot of depth.",style=MaterialTheme.typography.headlineLarge)
-                    Spacer(Modifier.height(12.dp));Row(verticalAlignment=Alignment.CenterVertically) { Text("Explore living worlds",fontSize=12.sp);Icon(Icons.Outlined.ArrowOutward,null,Modifier.padding(start=6.dp).size(16.dp),tint=Orange) }
-                }
-                BadgeLabel("7 LIVING WORLDS",Modifier.align(Alignment.TopStart).padding(18.dp))
-            }
-        }
-        // Curated for the 6.67" 1440 × 3120 AMOLED panel. A nested row keeps its own item keys,
-        // so picks that also appear in the grid below cannot collide with grid keys.
-        if(provider=="Offline" && query.isEmpty() && category=="All" && color=="All colours" && picks.isNotEmpty())item(span={GridItemSpan(2)}) {
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                Text("Best for your phone",style=MaterialTheme.typography.titleLarge)
-                Text("Tuned for OnePlus 7T Pro · 1440 × 3120 AMOLED · papaya, carbon and space",color=Muted,fontSize=13.sp)
-                LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp),modifier=Modifier.fillMaxWidth().testTag("device_picks")) {
-                    items(picks,key={it.id}) { item -> WallpaperCard(item,{onSelect(item)},{vm.favorite(item)},Modifier.width(148.dp),"pick_${item.id}") }
-                }
-            }
-        }
-        item(span={GridItemSpan(2)}) {
-            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
-                Text("Space, open roads and AMOLED colour.",color=Muted,fontSize=13.sp)
+                Text("Space, open roads and AMOLED colour, offline or from NASA, Wikimedia and Wallhaven.",color=Muted,fontSize=13.sp)
                 ChoiceRow(listOf("Space","Cars","Themes","Alps"),topic) { selectedTopic ->
                     resetOnline();topic=selectedTopic
                     when(selectedTopic) {
@@ -391,11 +373,11 @@ import kotlinx.coroutines.launch
         coil.request.ImageRequest.Builder(context).data(item.thumbnailModel).size(480, 720).build()
     }
     Column(modifier.clickable(onClick=onSelect).testTag(tag)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(.68f).clip(RoundedCornerShape(19.dp)).background(Surface)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(.66f).clip(RoundedCornerShape(22.dp)).background(Raised)) {
             AsyncImage(thumbnail,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             IconButton(onClick=onFavorite,modifier=Modifier.align(Alignment.TopEnd)) { Icon(if(item.favorite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Favorite ${item.title}",tint=if(item.favorite)Orange else Ivory,modifier=Modifier.size(19.dp)) }
-            if(item.kind!="STATIC")BadgeLabel(if(item.kind=="NATIVE_SCENE")"LIVE" else "DEPTH",Modifier.align(Alignment.BottomStart).padding(9.dp))
-            else if(maxOf(item.width,item.height)>=3840 && minOf(item.width,item.height)>=2160)BadgeLabel("4K SOURCE",Modifier.align(Alignment.BottomStart).padding(9.dp))
+            val badge=cardBadge(item) ?: if(maxOf(item.width,item.height)>=3840 && minOf(item.width,item.height)>=2160)"4K SOURCE" else null
+            badge?.let { BadgeLabel(it,Modifier.align(Alignment.BottomStart).padding(9.dp)) }
             if(item.localPath.isNotEmpty())Icon(Icons.Outlined.OfflinePin,"Available offline",Modifier.align(Alignment.BottomEnd).padding(10.dp).size(16.dp),tint=Ivory)
         }
         Text(item.title,Modifier.padding(top=9.dp),fontWeight=FontWeight.Medium,fontSize=14.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
@@ -421,58 +403,75 @@ import kotlinx.coroutines.launch
         if(items.isEmpty()) item(span={GridItemSpan(2)}) { EmptyState("Your collection starts here","Save a favourite or import a photo.") }
     }
 }
-@Composable private fun SuperScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,vm:MainViewModel,
+@Composable private fun LiveScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,vm:MainViewModel,
     applied:WallpaperApplyState?,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
-    var original by rememberSaveable { mutableStateOf(false) }
-    Column {
-        Column(Modifier.padding(horizontal=20.dp)) {
-            Text("Beyond the still.",style=MaterialTheme.typography.headlineMedium)
-            Text("Seven worlds. One extraordinary screen.",color=Muted,modifier=Modifier.padding(top=7.dp,bottom=10.dp))
-            ChoiceRow(listOf("DepthWall originals","Xiaomi / HyperOS"),if(original)"Xiaomi / HyperOS" else "DepthWall originals"){original=it=="Xiaomi / HyperOS"}
+    // DepthWall's own scenes are built in. Xiaomi/HyperOS ports are separate apps, so only the
+    // installed ones are listed; the rest stay in an optional, collapsed section.
+    var showPacks by rememberSaveable { mutableStateOf(false) }
+    val scenes=items.filter { it.kind=="NATIVE_SCENE" }
+    val installedPacks=packs.filter { it.version!=null }
+    val otherPacks=packs.filter { it.version==null }
+    LazyVerticalGrid(GridCells.Fixed(2),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=28.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(14.dp),modifier=Modifier.testTag("scene_grid")) {
+        item(span={GridItemSpan(2)}) {
+            Text("Seven living worlds built into DepthWall. Smooth at 90 Hz, gentle on battery, and no extra apps to install.",color=Muted,fontSize=13.sp)
         }
-        if(!original) CollectionScreen("","Built for DepthWall · adjustable performance",items.filter { it.kind=="NATIVE_SCENE" },onSelect,{vm.favorite(it)},"scene_grid")
-        else LazyColumn(contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
-            item {
-                Text("Original ports install separately. Choose an exposed scene below; public settings appear when available. Rendering on your exact crDroid build remains unverified.",color=Muted,fontSize=13.sp)
-                OutlinedButton(onClick=onImport,modifier=Modifier.fillMaxWidth().padding(top=12.dp)) { Icon(Icons.Outlined.InstallMobile,null);Spacer(Modifier.width(8.dp));Text("Inspect / install downloaded APK") }
-            }
-            items(packs,key={it.definition.packageName}) { p ->
-                Card(colors=CardDefaults.cardColors(containerColor=Surface),shape=RoundedCornerShape(20.dp)) {
-                    Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment=Alignment.CenterVertically) { Text(p.definition.title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));Icon(Icons.Outlined.Public,null,tint=Orange) }
-                        Text(p.version?.let { "Installed · $it" } ?: "Not installed",color=Muted,fontSize=12.sp)
-                        vm.packs.verifiedRelease(p.definition.packageName)?.let { evidence ->
-                            Text("Original port · %.1f MB · %d scenes".format(evidence.getLong("bytes")/1048576.0,evidence.getJSONArray("scenes").length()),color=Orange,fontSize=12.sp)
-                            Text("Archive inspected; installation checked on an Android 17 emulator. Phone rendering still needs testing.",color=Muted,fontSize=11.sp)
-                            if(p.version==evidence.getString("version") && p.signatures==listOf(evidence.getString("certificate"))) {
-                                val unstable=p.definition.packageName.endsWith("earth") || p.definition.packageName.endsWith("mars")
-                                Text(if(unstable) "This original release showed intermittent black previews and crashes on the emulator. Try the DepthWall original below if it fails."
-                                    else "Scene imagery verified with an emulator graphics workaround. Phone and AOD support remain unverified.",
-                                    color=if(unstable)Orange else Muted,fontSize=11.sp)
+        items(scenes,key={it.id}) { scene -> PosterCard(scene,{onSelect(scene)},Modifier.fillMaxWidth(),"wall_${scene.id}") }
+        if(installedPacks.isNotEmpty())item(span={GridItemSpan(2)}) {
+            Text("Your HyperOS packs",Modifier.padding(top=14.dp),style=MaterialTheme.typography.titleLarge)
+        }
+        items(installedPacks,key={it.definition.packageName},span={GridItemSpan(2)}) { p -> PackCard(p,items,vm,applied,onSelect,open,launch,apply,onRestart) }
+        item(span={GridItemSpan(2)}) {
+            Card(colors=CardDefaults.cardColors(containerColor=Raised),shape=RoundedCornerShape(24.dp),modifier=Modifier.padding(top=10.dp)) {
+                Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth().clickable { showPacks=!showPacks }.testTag("more_packs"),verticalAlignment=Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Original Xiaomi / HyperOS packs",style=MaterialTheme.typography.titleMedium)
+                            Text("Optional separate apps. The scenes above don't need them.",color=Muted,fontSize=12.sp)
+                        }
+                        Icon(if(showPacks)Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,if(showPacks)"Hide packs" else "Show packs",tint=Muted)
+                    }
+                    if(showPacks) {
+                        Text("Each pack is a separate download. Rendering on your exact crDroid build is unverified, and Earth and Mars can crash; the matching DepthWall scene is the reliable choice.",color=Muted,fontSize=12.sp)
+                        otherPacks.forEach { p ->
+                            Row(verticalAlignment=Alignment.CenterVertically) {
+                                Text(p.definition.title,Modifier.weight(1f),fontSize=14.sp)
+                                TextButton(onClick={open(p.definition.url)}){Text("Get ↗")}
+                                if(p.definition.legacyUrl.isNotEmpty())TextButton(onClick={open(p.definition.legacyUrl)}){Text("linuxct ↗")}
                             }
                         }
-                        val nativeScene = if(p.definition.packageName.endsWith("snowmountain")) "snow" else p.definition.packageName.substringAfterLast('.')
-                        items.firstOrNull { it.kind=="NATIVE_SCENE" && it.scene==nativeScene }?.let { native ->
-                            TextButton(onClick={onSelect(native)}) { Text("Use DepthWall original") }
-                        }
-                        p.error?.let { Text(it,color=Orange,fontSize=12.sp) }
-                        p.services.forEach { info ->
-                            Text(info.loadLabel(LocalContext.current.packageManager).toString(),fontSize=13.sp)
-                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                                Button(onClick={apply(info)}){Text("Preview & apply")}
-                                vm.packs.configuration(info)?.let { intent -> OutlinedButton(onClick={launch(intent)}){Text("Locations")}}
-                            }
-                            if(applied!=null && WallpaperRestart.destinations(applied,info.component.flattenToString())!=0)
-                                TextButton(onClick={onRestart(info)}) { Icon(Icons.Outlined.Refresh,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Black or frozen? Restart it") }
-                        }
-                        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick={open(p.definition.url)}){Text("Get original pack ↗")}
-                            if(p.definition.legacyUrl.isNotEmpty())TextButton(onClick={open(p.definition.legacyUrl)}){Text("linuxct ↗")}
-                        }
+                        OutlinedButton(onClick=onImport,modifier=Modifier.fillMaxWidth()) { Icon(Icons.Outlined.InstallMobile,null);Spacer(Modifier.width(8.dp));Text("Inspect / install downloaded pack") }
                     }
                 }
             }
-            item { Text("The documented collection contains Earth, Mars, Saturn, Moon, Snow Mountain and Geometry. Sun is a DepthWall original. No root or AOD module is installed by this app.",fontSize=12.sp,color=Muted) }
+        }
+    }
+}
+@Composable private fun PackCard(p:InstalledPack,items:List<WallpaperItem>,vm:MainViewModel,applied:WallpaperApplyState?,onSelect:(WallpaperItem)->Unit,
+    open:(String)->Unit,launch:(Intent)->Unit,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
+    Card(colors=CardDefaults.cardColors(containerColor=Raised),shape=RoundedCornerShape(24.dp)) {
+        Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment=Alignment.CenterVertically) { Text(p.definition.title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));Text("Installed · ${p.version}",color=Muted,fontSize=12.sp) }
+            vm.packs.verifiedRelease(p.definition.packageName)?.let { evidence ->
+                if(p.version==evidence.getString("version") && p.signatures==listOf(evidence.getString("certificate"))) {
+                    val unstable=p.definition.packageName.endsWith("earth") || p.definition.packageName.endsWith("mars")
+                    if(unstable)Text("This pack showed black previews and crashes in testing. If it fails, use the DepthWall scene instead.",color=Orange,fontSize=11.sp)
+                }
+            }
+            val nativeScene = if(p.definition.packageName.endsWith("snowmountain")) "snow" else p.definition.packageName.substringAfterLast('.')
+            items.firstOrNull { it.kind=="NATIVE_SCENE" && it.scene==nativeScene }?.let { native ->
+                TextButton(onClick={onSelect(native)}) { Text("Use DepthWall ${native.title} instead") }
+            }
+            p.error?.let { Text(it,color=Orange,fontSize=12.sp) }
+            p.services.forEach { info ->
+                Text(info.loadLabel(LocalContext.current.packageManager).toString(),fontSize=13.sp)
+                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Button(onClick={apply(info)}){Text("Preview & apply")}
+                    vm.packs.configuration(info)?.let { intent -> OutlinedButton(onClick={launch(intent)}){Text("Locations")}}
+                }
+                if(applied!=null && WallpaperRestart.destinations(applied,info.component.flattenToString())!=0)
+                    TextButton(onClick={onRestart(info)}) { Icon(Icons.Outlined.Refresh,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text("Black or frozen? Restart it") }
+            }
+            TextButton(onClick={open(p.definition.url)}){Text("Pack source ↗")}
         }
     }
 }
