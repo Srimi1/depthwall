@@ -24,8 +24,9 @@ class AppSmokeTest {
         compose.onNodeWithTag("apply_wallpaper").assertExists()
         compose.onNodeWithTag("close_preview").performClick()
         compose.onNodeWithTag("tab_2").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("wall_wall_0_0").fetchSemanticsNodes().isNotEmpty() }
+        // Type while the Browse header is on screen, then scroll the lazy grid to the card.
         compose.onNodeWithTag("search").performTextInput("Blue Hour")
+        compose.onNodeWithTag("explore_grid").performScrollToNode(hasTestTag("wall_wall_0_0"))
         compose.onNodeWithTag("wall_wall_0_0").assert(hasText("Blue Hour"))
         compose.onNodeWithTag("wall_wall_0_0").performClick()
         compose.onNodeWithTag("apply_wallpaper").assertExists()
