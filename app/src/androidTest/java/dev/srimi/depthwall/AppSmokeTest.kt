@@ -17,21 +17,27 @@ import org.junit.runner.RunWith
 class AppSmokeTest {
     @get:Rule val compose=createAndroidComposeRule<MainActivity>()
     @Test fun libraryAndNavigationAreUsable() {
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("wall_wall_0_0").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("explore_grid").performScrollToNode(hasTestTag("device_picks"))
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("home_hero").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("app_version").assert(hasText("v${BuildConfig.VERSION_NAME}"))
+        compose.onNodeWithTag("home").performScrollToNode(hasTestTag("device_picks"))
         compose.onNodeWithTag("pick_device_carbon_weave").performClick()
         compose.onNodeWithTag("apply_wallpaper").assertExists()
         compose.onNodeWithTag("close_preview").performClick()
+        compose.onNodeWithTag("tab_2").performClick()
+        // Type while the Browse header is on screen, then scroll the lazy grid to the card.
         compose.onNodeWithTag("search").performTextInput("Blue Hour")
+        compose.onNodeWithTag("explore_grid").performScrollToNode(hasTestTag("wall_wall_0_0"))
         compose.onNodeWithTag("wall_wall_0_0").assert(hasText("Blue Hour"))
         compose.onNodeWithTag("wall_wall_0_0").performClick()
         compose.onNodeWithTag("apply_wallpaper").assertExists()
         compose.onNodeWithTag("close_preview").performClick()
         compose.onNodeWithTag("tab_1").performClick()
-        compose.onNodeWithText("Beyond the still.").assertExists()
-        compose.onNodeWithTag("tab_2").performClick()
-        compose.onNodeWithText("Make it dimensional.").assertExists()
+        compose.onNodeWithTag("scene_grid").performScrollToNode(hasTestTag("wall_scene_sun"))
+        compose.onNodeWithTag("wall_scene_sun").assertExists()
+        compose.onNodeWithText("Not installed").assertDoesNotExist()
         compose.onNodeWithTag("tab_3").performClick()
+        compose.onNodeWithTag("depth_grid").assertExists()
+        compose.onNodeWithTag("tab_4").performClick()
         compose.onNodeWithTag("settings").performClick()
         compose.onNodeWithText("Make it yours").assertExists()
     }

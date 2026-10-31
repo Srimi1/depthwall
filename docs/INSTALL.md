@@ -4,7 +4,7 @@ These instructions target **v1.2.0** (Android 12 or newer), with the OnePlus 7T 
 
 1. Download the APK attached to the release and copy it to your phone.
 2. Open it from Files and allow installation from that source when Android asks.
-3. Open DepthWall. Browse **Explore**, **Super**, **Depth Studio**, or **Library**.
+3. Open DepthWall. Use **Home**, **Live**, **Browse**, **Depth** or **Library** at the bottom.
 
 **Coming from 1.0.1 or 1.1.0:** 1.2.0 uses a new signing key because the earlier key was lost. Uninstall the old DepthWall first, then install 1.2.0. Its favourites, downloads and settings do not carry over. Updates after 1.2.0 install normally.
 
@@ -20,8 +20,8 @@ This optimized, non-debuggable APK uses a development signing certificate. It is
 
 ## A first wallpaper
 
-- **Still:** Explore → choose an image → adjust crop → Home, Lock or Both → Set wallpaper.
-- **Live:** Super → choose a DepthWall original → Preview unlock → Preview & apply → finish in Android's wallpaper chooser.
+- **Still:** Home or Browse → choose an image → adjust crop → Home, Lock or Both → Set wallpaper.
+- **Live:** Live → choose a scene → Preview unlock → Preview & apply → finish in Android's wallpaper chooser.
 - **Depth:** Depth Studio → choose a scene → select an optional clock → adjust clock position and parallax → Preview & apply.
 - **Your photo:** use the import icon → Depth + clock → Edit mask. Erase the background while retaining the subject, then save the depth wallpaper. Transparent PNG/WebP foreground layers can also be imported.
 
@@ -40,7 +40,7 @@ Foreground-over-clock depth requires a prepared layered scene or a foreground cr
 
 ## Original Xiaomi / HyperOS packs
 
-1. Open **Super → Xiaomi / HyperOS**.
+1. Open **Live → Original Xiaomi / HyperOS packs** and expand it.
 2. Use **Get original pack** to visit the port author's linked release. Earth and Mars also have the exact older linuxct release links.
 3. After downloading, return to **Inspect / install downloaded APK**.
 4. Review archive checks. If required, enable **Allow from this source**, return and press Install again. Android's installer asks for final confirmation.

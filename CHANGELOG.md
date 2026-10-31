@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0 (2026-10-31)
+
+Installs as a normal update over 1.2.0, so there's no uninstall this time.
+
+### Changed
+
+- **New design.**
+  - Five tabs: Home, Live, Browse, Depth and Library.
+  - A larger header that shows the app version.
+  - Poster-style cards with the title on the artwork.
+  - A refreshed AMOLED palette and typography.
+- **Home** opens with a full-screen carousel of the new 7T Pro originals, followed by shelves for Best for your phone, Living worlds, Papaya Edition, space and depth.
+- **Live** puts DepthWall's seven built-in live wallpapers first. Optional Xiaomi/HyperOS packs show only once installed, and the rest sit in a collapsed section instead of six "Not installed" cards.
+
+See [release notes](docs/releases/1.3.0.md).
+
 ## 1.2.0 (2026-10-31)
 
 **New signing key.** The key behind earlier releases was lost. Uninstall DepthWall before installing 1.2.0; its library and settings are not carried over. Later versions update normally.

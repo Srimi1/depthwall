@@ -6,9 +6,9 @@ A personal, no-root Android wallpaper app with AMOLED blacks and papaya-orange a
 
 ## Inside
 
-- **Explore:** 64 original static illustrations, including sixteen 4K portrait car, theme and space designs, search, category/colour filters, favourites, crop positioning, home/lock application and image export.
-- **Best for your phone:** a curated Explore row for the OnePlus 7T Pro's 1440 × 3120 AMOLED panel. It mixes eleven new papaya, carbon and space originals (true black above the clock, clean of the curved edges) with the best existing stills and the live Sun scene.
-- **Super:** seven native OpenGL worlds — Earth, Mars, Saturn, Moon, Snow Mountain, Geometry and Sun — with adjustable performance.
+- **Home:** a new start screen for the OnePlus 7T Pro's 1440 × 3120 AMOLED panel. A full-screen carousel of the newest originals, then shelves for Best for your phone, Living worlds, Papaya Edition, space and depth.
+- **Live:** seven built-in OpenGL worlds (Earth, Mars, Saturn, Moon, Snow Mountain, Geometry and Sun) with adjustable performance. Optional Xiaomi/HyperOS packs appear only once installed.
+- **Browse:** 64 original static illustrations, including sixteen 4K portrait car, theme and space designs, plus search, category/colour filters, online sources and website import, favourites, crop positioning, home/lock application and image export.
 - **Depth Studio:** 12 prepared layered scenes, transparent foreground import, a manual erase/restore mask editor, parallax and optional digital, minimal or analogue clocks.
 - **Library:** offline downloads, local imports, saved favourites, settings and optional hourly, six-hourly or daily static rotation.
 - **Online collections:** paginated NASA originals, SFW Wallhaven, Wikimedia, and ESA / ISRO / JAXA / CSA collections via Commons. Filter by verified 4K source dimensions and keep creator credits and source links.
