@@ -66,6 +66,8 @@ import kotlinx.coroutines.launch
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
+    var report32 by remember { mutableStateOf<ApkInspection?>(null) }
+    var awaitingUninstall by remember { mutableStateOf(false) }
     val snackbar=remember { SnackbarHostState() }
     var applied by remember { mutableStateOf(WallpaperApplyState.capture(context)) }
     var restart by remember { mutableStateOf<WallpaperInfo?>(null) }
@@ -73,7 +75,11 @@ import kotlinx.coroutines.launch
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
     val owner=LocalLifecycleOwner.current
     DisposableEffect(owner) {
-        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_RESUME) { vm.refreshPacks();applied=WallpaperApplyState.capture(context) } }
+        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_RESUME) {
+            vm.refreshPacks();applied=WallpaperApplyState.capture(context)
+            val pending=report32
+            if(awaitingUninstall && pending!=null) { awaitingUninstall=false;vm.run { report32=vm.packs.recheck(pending) } }
+        } }
         owner.lifecycle.addObserver(observer);onDispose { owner.lifecycle.removeObserver(observer) }
     }
     val importImage=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -82,6 +88,10 @@ import kotlinx.coroutines.launch
     val importApk=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { vm.run { report=vm.packs.inspect(it) } }
     }
+    val importApk32=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { vm.run { report32=vm.packs.prepare32Bit(it) } }
+    }
+    val apkTypes=arrayOf("application/vnd.android.package-archive","application/octet-stream")
     val applyLive=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val accepted = result.resultCode == Activity.RESULT_OK
         val flags = vm.repo.scenes.finishPreview(accepted,
@@ -123,7 +133,7 @@ import kotlinx.coroutines.launch
             Box(Modifier.weight(1f)) { tabStates.SaveableStateProvider(tab) {
                 when(tab) {
                     Tabs.HOME -> HomeScreen(items,picks,{selected=it},{ category -> browseCategory=category;tab=Tabs.BROWSE }) { tab=it }
-                    Tabs.LIVE -> LiveScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
+                    Tabs.LIVE -> LiveScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(apkTypes)},{importApk32.launch(apkTypes)},vm,applied,::applyPort) { restart=it }
                     Tabs.BROWSE -> ExploreScreen(vm,items,browseCategory,{selected=it})
                     Tabs.DEPTH -> CollectionScreen("","Layered landscapes with subtle parallax and an optional clock. Make your own in the preview with Import layer or Edit mask.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
                     else -> LibraryScreen(items,{selected=it},{vm.favorite(it)},{settingsOpen=true},{importImage.launch(arrayOf("image/*"))})
@@ -158,6 +168,23 @@ import kotlinx.coroutines.launch
                 Text("Android will ask you to allow installation from DepthWall if needed. Return here and tap Install again.",fontSize=12.sp)
             }
         },confirmButton={TextButton(enabled=info.problem==null,onClick={launch(vm.packs.installationIntent(info))}){Text("Install")}},dismissButton={TextButton(onClick={report=null}){Text("Close")}})
+    }
+    report32?.let { info ->
+        AlertDialog(onDismissRequest={report32=null;awaitingUninstall=false},title={Text("Install as 32-bit")},text={
+            Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Text(info.packageName,style=MaterialTheme.typography.titleSmall)
+                Text("Version ${info.version}\nAndroid API ${info.minSdk}+ · target ${info.targetSdk}\n${info.abis.joinToString().ifBlank { "No native libraries" }}")
+                Text("DepthWall removed the 64-bit engine and signed this copy with its own key, so the pack runs as 32-bit. Updates from the original source need the same steps again.",fontSize=12.sp)
+                Text(info.problem ?: "Ready to install. Rendering on your phone still needs checking.",color=if(info.problem==null)Ivory else Orange)
+                Text("Certificate SHA-256\n${info.signatures.joinToString("\n")}\n\nFile SHA-256\n${info.sha256}",fontSize=10.sp,color=Muted)
+                Text("Android will ask you to allow installation from DepthWall if needed. Return here and tap Install again.",fontSize=12.sp)
+            }
+        },confirmButton={TextButton(enabled=info.problem==null,onClick={launch(vm.packs.installationIntent(info))}){Text("Install")}},dismissButton={
+            Row {
+                info.uninstall?.let { pkg -> TextButton(onClick={awaitingUninstall=true;launch(vm.packs.uninstallIntent(pkg))}){Text("Uninstall original")} }
+                TextButton(onClick={report32=null;awaitingUninstall=false}){Text("Close")}
+            }
+        })
     }
 }
 
@@ -408,7 +435,7 @@ import kotlinx.coroutines.launch
         if(items.isEmpty()) item(span={GridItemSpan(2)}) { EmptyState("Your collection starts here","Save a favourite or import a photo.") }
     }
 }
-@Composable private fun LiveScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,vm:MainViewModel,
+@Composable private fun LiveScreen(items:List<WallpaperItem>,packs:List<InstalledPack>,onSelect:(WallpaperItem)->Unit,open:(String)->Unit,launch:(Intent)->Unit,onImport:()->Unit,onImport32:()->Unit,vm:MainViewModel,
     applied:WallpaperApplyState?,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
     // DepthWall's own scenes are built in. Xiaomi/HyperOS ports are separate apps, so only the
     // installed ones are listed; the rest stay in an optional, collapsed section.
@@ -424,7 +451,7 @@ import kotlinx.coroutines.launch
         if(installedPacks.isNotEmpty())item(span={GridItemSpan(2)}) {
             Text("Your HyperOS packs",Modifier.padding(top=14.dp),style=MaterialTheme.typography.titleLarge)
         }
-        items(installedPacks,key={it.definition.packageName},span={GridItemSpan(2)}) { p -> PackCard(p,items,vm,applied,onSelect,open,launch,apply,onRestart) }
+        items(installedPacks,key={it.definition.packageName},span={GridItemSpan(2)}) { p -> PackCard(p,items,vm,applied,onSelect,open,launch,apply,onRestart,onImport32) }
         item(span={GridItemSpan(2)}) {
             Card(colors=CardDefaults.cardColors(containerColor=Raised),shape=RoundedCornerShape(24.dp),modifier=Modifier.padding(top=10.dp)) {
                 Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -445,6 +472,8 @@ import kotlinx.coroutines.launch
                             }
                         }
                         OutlinedButton(onClick=onImport,modifier=Modifier.fillMaxWidth()) { Icon(Icons.Outlined.InstallMobile,null);Spacer(Modifier.width(8.dp));Text("Inspect / install downloaded pack") }
+                        Text("Earth, Mars, Saturn, Snow Mountain and Geometry use an old engine that crashes on 64-bit Android 17. Install them as 32-bit to fix this; Moon works as is.",color=Muted,fontSize=12.sp)
+                        OutlinedButton(onClick=onImport32,modifier=Modifier.fillMaxWidth().testTag("install_32bit")) { Icon(Icons.Outlined.Memory,null);Spacer(Modifier.width(8.dp));Text("Install pack as 32-bit") }
                     }
                 }
             }
@@ -452,7 +481,7 @@ import kotlinx.coroutines.launch
     }
 }
 @Composable private fun PackCard(p:InstalledPack,items:List<WallpaperItem>,vm:MainViewModel,applied:WallpaperApplyState?,onSelect:(WallpaperItem)->Unit,
-    open:(String)->Unit,launch:(Intent)->Unit,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit) {
+    open:(String)->Unit,launch:(Intent)->Unit,apply:(WallpaperInfo)->Unit,onRestart:(WallpaperInfo)->Unit,onImport32:()->Unit) {
     Card(colors=CardDefaults.cardColors(containerColor=Raised),shape=RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(p.definition.title,style=MaterialTheme.typography.titleLarge)
@@ -468,6 +497,13 @@ import kotlinx.coroutines.launch
                 TextButton(onClick={onSelect(native)}) { Text("Use DepthWall ${native.title} instead") }
             }
             p.error?.let { Text(it,color=Orange,fontSize=12.sp) }
+            if(!p.definition.packageName.endsWith(".moon")) {
+                if(p.is32Bit) Text("Running as 32-bit",color=Muted,fontSize=12.sp)
+                else Row(verticalAlignment=Alignment.CenterVertically) {
+                    Text("Black or crashing? Reinstall it as 32-bit",Modifier.weight(1f),color=Orange,fontSize=12.sp)
+                    TextButton(onClick=onImport32){Text("Choose APK")}
+                }
+            }
             p.services.forEach { info ->
                 Text(info.loadLabel(LocalContext.current.packageManager).toString(),fontSize=13.sp)
                 Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
