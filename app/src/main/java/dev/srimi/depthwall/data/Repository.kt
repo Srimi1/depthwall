@@ -35,7 +35,7 @@ class Repository(val context: Context) {
     val downloads = File(context.filesDir,"wallpapers").apply { mkdirs() }
 
     suspend fun seed() = withContext(Dispatchers.IO) {
-        for (catalogFile in listOf("catalog.json", "extra_catalog.json")) {
+        for (catalogFile in listOf("catalog.json", "extra_catalog.json", "device_catalog.json")) {
             val array=JSONArray(context.assets.open(catalogFile).bufferedReader().use { it.readText() })
             dao.seed((0 until array.length()).map { i ->
                 val j=array.getJSONObject(i)
@@ -43,6 +43,11 @@ class Repository(val context: Context) {
                     width=j.optInt("width"),height=j.optInt("height"))
             })
         }
+    }
+
+    val devicePicks: List<String> by lazy {
+        runCatching { DevicePicks.parse(context.assets.open(DevicePicks.ASSET).bufferedReader().use { it.readText() }) }
+            .getOrDefault(emptyList())
     }
 
     fun open(path: String): InputStream = if (path.startsWith("/")) File(path).inputStream() else context.assets.open(path.removePrefix("file:///android_asset/"))

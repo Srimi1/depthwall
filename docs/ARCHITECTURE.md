@@ -4,7 +4,7 @@
 
 Kotlin + Compose, minimum API 31, compile/target API 37. The catalogue uses Room; preferences use DataStore. A small synchronous SceneStore handles Android's preview/apply boundary. No account, telemetry or application server is used.
 
-`WallpaperItem` distinguishes static images, layered depth, native scenes and external services. The shipped catalogue has 48 static illustrations, 12 layer pairs and seven native preview entries. Original art is reproducible with `tools/generate_art.py`; these are generative illustrations, not photographs or copies of Xiaomi artwork.
+`WallpaperItem` distinguishes static images, layered depth, native scenes and external services. The shipped catalogue has 64 static illustrations (`catalog.json`, `extra_catalog.json`, `device_catalog.json`), 12 layer pairs and seven native preview entries. Explore's "Best for your phone" row reads its ordered ids from `device_picks.json`, outside Room, because seeding never updates existing rows and the row mixes kinds. Original art is reproducible with the generators in `tools/`; these are generative illustrations, not photographs or copies of Xiaomi artwork.
 
 Images use Android's document picker for import and MediaStore for export. Downloads are bounded, HTTPS-only and limited to NASA/Wikimedia image hosts. Saved files are retained independently of the thumbnail cache. Credits and source links persist with the image record.
 

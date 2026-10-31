@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0 (unreleased)
+
+### Fixed
+
+- Black or frozen Super wallpapers after a restart. DepthWall's engine now retries a renderer that fails to start, rebuilds EGL after a lost surface instead of retrying the dead one, draws black for an unreadable depth layer instead of failing every frame, and releases EGL before Android releases the surface. Failures are bounded and visible in `dumpsys wallpaper` (`rendererAttempts`, `stalled`, `msSinceLastFrame`).
+- Applying the same DepthWall scene again now restarts a stuck engine. Android only sends the running engine a reapply command in that case, and DepthWall rebuilds on it.
+- Lock-only rotation could replace a live lock screen that shares the home wallpaper after a reboot.
+- A settings file damaged by a power loss is replaced with defaults instead of crashing the process that hosts the wallpaper.
+- The unlock transition re-reads the keyguard after boot, so Earth, Mars and Moon no longer stay in orbit view on the home screen.
+
+### Added
+
+- **Black or frozen? Restart it** on installed Xiaomi/HyperOS port cards. Re-applying a port cannot restart it, so DepthWall switches its screens to black (which unbinds it), offers a force stop for a stuck process, and opens the picker for a fresh start.
+- A warning when Home and Lock use two scenes of the same port pack, which share one process and crash together at startup.
+- **Best for your phone** in Explore: eleven new 2160 × 4680 papaya, carbon and space originals tuned for the OnePlus 7T Pro panel, alongside the best existing stills and the live Sun scene. New **Papaya Edition** filter.
+- `tools/device_report.sh` captures WallpaperManagerService resets, service deaths, port process IDs and exit info. `tools/inspect_apk.py` records directBootAware, process and receivers.
+
+### Validation
+
+CI (`.github/workflows/android.yml`) compiles debug, preview and androidTest builds and runs unit tests and lint. Android instrumentation tests were compiled, not run. The restart fixes follow crDroid 17.0 `WallpaperManagerService` source; phone validation after a real reboot is still pending. See [After a restart](docs/COMPATIBILITY.md#after-a-restart) and [release notes](docs/releases/1.2.0.md).
+
 ## 1.1.0-preview.1 — 2026-10-29
 
 - Added an optimized, non-debuggable **DepthWall Preview** build using a separate application ID and development signing certificate, so the new 1.1.0 features can be tested alongside stable DepthWall.

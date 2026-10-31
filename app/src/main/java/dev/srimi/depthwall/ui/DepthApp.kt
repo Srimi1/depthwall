@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +56,7 @@ import kotlinx.coroutines.launch
     val busy by vm.busy.collectAsStateWithLifecycle()
     val installed by vm.installed.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val picks by vm.devicePicks.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
@@ -111,7 +113,7 @@ import kotlinx.coroutines.launch
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
             Box(Modifier.weight(1f)) {
                 when(tab) {
-                    0 -> ExploreScreen(vm,items,{selected=it},{selected=items.firstOrNull { it.id=="scene_earth" }})
+                    0 -> ExploreScreen(vm,items,picks,{selected=it},{selected=items.firstOrNull { it.id=="scene_earth" }})
                     1 -> SuperScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(arrayOf("application/vnd.android.package-archive","application/octet-stream"))},vm,applied,::applyPort) { restart=it }
                     2 -> CollectionScreen("Make it dimensional.","Layered landscapes. Subtle movement. Your own sense of depth.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
                     else -> LibraryScreen(items,{selected=it},{vm.favorite(it)},{settingsOpen=true},{importImage.launch(arrayOf("image/*"))})
@@ -149,7 +151,7 @@ import kotlinx.coroutines.launch
     }
 }
 
-@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
+@Composable private fun ExploreScreen(vm:MainViewModel,items:List<WallpaperItem>,picks:List<WallpaperItem>,onSelect:(WallpaperItem)->Unit,onHero:()->Unit) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
@@ -218,6 +220,17 @@ import kotlinx.coroutines.launch
                 BadgeLabel("7 LIVING WORLDS",Modifier.align(Alignment.TopStart).padding(18.dp))
             }
         }
+        // Curated for the 6.67" 1440 × 3120 AMOLED panel. A nested row keeps its own item keys,
+        // so picks that also appear in the grid below cannot collide with grid keys.
+        if(provider=="Offline" && query.isEmpty() && category=="All" && color=="All colours" && picks.isNotEmpty())item(span={GridItemSpan(2)}) {
+            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                Text("Best for your phone",style=MaterialTheme.typography.titleLarge)
+                Text("Tuned for OnePlus 7T Pro · 1440 × 3120 AMOLED · papaya, carbon and space",color=Muted,fontSize=13.sp)
+                LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp),modifier=Modifier.fillMaxWidth().testTag("device_picks")) {
+                    items(picks,key={it.id}) { item -> WallpaperCard(item,{onSelect(item)},{vm.favorite(item)},Modifier.width(148.dp),"pick_${item.id}") }
+                }
+            }
+        }
         item(span={GridItemSpan(2)}) {
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Text("Find your next favourite",style=MaterialTheme.typography.titleLarge)
@@ -240,7 +253,7 @@ import kotlinx.coroutines.launch
                 }
                 if(provider=="Offline") {
                     Text("${source.size} wallpapers available offline",color=Muted,fontSize=11.sp)
-                    ChoiceRow(listOf("All","Space","Cars","Themes","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
+                    ChoiceRow(listOf("All","Papaya Edition","Space","Cars","Themes","Nature","Abstract","Minimal","Geometry","Orange / Black"),category){category=it}
                     ChoiceRow(listOf("All colours","Orange","Blue","Green","Purple","Gold","Red","White"),color){color=it}
                 } else {
                     Card(colors=CardDefaults.cardColors(containerColor=Surface),shape=RoundedCornerShape(16.dp)) {
@@ -372,12 +385,12 @@ import kotlinx.coroutines.launch
 @Composable fun BadgeLabel(label:String,modifier:Modifier=Modifier) {
     Text(label,modifier.clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.85f)).padding(horizontal=11.dp,vertical=7.dp),color=Orange,fontSize=8.sp,letterSpacing=1.sp,fontWeight=FontWeight.Bold)
 }
-@Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit) {
+@Composable fun WallpaperCard(item:WallpaperItem,onSelect:()->Unit,onFavorite:()->Unit,modifier:Modifier=Modifier,tag:String="wall_${item.id}") {
     val context = LocalContext.current
     val thumbnail = remember(item.thumbnailModel) {
         coil.request.ImageRequest.Builder(context).data(item.thumbnailModel).size(480, 720).build()
     }
-    Column(Modifier.clickable(onClick=onSelect).testTag("wall_${item.id}")) {
+    Column(modifier.clickable(onClick=onSelect).testTag(tag)) {
         Box(Modifier.fillMaxWidth().aspectRatio(.68f).clip(RoundedCornerShape(19.dp)).background(Surface)) {
             AsyncImage(thumbnail,item.title,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
             IconButton(onClick=onFavorite,modifier=Modifier.align(Alignment.TopEnd)) { Icon(if(item.favorite)Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,"Favorite ${item.title}",tint=if(item.favorite)Orange else Ivory,modifier=Modifier.size(19.dp)) }

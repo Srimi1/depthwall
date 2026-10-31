@@ -6,7 +6,8 @@ A personal, no-root Android wallpaper app with AMOLED blacks and papaya-orange a
 
 ## Inside
 
-- **Explore:** 53 original static illustrations, including five 4K portrait car and theme designs, search, category/colour filters, favourites, crop positioning, home/lock application and image export.
+- **Explore:** 64 original static illustrations, including sixteen 4K portrait car, theme and space designs, search, category/colour filters, favourites, crop positioning, home/lock application and image export.
+- **Best for your phone:** a curated Explore row for the OnePlus 7T Pro's 1440 × 3120 AMOLED panel. It mixes eleven new papaya, carbon and space originals (true black above the clock, clean of the curved edges) with the best existing stills and the live Sun scene.
 - **Super:** seven native OpenGL worlds — Earth, Mars, Saturn, Moon, Snow Mountain, Geometry and Sun — with adjustable performance.
 - **Depth Studio:** 12 prepared layered scenes, transparent foreground import, a manual erase/restore mask editor, parallax and optional digital, minimal or analogue clocks.
 - **Library:** offline downloads, local imports, saved favourites, settings and optional hourly, six-hourly or daily static rotation.
@@ -45,6 +46,6 @@ For a personally signed release, run `python3 tools/create_personal_key.py`, the
 
 ![Bundled artwork contact sheet](branding/catalog-contact-sheet.jpg)
 
-The [logo master](branding/depthwall-logo.png), Android adaptive/monochrome launcher icons, and [artwork generator](tools/generate_art.py) are included. Wallpaper artwork is original generative illustration. The logo's generation brief is recorded in [branding/PROMPT.md](branding/PROMPT.md). No Xiaomi, OnePlus or McLaren branding is used in the app identity.
+The [logo master](branding/depthwall-logo.png), Android adaptive/monochrome launcher icons, and artwork generators ([catalogue](tools/generate_art.py), [car and theme extras](tools/generate_extra_art.py), [phone collection](tools/generate_device_art.py)) are included. Wallpaper artwork is original generative illustration. The logo's generation brief is recorded in [branding/PROMPT.md](branding/PROMPT.md). No Xiaomi, OnePlus or McLaren branding is used in the app identity.
 
 DepthWall's optional clock is drawn inside its own wallpaper. The native crDroid clock remains controlled by the ROM. Wallpaper AOD requires a restricted Android permission that current crDroid retains; this normally installed no-root APK cannot enable it. See [AOD support](docs/AOD_AND_EMULATOR.md).
