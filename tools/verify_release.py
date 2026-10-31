@@ -11,7 +11,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 # This is the public certificate fingerprint of the published v1.0.1 APK, not a secret.
-RELEASE_CERTIFICATE = "1086e392ec4b7b22b514eb747d6b00521fd69c5d2ecbbfc48b623db7fca39edf"
+RELEASE_CERTIFICATE = "bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37"
 PACKAGE_NAME = "dev.srimi.depthwall"
 
 

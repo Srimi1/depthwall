@@ -1,12 +1,8 @@
 # Changelog
 
-## 1.2.0-preview.1 (2026-10-31)
+## 1.2.0 (2026-10-31)
 
-- An installable **DepthWall Preview** build of the 1.2.0 changes: the restart fixes for Super wallpapers and the "Best for your phone" collection. It uses the separate preview application ID and a development signing certificate, so it installs beside stable DepthWall and cannot update it. Physical-phone validation is still pending.
-
-See [preview release notes](docs/releases/1.2.0-preview.1.md).
-
-## 1.2.0 (unreleased)
+**New signing key.** The key behind earlier releases was lost. Uninstall DepthWall before installing 1.2.0; its library and settings are not carried over. Later versions update normally.
 
 ### Fixed
 

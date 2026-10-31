@@ -1,10 +1,12 @@
 # Install DepthWall
 
-These instructions target **v1.1.0** (Android 12 or newer), with the OnePlus 7T Pro McLaren as the default phone profile. Download release APKs only from this repository's [Releases page](https://github.com/Srimi1/depthwall/releases), and read the selected release's signing and validation notes.
+These instructions target **v1.2.0** (Android 12 or newer), with the OnePlus 7T Pro McLaren as the default phone profile. Download release APKs only from this repository's [Releases page](https://github.com/Srimi1/depthwall/releases), and read the selected release's signing and validation notes.
 
 1. Download the APK attached to the release and copy it to your phone.
 2. Open it from Files and allow installation from that source when Android asks.
 3. Open DepthWall. Browse **Explore**, **Super**, **Depth Studio**, or **Library**.
+
+**Coming from 1.0.1 or 1.1.0:** 1.2.0 uses a new signing key because the earlier key was lost. Uninstall the old DepthWall first, then install 1.2.0. Its favourites, downloads and settings do not carry over. Updates after 1.2.0 install normally.
 
 Android accepts an in-place update only when the APK uses the same signing identity as the installed version. A debug APK or a release signed with a new key cannot update an older personal release. If Android reports a signature mismatch, keep the installed app and obtain a build signed with its original key; uninstalling would remove its private library and preferences. The v1.1.0 database migration preserves existing favourites and saved image paths, but installation and upgrade still need validation on a physical phone.
 
