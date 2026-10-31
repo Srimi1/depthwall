@@ -2,6 +2,7 @@ package dev.srimi.depthwall.standby
 
 import android.content.pm.ActivityInfo
 import android.service.dreams.DreamService
+import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.Lifecycle
@@ -26,6 +27,7 @@ class StandbyDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOw
     override val viewModelStore = ViewModelStore()
     private var monitor: StandbyDeviceMonitor? = null
     private var composition: ComposeView? = null
+    private var dreaming = false
 
     override fun onCreate() {
         super.onCreate()
@@ -54,17 +56,35 @@ class StandbyDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOw
                     onExit = { finish() }, onNightChanged = { night -> window?.let { applyStandbyBrightness(it, night) } })
             }
         }.also { setContentView(it) }
+        // A configuration change can replace the dream window without starting a new dream.
+        if (dreaming) startSession()
+    }
+
+    override fun onWindowAttributesChanged(attrs: WindowManager.LayoutParams) {
+        super.onWindowAttributesChanged(attrs)
+        // DreamService's default callback is a no-op. Unlike an Activity, changing the
+        // Window attributes alone does not apply brightness/orientation to its visible view.
+        window?.let { host ->
+            if (host.decorView.isAttachedToWindow) host.windowManager.updateViewLayout(host.decorView, attrs)
+        }
     }
 
     override fun onDreamingStarted() {
         super.onDreamingStarted()
+        dreaming = true
+        startSession()
+    }
+
+    private fun startSession() {
         registry.currentState = Lifecycle.State.RESUMED
+        if (monitor != null) return
         monitor = StandbyDeviceMonitor(this, { state ->
             if (!state.powered || state.landscape == false) finish()
         }, onScreenOff = { finish() }).also { it.start() }
     }
 
     override fun onDreamingStopped() {
+        dreaming = false
         stopSession()
         super.onDreamingStopped()
     }
@@ -82,6 +102,7 @@ class StandbyDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOw
     }
 
     override fun onDestroy() {
+        dreaming = false
         stopSession()
         composition?.disposeComposition(); composition = null
         registry.currentState = Lifecycle.State.DESTROYED
