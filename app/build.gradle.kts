@@ -68,6 +68,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.21.2")
+    implementation("com.android.tools.build:apksig:8.13.2")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.11.01"))
