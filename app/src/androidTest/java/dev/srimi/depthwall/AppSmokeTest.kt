@@ -31,7 +31,7 @@ class AppSmokeTest {
         compose.onNodeWithTag("apply_wallpaper").assertExists()
         compose.onNodeWithTag("close_preview").performClick()
         compose.onNodeWithTag("tab_1").performClick()
-        compose.onNodeWithTag("scene_grid").assertExists()
+        compose.onNodeWithTag("scene_grid").performScrollToNode(hasTestTag("wall_scene_sun"))
         compose.onNodeWithTag("wall_scene_sun").assertExists()
         compose.onNodeWithText("Not installed").assertDoesNotExist()
         compose.onNodeWithTag("tab_3").performClick()
