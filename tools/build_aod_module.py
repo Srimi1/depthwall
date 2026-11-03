@@ -5,7 +5,13 @@ Usage: python3 tools/build_aod_module.py [signed.apk] [--out artifacts/DepthWall
 The module installs the APK at /system/app/DepthWall. AMBIENT_WALLPAPER is a
 signature|preinstalled permission, so Android grants it to that system copy and
 DepthWall's ambient wallpaper component can bind on AOD. An optional static
-overlay sets crDroid's config_dozeSupportsAodWallpaper (default false).
+SystemUI overlay sets config_dozeSupportsAodWallpaperOverride to 1, which crDroid's
+SystemUI reads before the framework's config_dozeSupportsAodWallpaper (default false).
+
+The overlay targets SystemUI, never "android". Zygote preloads static framework
+overlays and every app inherits the open file, so a framework overlay served from
+a Magisk module shows up in the memory maps of apps on the DenyList (1.5.0 did this,
+and root-detecting apps flagged the phone). Only SystemUI loads a SystemUI overlay.
 
 The overlay is compiled with the Android SDK's aapt2/zipalign/apksigner and
 signed with the local debug key; a static, preinstalled overlay is trusted by its
@@ -33,6 +39,8 @@ SIGNING_MAGIC = b"APK Sig Block 42"
 # APK Signature Scheme v3 and v2 block IDs; v3 is preferred because it carries rotation.
 SCHEME_IDS = (0xF05368C0, 0x7109871A)
 EXECUTABLE = {"customize.sh", "service.sh", "META-INF/com/google/android/update-binary"}
+OVERLAY_TARGET = "com.android.systemui"
+OVERLAY_PATH = "system/product/overlay/DepthWallAodSystemUIOverlay.apk"
 
 
 def signing_certificate(apk: bytes) -> bytes:
@@ -100,7 +108,24 @@ def badging(tools: Path, apk: Path) -> dict[str, str]:
     return dict(re.findall(r"(\w+)='([^']*)'", line))
 
 
+def overlay_target(manifest: Path) -> str:
+    """targetPackage of the overlay manifest's <overlay> element."""
+    match = re.search(r'<overlay\b[^>]*\bandroid:targetPackage="([^"]+)"', manifest.read_text())
+    if not match:
+        raise SystemExit(f"{manifest} has no <overlay android:targetPackage>.")
+    return match.group(1)
+
+
+def check_overlay_target(manifest: Path) -> None:
+    """Refuse a framework overlay: zygote would load it into every app, hidden apps included."""
+    target = overlay_target(manifest)
+    if target != OVERLAY_TARGET:
+        raise SystemExit(f"{manifest} targets {target}. The AOD overlay must target {OVERLAY_TARGET}: "
+                         "a static overlay for 'android' is preloaded by zygote and leaks the module into every app.")
+
+
 def build_overlay(tools: Path, platform: Path, work: Path) -> Path:
+    check_overlay_target(OVERLAY / "AndroidManifest.xml")
     compiled, unsigned, aligned, signed = (work / name for name in ("res.zip", "overlay-unsigned.apk", "overlay-aligned.apk", "overlay.apk"))
     run(tools / "aapt2", "compile", "--dir", OVERLAY / "res", "-o", compiled)
     run(tools / "aapt2", "link", "--manifest", OVERLAY / "AndroidManifest.xml", "-I", platform / "android.jar",
@@ -134,7 +159,7 @@ def package(apk: Path, out: Path, overlay: Path | None, info: dict[str, str], si
         # APKs are stored uncompressed so Android can map them directly from the module.
         archive.write(apk, "system/app/DepthWall/DepthWall.apk", zipfile.ZIP_STORED)
         if overlay:
-            archive.write(overlay, "system/product/overlay/DepthWallAodOverlay.apk", zipfile.ZIP_STORED)
+            archive.write(overlay, OVERLAY_PATH, zipfile.ZIP_STORED)
         if sighash:
             archive.writestr("depthwall.sighash", sighash + "\n")
         archive.writestr("depthwall.package", info["name"] + "\n")
@@ -144,7 +169,7 @@ def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("apk", nargs="?", default=ROOT / "app/build/outputs/apk/release/app-release.apk", type=Path)
     parser.add_argument("--out", default=ROOT / "artifacts/DepthWall-AOD-module.zip", type=Path)
-    parser.add_argument("--no-overlay", action="store_true", help="Leave crDroid's AOD wallpaper flag unchanged.")
+    parser.add_argument("--no-overlay", action="store_true", help="Leave SystemUI's AOD wallpaper override unchanged.")
     args = parser.parse_args(argv)
     if not args.apk.is_file():
         raise SystemExit(f"Signed APK not found: {args.apk}. Build it with ./gradlew :app:assembleRelease.")

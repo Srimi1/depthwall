@@ -53,8 +53,34 @@ object AmbientWallpaper {
     fun isSystemInstall(context: Context): Boolean =
         context.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0
 
-    /** The ROM's private `config_dozeSupportsAodWallpaper`; null when this build does not define it. */
-    fun romSupportsAodWallpaper(): Boolean? = runCatching {
+    const val SYSTEMUI = "com.android.systemui"
+
+    /**
+     * Whether SystemUI will show wallpapers on AOD, read the way crDroid 17's `WallpaperRepository`
+     * does: SystemUI's `config_dozeSupportsAodWallpaperOverride` (set to 1 by the AOD module's
+     * overlay) wins when it is 0 or 1; otherwise the framework's `config_dozeSupportsAodWallpaper`.
+     * Null when neither can be read.
+     */
+    fun romSupportsAodWallpaper(context: Context): Boolean? =
+        effectiveAodWallpaperFlag(systemUiAodWallpaperOverride(context), frameworkAodWallpaperFlag())
+
+    /** SystemUI's rule: 1 is true, 0 is false, anything else (default -1) defers to the framework. */
+    fun effectiveAodWallpaperFlag(systemUiOverride: Int?, frameworkFlag: Boolean?): Boolean? = when (systemUiOverride) {
+        1 -> true
+        0 -> false
+        else -> frameworkFlag
+    }
+
+    /** Includes SystemUI's enabled overlays; needs SystemUI in the manifest's `<queries>`. */
+    private fun systemUiAodWallpaperOverride(context: Context): Int? = runCatching {
+        val resources = context.packageManager.getResourcesForApplication(SYSTEMUI)
+        @Suppress("DiscouragedApi") // SystemUI's private flag has no public constant.
+        val id = resources.getIdentifier("config_dozeSupportsAodWallpaperOverride", "integer", SYSTEMUI)
+        if (id == 0) null else resources.getInteger(id)
+    }.getOrNull()
+
+    /** The framework's private `config_dozeSupportsAodWallpaper`; null when this build does not define it. */
+    private fun frameworkAodWallpaperFlag(): Boolean? = runCatching {
         val system = Resources.getSystem()
         @Suppress("DiscouragedApi") // A private framework flag has no public constant.
         val id = system.getIdentifier("config_dozeSupportsAodWallpaper", "bool", "android")

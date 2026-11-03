@@ -46,7 +46,7 @@ data class AodStatus(
         appendLine("Installed as system app: ${if (systemApp) "yes" else "no"}")
         appendLine("Ambient wallpaper permission: ${if (ambientPermission) "granted" else "not granted"}")
         appendLine("AOD wallpaper component: ${if (ambientComponent) "enabled" else "disabled"}")
-        appendLine("ROM config_dozeSupportsAodWallpaper: ${label(romAodWallpaper)}")
+        appendLine("SystemUI wallpaper on AOD (config_dozeSupportsAodWallpaperOverride, else framework flag): ${label(romAodWallpaper)}")
         appendLine("Secure doze_always_on_wallpaper_enabled: ${label(aodWallpaperSetting)} (writable: ${if (canWriteSecure) "yes" else "no"})")
         appendLine("Lock screen uses DepthWall AOD wallpaper: ${label(lockUsesAmbient)}")
         appendLine("Physical AOD / sleep / wake validation: not established by these observations")
@@ -79,7 +79,7 @@ object AodSupport {
             AmbientWallpaper.isGranted(context),
             AmbientWallpaper.isSystemInstall(context),
             AmbientWallpaper.isAmbientEnabled(context),
-            AmbientWallpaper.romSupportsAodWallpaper(),
+            AmbientWallpaper.romSupportsAodWallpaper(context),
             AmbientWallpaper.aodWallpaperSetting(context),
             AmbientWallpaper.canWriteSecureSettings(context),
             WallpaperApplyState.capture(context)?.let { state ->

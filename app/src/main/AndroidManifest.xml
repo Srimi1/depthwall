@@ -20,6 +20,8 @@
         <package android:name="com.miui.miwallpaper.moon" />
         <package android:name="com.miui.miwallpaper.snowmountain" />
         <package android:name="com.miui.miwallpaper.geometry" />
+        <!-- Reads SystemUI's AOD wallpaper override (set by the AOD module's overlay) for the checklist. -->
+        <package android:name="com.android.systemui" />
     </queries>
     <application android:name=".DepthWallApp" android:label="DepthWall" android:theme="@style/Theme.DepthWall"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"

@@ -6,7 +6,8 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_aod_module import package, signature_hash, signing_certificate  # noqa: E402
+from build_aod_module import (OVERLAY, OVERLAY_PATH, OVERLAY_TARGET, check_overlay_target,  # noqa: E402
+                              overlay_target, package, signature_hash, signing_certificate)
 
 
 def prefixed(data: bytes) -> bytes:
@@ -53,7 +54,7 @@ class PackageTest(unittest.TestCase):
             with zipfile.ZipFile(out) as archive:
                 names = set(archive.namelist())
                 self.assertTrue({"module.prop", "customize.sh", "META-INF/com/google/android/update-binary",
-                                 "system/app/DepthWall/DepthWall.apk", "system/product/overlay/DepthWallAodOverlay.apk",
+                                 "system/app/DepthWall/DepthWall.apk", OVERLAY_PATH,
                                  "depthwall.sighash"} <= names)
                 prop = archive.read("module.prop").decode()
                 self.assertIn("version=v1.5.0", prop)
@@ -69,8 +70,41 @@ class PackageTest(unittest.TestCase):
             apk.write_bytes(b"apk")
             package(apk, out, None, {"versionName": "1.5.0", "versionCode": "7", "name": "dev.srimi.depthwall"}, None)
             with zipfile.ZipFile(out) as archive:
-                self.assertNotIn("system/product/overlay/DepthWallAodOverlay.apk", archive.namelist())
+                self.assertNotIn(OVERLAY_PATH, archive.namelist())
                 self.assertNotIn("depthwall.sighash", archive.namelist())
+
+
+
+class OverlayTargetTest(unittest.TestCase):
+    def test_shipped_overlay_targets_systemui_not_the_framework(self):
+        # Zygote preloads static overlays for "android" into every app, DenyList'd apps included.
+        self.assertEqual(OVERLAY_TARGET, "com.android.systemui")
+        self.assertEqual(overlay_target(OVERLAY / "AndroidManifest.xml"), OVERLAY_TARGET)
+        check_overlay_target(OVERLAY / "AndroidManifest.xml")
+
+    def test_shipped_overlay_sets_the_systemui_override(self):
+        values = (OVERLAY / "res/values/config.xml").read_text()
+        self.assertIn('<integer name="config_dozeSupportsAodWallpaperOverride">1</integer>', values)
+        self.assertNotIn("config_dozeSupportsAodWallpaper\"", values)
+
+    def test_refuses_a_framework_overlay(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory, "AndroidManifest.xml")
+            manifest.write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="x">'
+                                '<overlay android:targetPackage="android" android:isStatic="true" /></manifest>')
+            with self.assertRaises(SystemExit):
+                check_overlay_target(manifest)
+
+    def test_rejects_a_manifest_without_an_overlay_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory, "AndroidManifest.xml")
+            manifest.write_text('<manifest package="x"><application /></manifest>')
+            with self.assertRaises(SystemExit):
+                overlay_target(manifest)
+
+    def test_old_framework_overlay_name_is_gone(self):
+        self.assertNotEqual(OVERLAY_PATH, "system/product/overlay/DepthWallAodOverlay.apk")
+        self.assertTrue(OVERLAY_PATH.startswith("system/product/overlay/"))
 
 
 if __name__ == "__main__":

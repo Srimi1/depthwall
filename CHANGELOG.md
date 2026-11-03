@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.5.1 (2026-11-03)
+
+Installs as a normal update over 1.5.0. If you use the AOD module, rebuild it from the 1.5.1 APK and flash it over the old one.
+
+### Fixed
+
+- **Apps that detect root flagged the phone after the AOD module was flashed.** The 1.5.0 module set crDroid's AOD wallpaper flag with an overlay on the Android framework. Android loads framework overlays into every app before Magisk's DenyList can hide anything, so an app such as DigiYatra could see a file from the Magisk module and reported the phone as rooted. The module now sets SystemUI's own override, `config_dozeSupportsAodWallpaperOverride`, with an overlay that only SystemUI loads. The module builder refuses an overlay that targets the framework.
+
+### Added
+
+- **`tools/integrity_report.sh`**, a read-only phone report: boot and build state, Developer options, VPN, Magisk modules and DenyList, app versions and installers, and whether any DepthWall overlay or Magisk file is mapped into DigiYatra, Claude, DigiLocker, Google Play services or zygote.
+
+### Changed
+
+- The AOD checklist reads the value SystemUI actually uses: its override first, then the framework flag.
+
+### Not changed by this release
+
+- Apps that rely on Google Play Integrity's device verdict, such as the Claude app since late October 2026, still refuse a phone with an unlocked bootloader, with or without the module.
+
+See [release notes](docs/releases/1.5.1.md).
+
 ## 1.5.0 (2026-11-02)
 
 **New signing key.** The key behind 1.2.0–1.4.0 is not available. Uninstall DepthWall before installing 1.5.0; its library and settings are not carried over. Later versions update normally.

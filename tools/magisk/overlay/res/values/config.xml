@@ -1,4 +1,5 @@
 <resources>
-    <!-- crDroid's generic default is false. Matches the framework's private boolean by name. -->
-    <bool name="config_dozeSupportsAodWallpaper">true</bool>
+    <!-- crDroid 17 SystemUI reads this before the framework's config_dozeSupportsAodWallpaper
+         (WallpaperRepository): 1 = true, 0 = false, -1 (default) = use the framework flag. -->
+    <integer name="config_dozeSupportsAodWallpaperOverride">1</integer>
 </resources>
