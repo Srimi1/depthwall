@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 
 # Public certificate fingerprint of the signing identity introduced in v1.2.0 (not a secret).
 # The v1.0.1 key was lost; see docs/RELEASING.md.
-RELEASE_CERTIFICATE = "bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37"
+RELEASE_CERTIFICATE = "b5c2aef1f7de8ba1dd744e5ea3f9bc2ad4d4d20a690d283a0eaf984e956f5309"
 PACKAGE_NAME = "dev.srimi.depthwall"
 
 

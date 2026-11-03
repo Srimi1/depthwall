@@ -1,12 +1,12 @@
 # Releasing an update
 
-Stable update APKs must retain application ID `dev.srimi.depthwall` and the signing identity introduced in v1.2.0. The public SHA-256 certificate fingerprint is:
+Stable update APKs must retain application ID `dev.srimi.depthwall` and the signing identity introduced in v1.5.0. The public SHA-256 certificate fingerprint is:
 
 ```text
-bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37
+b5c2aef1f7de8ba1dd744e5ea3f9bc2ad4d4d20a690d283a0eaf984e956f5309
 ```
 
-The key that signed v1.0.1 (`1086e392ec4b7b22b514eb747d6b00521fd69c5d2ecbbfc48b623db7fca39edf`) was lost, so v1.2.0 started a new identity and needs a one-time uninstall of earlier versions. Every later release must use the v1.2.0 key.
+Earlier identities: v1.0.0–v1.1.0 used `1086e392ec4b7b22b514eb747d6b00521fd69c5d2ecbbfc48b623db7fca39edf`; v1.2.0–v1.4.0 used `bed080b5e4a2d85b95b09d6a0df92b05ef944f7eb4509404ab4fc7811dc32e37`. The v1.2.0 key was not available when 1.5.0 was released, so v1.5.0 started the current identity and needs a one-time uninstall of earlier versions. Every later release must use the v1.5.0 key, which `tools/create_personal_key.py` created as the gitignored `private/depthwall-release.jks` and `keystore.properties`. Keep both together in more than one secure backup, such as a password manager and an offline copy.
 
 The signing key is not in Git. A new key, including a newly generated “personal” key, cannot update the published app. Restore the existing keystore and credentials from their secure backup. Do not put signing passwords, keystores or tokens in issues, pull-request comments, source files or release assets.
 

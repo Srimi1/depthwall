@@ -2,7 +2,7 @@
 
 ## 1.5.0 (2026-11-02)
 
-Installs as a normal update over 1.4.0.
+**New signing key.** The key behind 1.2.0–1.4.0 is not available. Uninstall DepthWall before installing 1.5.0; its library and settings are not carried over. Later versions update normally.
 
 ### Added
 
