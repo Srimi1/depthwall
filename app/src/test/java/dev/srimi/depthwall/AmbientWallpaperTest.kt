@@ -29,7 +29,7 @@ class AmbientWallpaperTest {
     }
 
     @Test fun systemUiOverrideDecidesBeforeTheFrameworkFlag() {
-        // The module's SystemUI overlay sets 1; crDroid's framework default stays false.
+        // The optional SystemUI overlay sets 1, for ROMs whose framework flag is false.
         assertEquals(true, AmbientWallpaper.effectiveAodWallpaperFlag(1, false))
         assertEquals(false, AmbientWallpaper.effectiveAodWallpaperFlag(0, true))
         // -1 (SystemUI's default), other values or an unreadable override defer to the framework.

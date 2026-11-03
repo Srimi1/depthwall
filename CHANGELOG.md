@@ -6,14 +6,16 @@ Installs as a normal update over 1.5.0. If you use the AOD module, rebuild it fr
 
 ### Fixed
 
-- **Apps that detect root flagged the phone after the AOD module was flashed.** The 1.5.0 module set crDroid's AOD wallpaper flag with an overlay on the Android framework. Android loads framework overlays into every app before Magisk's DenyList can hide anything, so an app such as DigiYatra could see a file from the Magisk module and reported the phone as rooted. The module now sets SystemUI's own override, `config_dozeSupportsAodWallpaperOverride`, with an overlay that only SystemUI loads. The module builder refuses an overlay that targets the framework.
+- **Apps that detect root flagged the phone after the AOD module was flashed.** The 1.5.0 module set crDroid's "wallpapers on AOD" flag with an overlay on the Android framework. Android loads framework overlays into every app before Magisk's DenyList can hide anything, so an app such as DigiYatra could see a file from the Magisk module and reported the phone as rooted. crDroid already sets that flag itself, so the module now ships no overlay at all. For a ROM that leaves the flag off, `tools/build_aod_module.py --systemui-overlay` adds an overlay that only SystemUI loads. The builder refuses an overlay that targets the framework.
+- **Updating the module switched wallpaper-on-AOD back on.** Magisk and KernelSU replace the module folder on update, which dropped the "turned on once" marker. The installer now carries it over.
 
 ### Added
 
-- **`tools/integrity_report.sh`**, a read-only phone report: boot and build state, Developer options, VPN, Magisk modules and DenyList, app versions and installers, and whether any DepthWall overlay or Magisk file is mapped into DigiYatra, Claude, DigiLocker, Google Play services or zygote.
+- **`tools/integrity_report.sh`**, a read-only phone report: boot and build state, Developer options, VPN, Magisk modules and DenyList, app versions and installers, and, for every process of DigiYatra, Claude, DigiLocker, Google Play services, the Play Store, zygote and any package you name, each system path that is really served from `/data` (a magic-mounted module file, whatever its name). It stops if adb cannot reach the phone and says so when root is not available.
 
 ### Changed
 
+- The module builder ships no overlay unless you pass `--systemui-overlay`. `--no-overlay` is still accepted.
 - The AOD checklist reads the value SystemUI actually uses: its override first, then the framework flag.
 
 ### Not changed by this release

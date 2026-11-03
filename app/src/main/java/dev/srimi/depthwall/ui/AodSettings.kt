@@ -91,7 +91,7 @@ import kotlinx.coroutines.withContext
                 Check("Installed as a system app", current.systemApp, "Flash the DepthWall AOD module and reboot.")
                 Check("AOD wallpaper permission", current.ambientPermission, "Granted only to the system copy from the module.")
                 Check("AOD wallpaper component", current.ambientComponent, "Turns on by itself once the permission is granted.")
-                Check("ROM shows wallpapers on AOD", current.romAodWallpaper, "The module’s SystemUI overlay sets config_dozeSupportsAodWallpaperOverride. Reflash the module and reboot.")
+                Check("ROM shows wallpapers on AOD", current.romAodWallpaper, "crDroid turns this on itself. On a ROM that leaves it off, rebuild the module with --systemui-overlay and reflash.")
                 Check("Always-on display", current.alwaysOn, "Turn on Always-on display in crDroid’s settings.")
                 Check("Wallpaper shown on AOD", current.aodWallpaperSetting,
                     if (current.canWriteSecure) "crDroid’s doze_always_on_wallpaper_enabled is off. Turn it on below."

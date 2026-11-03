@@ -20,4 +20,9 @@ fi
 rm -f "$MODPATH/depthwall.sighash" "$MODPATH/depthwall.package"
 
 set_perm_recursive "$MODPATH/system" 0 0 0755 0644
+
+# Magisk and KernelSU replace the module folder on update. Carry service.sh's "turned on once"
+# marker over, so an update does not switch wallpaper-on-AOD back on after the user turned it off.
+OLD="/data/adb/modules/${MODID:-depthwall_aod}"
+[ -f "$OLD/.aod_wallpaper_initialised" ] && touch "$MODPATH/.aod_wallpaper_initialised"
 ui_print "- Reboot, then open DepthWall > Settings > Always-on display."

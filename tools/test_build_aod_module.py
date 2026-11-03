@@ -1,3 +1,5 @@
+import contextlib
+import io
 import struct
 import sys
 import tempfile
@@ -7,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_aod_module import (OVERLAY, OVERLAY_PATH, OVERLAY_TARGET, check_overlay_target,  # noqa: E402
-                              overlay_target, package, signature_hash, signing_certificate)
+                              overlay_target, package, parse_args, signature_hash, signing_certificate)
 
 
 def prefixed(data: bytes) -> bytes:
@@ -101,6 +103,14 @@ class OverlayTargetTest(unittest.TestCase):
             manifest.write_text('<manifest package="x"><application /></manifest>')
             with self.assertRaises(SystemExit):
                 overlay_target(manifest)
+
+    def test_module_ships_no_overlay_unless_asked(self):
+        # crDroid already sets config_dozeSupportsAodWallpaper=true; an overlay is only extra traces there.
+        self.assertFalse(parse_args([]).systemui_overlay)
+        self.assertFalse(parse_args(["--no-overlay"]).systemui_overlay)
+        self.assertTrue(parse_args(["--systemui-overlay"]).systemui_overlay)
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            parse_args(["--systemui-overlay", "--no-overlay"])
 
     def test_old_framework_overlay_name_is_gone(self):
         self.assertNotEqual(OVERLAY_PATH, "system/product/overlay/DepthWallAodOverlay.apk")

@@ -57,8 +57,9 @@ object AmbientWallpaper {
 
     /**
      * Whether SystemUI will show wallpapers on AOD, read the way crDroid 17's `WallpaperRepository`
-     * does: SystemUI's `config_dozeSupportsAodWallpaperOverride` (set to 1 by the AOD module's
-     * overlay) wins when it is 0 or 1; otherwise the framework's `config_dozeSupportsAodWallpaper`.
+     * does: SystemUI's `config_dozeSupportsAodWallpaperOverride` (set to 1 only by the module's
+     * optional SystemUI overlay) wins when it is 0 or 1; otherwise the framework's
+     * `config_dozeSupportsAodWallpaper`, which crDroid's vendor overlay sets to true.
      * Null when neither can be read.
      */
     fun romSupportsAodWallpaper(context: Context): Boolean? =

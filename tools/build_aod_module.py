@@ -1,12 +1,17 @@
 """Package DepthWall as a Magisk/KernelSU module for crDroid Always-On Display.
 
-Usage: python3 tools/build_aod_module.py [signed.apk] [--out artifacts/DepthWall-AOD-module.zip] [--no-overlay]
+Usage: python3 tools/build_aod_module.py [signed.apk] [--out artifacts/DepthWall-AOD-module.zip] [--systemui-overlay]
 
 The module installs the APK at /system/app/DepthWall. AMBIENT_WALLPAPER is a
 signature|preinstalled permission, so Android grants it to that system copy and
-DepthWall's ambient wallpaper component can bind on AOD. An optional static
-SystemUI overlay sets config_dozeSupportsAodWallpaperOverride to 1, which crDroid's
-SystemUI reads before the framework's config_dozeSupportsAodWallpaper (default false).
+DepthWall's ambient wallpaper component can bind on AOD.
+
+By default the module ships no overlay. crDroid already sets the framework's
+config_dozeSupportsAodWallpaper to true in its vendor overlay, and every file a
+module adds under /product/overlay is one more trace for root detectors.
+--systemui-overlay adds a static SystemUI overlay that sets
+config_dozeSupportsAodWallpaperOverride to 1, which SystemUI reads first, for ROMs
+that leave the framework flag false. DepthWall's AOD checklist shows which applies.
 
 The overlay targets SystemUI, never "android". Zygote preloads static framework
 overlays and every app inherits the open file, so a framework overlay served from
@@ -165,12 +170,23 @@ def package(apk: Path, out: Path, overlay: Path | None, info: dict[str, str], si
         archive.writestr("depthwall.package", info["name"] + "\n")
 
 
-def main(argv: list[str]) -> None:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("apk", nargs="?", default=ROOT / "app/build/outputs/apk/release/app-release.apk", type=Path)
     parser.add_argument("--out", default=ROOT / "artifacts/DepthWall-AOD-module.zip", type=Path)
-    parser.add_argument("--no-overlay", action="store_true", help="Leave SystemUI's AOD wallpaper override unchanged.")
+    parser.add_argument("--systemui-overlay", action="store_true",
+                        help="Add a SystemUI overlay that allows wallpapers on AOD, for ROMs whose framework flag is false. "
+                             "crDroid does not need it.")
+    # The default since 1.5.1; still accepted so older build commands keep working.
+    parser.add_argument("--no-overlay", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.systemui_overlay and args.no_overlay:
+        parser.error("--systemui-overlay and --no-overlay contradict each other.")
+    return args
+
+
+def main(argv: list[str]) -> None:
+    args = parse_args(argv)
     if not args.apk.is_file():
         raise SystemExit(f"Signed APK not found: {args.apk}. Build it with ./gradlew :app:assembleRelease.")
     android = sdk()
@@ -185,9 +201,9 @@ def main(argv: list[str]) -> None:
         print(f"Warning: signing key not recorded ({error}); the installer will not compare keys.", file=sys.stderr)
         sighash = None
     with tempfile.TemporaryDirectory() as directory:
-        overlay = None if args.no_overlay else build_overlay(tools, latest(android / "platforms"), Path(directory))
+        overlay = build_overlay(tools, latest(android / "platforms"), Path(directory)) if args.systemui_overlay else None
         package(args.apk, args.out, overlay, info, sighash)
-    print(f"{args.out} · DepthWall {info['versionName']} ({info['name']})" + ("" if overlay else " · no overlay"))
+    print(f"{args.out} · DepthWall {info['versionName']} ({info['name']})" + (" · SystemUI overlay" if overlay else " · no overlay"))
 
 
 if __name__ == "__main__":
