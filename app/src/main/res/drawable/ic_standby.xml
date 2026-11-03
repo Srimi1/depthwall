@@ -1,0 +1,5 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <!-- A landscape phone holding a clock face. -->
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M4,6 L20,6 C21.1,6 22,6.9 22,8 L22,16 C22,17.1 21.1,18 20,18 L4,18 C2.9,18 2,17.1 2,16 L2,8 C2,6.9 2.9,6 4,6 Z M4,8 L4,16 L20,16 L20,8 Z" />
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M12,8.6 C13.88,8.6 15.4,10.12 15.4,12 C15.4,13.88 13.88,15.4 12,15.4 C10.12,15.4 8.6,13.88 8.6,12 C8.6,10.12 10.12,8.6 12,8.6 Z M12,9.8 C10.78,9.8 9.8,10.78 9.8,12 C9.8,13.22 10.78,14.2 12,14.2 C13.22,14.2 14.2,13.22 14.2,12 C14.2,10.78 13.22,9.8 12,9.8 Z M11.5,10.4 L12.5,10.4 L12.5,11.8 L13.6,12.9 L12.9,13.6 L11.5,12.2 Z" />
+</vector>

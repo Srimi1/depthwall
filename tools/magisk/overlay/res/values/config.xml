@@ -1,0 +1,4 @@
+<resources>
+    <!-- crDroid's generic default is false. Matches the framework's private boolean by name. -->
+    <bool name="config_dozeSupportsAodWallpaper">true</bool>
+</resources>

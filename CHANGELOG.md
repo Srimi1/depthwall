@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.0 (2026-11-02)
+
+Installs as a normal update over 1.4.0.
+
+### Added
+
+- **Super wallpapers on Always-On Display (rooted phones).** The new DepthWall AOD module for Magisk or KernelSU installs DepthWall as a system app, so crDroid grants it the ambient wallpaper permission, and turns on crDroid's wallpaper-on-AOD setting. On AOD, Earth, Mars, Moon, Saturn, Sun, Snow Mountain, Geometry and depth scenes show a small, softened frame on true black beneath the AOD clock; waking the phone zooms it back to the lock-screen orbit. One still frame per AOD entry, shifted a few pixels each time, with no motion, sensors or clock. **Settings → Always-on display** shows a readiness checklist and applies the AOD wallpaper. Phones without the module behave as before.
+- **StandBy.** A full-screen clock on the charger. Choose DepthWall StandBy as the screen saver and set it to start while charging. In landscape, swipe sideways between a clock, your DepthWall planet and widgets (calendar, battery and charging power, next alarm, world clock); swipe up or down for another face. Portrait shows a nightstand clock. Auto night mode turns everything red and dims the screen in a dark room. A Quick Settings tile and **Save & try** open it on demand.
+- **Eleven clock faces**, shared by StandBy and the wallpaper clock: Digital, Minimal, Analogue, Bold, Float, Solar, World, Flip, Word, Dot matrix and Gauge (a McLaren-style tachometer).
+
+See [release notes](docs/releases/1.5.0.md).
+
 ## 1.4.0 (2026-10-31)
 
 Installs as a normal update over 1.3.0.

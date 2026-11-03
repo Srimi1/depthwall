@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import dev.srimi.depthwall.clock.ClockFaces
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
@@ -23,6 +24,13 @@ class SettingsStore(private val context: Context) {
     private val parallax = floatPreferencesKey("depth_parallax")
     private val clock = stringPreferencesKey("depth_clock")
     private val clockY = floatPreferencesKey("depth_clock_y")
+    private val standByFace = stringPreferencesKey("standby_face")
+    private val standByNight = stringPreferencesKey("standby_night")
+    private val standByScene = stringPreferencesKey("standby_scene")
+    private val standByZones = stringPreferencesKey("standby_zones")
+    private val standBySeconds = booleanPreferencesKey("standby_seconds")
+    private val standByShift = booleanPreferencesKey("standby_shift")
+    private val standByDim = intPreferencesKey("standby_dim")
     val flow = context.dataStore.data.map { values ->
         AppSettings(
             quality = values[quality] ?: "Balanced",
@@ -35,7 +43,7 @@ class SettingsStore(private val context: Context) {
             downloadSize = values[exportSize] ?: "Original",
             depthEnabled = values[depth] ?: false,
             depthParallax = values[parallax]?.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: .35f,
-            depthClock = values[clock]?.takeIf { it in listOf("Off", "Digital", "Minimal", "Analogue") } ?: "Off",
+            depthClock = values[clock]?.takeIf { it in ClockFaces.wallpaperChoices } ?: "Off",
             depthClockY = values[clockY]?.takeIf { it.isFinite() }?.coerceIn(.18f, .72f) ?: .33f,
         )
     }
@@ -44,6 +52,16 @@ class SettingsStore(private val context: Context) {
         it[theme]=s.appTheme; it[profile]=s.deviceProfile; it[exportSize]=s.downloadSize
         it[depth]=s.depthEnabled; it[parallax]=s.depthParallax; it[clock]=s.depthClock; it[clockY]=s.depthClockY
     }
+    val standBy = context.dataStore.data.map { values ->
+        StandBySettings.of(values[standByFace], values[standByNight], values[standByScene], values[standByZones],
+            values[standBySeconds], values[standByShift], values[standByDim])
+    }
+    suspend fun saveStandBy(s: StandBySettings) = context.dataStore.edit {
+        it[standByFace]=s.face; it[standByNight]=s.nightMode; it[standByScene]=s.scene; it[standByZones]=s.zones.joinToString(",")
+        it[standBySeconds]=s.showSeconds; it[standByShift]=s.burnInShift; it[standByDim]=s.dimAfterMinutes
+    }
+    /** StandBy remembers the last face swiped to, like the clock on a nightstand. */
+    suspend fun saveStandByFace(face: String) = context.dataStore.edit { it[standByFace] = face }
 }
 
 /** Synchronous apply boundary: a preview never writes the active scene. */

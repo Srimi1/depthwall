@@ -5,5 +5,9 @@
             android:label="DepthWall Preview settings" tools:replace="android:label" />
         <service android:name="dev.srimi.depthwall.wallpaper.DepthWallpaperService"
             android:label="DepthWall Preview live wallpaper" tools:replace="android:label" />
+        <service android:name="dev.srimi.depthwall.wallpaper.AmbientDepthWallpaperService"
+            android:label="DepthWall Preview AOD live wallpaper" tools:replace="android:label" />
+        <service android:name="dev.srimi.depthwall.standby.StandByDreamService"
+            android:label="DepthWall Preview StandBy" tools:replace="android:label" />
     </application>
 </manifest>

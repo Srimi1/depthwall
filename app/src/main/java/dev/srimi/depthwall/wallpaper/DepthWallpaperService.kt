@@ -23,10 +23,11 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
-class DepthWallpaperService : WallpaperService() {
+open class DepthWallpaperService : WallpaperService() {
     override fun onCreateEngine(): Engine = DepthEngine()
 
-    inner class DepthEngine : Engine(), SensorEventListener {
+    /** [ambientCapable] engines belong to the AOD component and may draw one still frame while dozing. */
+    inner class DepthEngine(private val ambientCapable: Boolean = false) : Engine(), SensorEventListener {
         private val thread = HandlerThread("DepthWall-render").apply { start() }
         private val handler = Handler(thread.looper)
         private val main = Handler(Looper.getMainLooper())
@@ -66,6 +67,15 @@ class DepthWallpaperService : WallpaperService() {
         @Volatile private var surfaceGeneration = 0
         @Volatile private var stalled = false
         @Volatile private var rendererAttempts = 0
+        @Volatile private var mode = DisplayRenderPolicy.Mode.STOP
+        @Volatile private var ambientFrame = false
+        @Volatile private var ambientSignal = false
+        @Volatile private var ambientDrawn = false
+        @Volatile private var ambientEntries = 0
+        @Volatile private var ambientFrames = 0L
+        @Volatile private var ambientCallbacks = 0
+        @Volatile private var ambientExitAt = 0L
+        @Volatile private var ambientExitMs = AmbientWallpaper.DEFAULT_EXIT_MS
         // Render-thread state: the renderer and its failure budget are only touched on [handler].
         private var renderer: WindowRenderer? = null
         private var drawFailures = 0
@@ -86,6 +96,8 @@ class DepthWallpaperService : WallpaperService() {
                     handler.removeCallbacks(frame)
                     stopSensors()
                     handler.post { progress = 0f; transitionFrom = 0f; lastUnlocked = false }
+                    // With native AOD the panel dozes instead of turning off: draw its still frame.
+                    if (ambientCapable) { updateDeviceState(); unlocked = false; schedule() }
                 } else {
                     if (intent?.action == Intent.ACTION_TIME_CHANGED || intent?.action == Intent.ACTION_TIMEZONE_CHANGED) {
                         handler.post { renderer?.invalidateClock() }
@@ -187,7 +199,7 @@ class DepthWallpaperService : WallpaperService() {
             updateDeviceState()
             watchKeyguard()
             stopObservingScene = repo.scenes.listenForAppliedChanges {
-                if (!isPreview) { readConfig(); updateSensors(); schedule() }
+                if (!isPreview) { readConfig(); ambientDrawn = false; updateSensors(); schedule() }
             }
             scope.launch {
                 repo.settings.flow.catch { if (it is IOException) emit(AppSettings()) else throw it }
@@ -202,7 +214,25 @@ class DepthWallpaperService : WallpaperService() {
             saver = power.isPowerSaveMode
             hot = power.currentThermalStatus >= PowerManager.THERMAL_STATUS_MODERATE
             unlocked = !keyguard.isKeyguardLocked
-            rendering = DisplayRenderPolicy.canRender(visible, interactive, displayState)
+            val previous = mode
+            mode = DisplayRenderPolicy.mode(visible, interactive, displayState, ambientCapable, ambientSignal)
+            rendering = mode == DisplayRenderPolicy.Mode.RUN
+            ambientFrame = mode == DisplayRenderPolicy.Mode.AMBIENT_FRAME
+            if (ambientFrame && previous != DisplayRenderPolicy.Mode.AMBIENT_FRAME) { ambientEntries++; ambientDrawn = false }
+            // Waking from AOD zooms the small planet back to its lock-screen orbit.
+            if (rendering && previous == DisplayRenderPolicy.Mode.AMBIENT_FRAME) ambientExitAt = SystemClock.elapsedRealtime()
+        }
+        /**
+         * Hidden @SystemApi callback for wallpapers declaring supportsAmbientMode. It is absent from
+         * the SDK stub, so this is not marked `override`; ART dispatches it by signature and R8 keeps
+         * it (proguard-rules.pro). Display-state changes are the fallback if it is never called.
+         */
+        @Suppress("unused")
+        fun onAmbientModeChanged(inAmbientMode: Boolean, animationDuration: Long) {
+            ambientCallbacks++
+            ambientSignal = inAmbientMode && ambientCapable
+            if (!inAmbientMode) ambientExitMs = animationDuration.takeIf { it > 0 } ?: AmbientWallpaper.DEFAULT_EXIT_MS
+            updateDeviceState(); updateSensors(); schedule()
         }
         private fun readConfig() {
             val flags = if (Build.VERSION.SDK_INT >= 34) wallpaperFlags else 1
@@ -210,15 +240,16 @@ class DepthWallpaperService : WallpaperService() {
         }
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
-            surfaceGeneration++
+            surfaceGeneration++; ambientDrawn = false
             readConfig(); surfaceReady = true; updateDeviceState(); updateSensors()
             requestRebuild()
         }
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, w: Int, h: Int) {
             super.onSurfaceChanged(holder, format, w, h)
-            width = w; height = h; schedule()
+            width = w; height = h; ambientDrawn = false; schedule()
         }
-        override fun onSurfaceRedrawNeeded(holder: SurfaceHolder) { super.onSurfaceRedrawNeeded(holder); schedule() }
+        // A new or invalidated surface has no AOD frame yet, even if one was drawn before.
+        override fun onSurfaceRedrawNeeded(holder: SurfaceHolder) { super.onSurfaceRedrawNeeded(holder); ambientDrawn = false; schedule() }
         override fun onVisibilityChanged(visible: Boolean) {
             updateDeviceState(visible)
             if (rendering) readConfig()
@@ -267,11 +298,14 @@ class DepthWallpaperService : WallpaperService() {
         }
         private fun schedule() {
             handler.removeCallbacks(frame)
-            if (rendering && surfaceReady) handler.post(frame)
+            if ((rendering || ambientFrame) && surfaceReady) handler.post(frame)
         }
         private val frame = object : Runnable {
             override fun run() {
-                if (!rendering || !surfaceReady) return
+                val ambient = ambientFrame
+                if (!(rendering || ambient) || !surfaceReady) return
+                // AOD gets exactly one still frame per entry: no loop, sensors or clock ticks.
+                if (ambient && ambientDrawn) return
                 handler.removeCallbacks(this)
                 val now = SystemClock.elapsedRealtime()
                 lastFrameAt = now
@@ -280,16 +314,19 @@ class DepthWallpaperService : WallpaperService() {
                     lastUnlocked = unlocked; transitionAt = now; transitionFrom = progress
                 }
                 val target = if (unlocked) 1f else 0f
-                progress = SceneTransition.progress(transitionFrom, target, now - transitionAt)
-                val changing = current.scene != "depth" && progress != target
+                progress = if (ambient) 0f else SceneTransition.progress(transitionFrom, target, now - transitionAt)
+                val level = if (ambient) 1f else AmbientWallpaper.exitLevel(now - ambientExitAt, ambientExitMs)
+                val changing = (current.scene != "depth" && progress != target) || level > 0f
                 val continuous = RenderBudget.hasContinuousMotion(current.scene, progress)
-                val fps = if (!continuous && !changing) 0 else RenderBudget.fps(quality, changing, true, saver, hot, refresh)
-                motionWakesFrame = fps == 0
-                drawnX = mx; drawnY = my
+                val fps = if (ambient || (!continuous && !changing)) 0 else RenderBudget.fps(quality, changing, true, saver, hot, refresh)
+                motionWakesFrame = fps == 0 && !ambient
+                drawnX = if (ambient) 0f else mx; drawnY = if (ambient) 0f else my
+                val shift = AmbientWallpaper.burnInShift(ambientEntries)
                 val active = renderer ?: return
                 try {
                     active.draw(current, width, height, (now - start) / 1000f, progress,
-                        drawnX, drawnY, RenderBudget.renderWidth(quality, saver, hot))
+                        drawnX, drawnY, RenderBudget.renderWidth(quality, saver, hot), level, shift[0] * level, shift[1] * level)
+                    if (ambient) { ambientDrawn = true; ambientFrames++ }
                     frames++; lastDrawnAt = SystemClock.elapsedRealtime()
                     drawFailures = 0; rendererAttempts = 0
                 } catch (error: Throwable) {
@@ -300,11 +337,12 @@ class DepthWallpaperService : WallpaperService() {
                             active.close(); renderer = null
                             if (surfaceReady) handler.postDelayed(createRenderer, RendererRecovery.retryDelayMs(rendererAttempts++))
                         }
-                        RendererRecovery.Action.RETRY_FRAME -> if (rendering) handler.postDelayed(this, 2000)
+                        RendererRecovery.Action.RETRY_FRAME -> if (rendering || ambientFrame) handler.postDelayed(this, 2000)
                         RendererRecovery.Action.GIVE_UP -> stalled = true
                     }
                     return
                 }
+                if (ambient) return
                 val delay = if (fps > 0) (1000L / fps - (SystemClock.elapsedRealtime() - now)).coerceAtLeast(1)
                     else if (current.clock != "Off") 60000 - System.currentTimeMillis() % 60000 else 0
                 if (rendering && delay > 0) handler.postDelayed(this, delay)
@@ -333,7 +371,7 @@ class DepthWallpaperService : WallpaperService() {
         }
         override fun dump(prefix: String, fd: FileDescriptor, out: PrintWriter, args: Array<out String>?) {
             super.dump(prefix, fd, out, args)
-            out.println("${prefix}DepthWall visible=$rendering engineVisible=$isVisible interactive=$interactive displayId=$displayId displayState=${DisplayRenderPolicy.stateLabel(displayState)} frames=$frames quality=$quality scene=${config.scene} surface=$surfaceReady sensors=$sensorListening idleOnDemand=$motionWakesFrame unlocked=$unlocked progress=$progress userPresentEvents=$userPresentEvents rendererAttempts=$rendererAttempts stalled=$stalled surfaceGeneration=$surfaceGeneration msSinceLastFrame=${if (lastDrawnAt == 0L) -1 else SystemClock.elapsedRealtime() - lastDrawnAt} error=$lastError")
+            out.println("${prefix}DepthWall visible=$rendering engineVisible=$isVisible interactive=$interactive displayId=$displayId displayState=${DisplayRenderPolicy.stateLabel(displayState)} frames=$frames quality=$quality scene=${config.scene} surface=$surfaceReady sensors=$sensorListening idleOnDemand=$motionWakesFrame unlocked=$unlocked progress=$progress userPresentEvents=$userPresentEvents rendererAttempts=$rendererAttempts stalled=$stalled surfaceGeneration=$surfaceGeneration ambientCapable=$ambientCapable mode=$mode ambientSignal=$ambientSignal ambientCallbacks=$ambientCallbacks ambientEntries=$ambientEntries ambientFrames=$ambientFrames msSinceLastFrame=${if (lastDrawnAt == 0L) -1 else SystemClock.elapsedRealtime() - lastDrawnAt} error=$lastError")
         }
     }
 }

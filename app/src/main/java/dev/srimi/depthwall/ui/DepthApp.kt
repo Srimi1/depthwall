@@ -46,13 +46,12 @@ import coil.compose.AsyncImage
 import dev.srimi.depthwall.BuildConfig
 import dev.srimi.depthwall.R
 import dev.srimi.depthwall.data.*
-import dev.srimi.depthwall.wallpaper.DepthWallpaperService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun DepthApp(vm:MainViewModel,initialSettingsOpen:Boolean=false) {
+@Composable fun DepthApp(vm:MainViewModel,initialSettingsOpen:Boolean=false,initialStandByOpen:Boolean=false) {
     val context=LocalContext.current
     val items by vm.wallpapers.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -65,6 +64,7 @@ import kotlinx.coroutines.launch
     val tabStates=rememberSaveableStateHolder()
     var selected by remember { vm.selected }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
+    var standByOpen by rememberSaveable { mutableStateOf(initialStandByOpen) }
     var report by remember { mutableStateOf<ApkInspection?>(null) }
     var report32 by remember { mutableStateOf<ApkInspection?>(null) }
     var awaitingUninstall by remember { mutableStateOf(false) }
@@ -96,7 +96,7 @@ import kotlinx.coroutines.launch
         val accepted = result.resultCode == Activity.RESULT_OK
         val flags = vm.repo.scenes.finishPreview(accepted,
             if (accepted) WallpaperApplyState.capture(context) else null,
-            ComponentName(context,DepthWallpaperService::class.java).flattenToString())
+            AmbientWallpaper.component(context).flattenToString())
         if (flags != 0) vm.message("Live wallpaper applied")
         else if (accepted) vm.message("Android did not confirm the wallpaper destination. Scene settings were preserved; try applying again.")
     }
@@ -132,7 +132,7 @@ import kotlinx.coroutines.launch
             if(busy) LinearProgressIndicator(Modifier.fillMaxWidth(),color=Orange)
             Box(Modifier.weight(1f)) { tabStates.SaveableStateProvider(tab) {
                 when(tab) {
-                    Tabs.HOME -> HomeScreen(items,picks,{selected=it},{ category -> browseCategory=category;tab=Tabs.BROWSE }) { tab=it }
+                    Tabs.HOME -> HomeScreen(items,picks,{selected=it},{ category -> browseCategory=category;tab=Tabs.BROWSE },onStandBy={standByOpen=true}) { tab=it }
                     Tabs.LIVE -> LiveScreen(items,installed,{selected=it},::openLink,::launch,{importApk.launch(apkTypes)},{importApk32.launch(apkTypes)},vm,applied,::applyPort) { restart=it }
                     Tabs.BROWSE -> ExploreScreen(vm,items,browseCategory,{selected=it})
                     Tabs.DEPTH -> CollectionScreen("","Layered landscapes with subtle parallax and an optional clock. Make your own in the preview with Import layer or Edit mask.",items.filter { it.kind=="LAYERED_DEPTH" },{selected=it},{vm.favorite(it)},"depth_grid")
@@ -147,12 +147,14 @@ import kotlinx.coroutines.launch
             if (before == null) vm.message("Cannot read the current wallpaper destinations. Please try again.")
             else try {
                 vm.repo.scenes.stage(config, before)
-                applyLive.launch(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,ComponentName(context,DepthWallpaperService::class.java)))
+                // A system install with AMBIENT_WALLPAPER applies the AOD-capable component instead.
+                applyLive.launch(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,AmbientWallpaper.component(context)))
             }
             catch(e:Exception) { vm.repo.scenes.clearPending();vm.message("Wallpaper picker unavailable: ${e.message}") }
         })
     }
-    if(settingsOpen)SettingsDialog(items,vm,{settingsOpen=false})
+    if(settingsOpen)SettingsDialog(items,vm,{settingsOpen=false},onStandBy={settingsOpen=false;standByOpen=true})
+    if(standByOpen)StandBySettingsDialog(vm) { standByOpen=false }
     restart?.let { info -> RestartPortDialog(info,vm,::launch,{ restart=null;applyPort(it) }) { restart=null;applied=WallpaperApplyState.capture(context) } }
     if(sharedProcessWarning)AlertDialog(onDismissRequest={sharedProcessWarning=false},title={Text("Use one scene for Home and lock")},
         text={Text("Your home and lock screens now show two scenes from the same pack. Both run in one app process, and starting them together after a restart can crash it, leaving the wallpaper black or reset. Apply one scene to Home and lock, or use a DepthWall original on one screen.")},

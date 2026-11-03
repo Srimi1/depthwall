@@ -2,6 +2,39 @@
 
 Investigated on **28 October 2026**. These notes describe platform restrictions and a diagnostic emulator configuration. The [compatibility report](COMPATIBILITY.md) contains the per-scene results; the OnePlus 7T Pro McLaren has not been physically verified.
 
+## 1.5.0: super wallpapers on AOD with the root module
+
+The findings below still hold for an ordinary install. Version 1.5.0 adds a path for **rooted** phones that meets crDroid's requirements instead of working around them.
+
+- **Permission.** `AMBIENT_WALLPAPER` is `signature|preinstalled`. The DepthWall AOD module (Magisk or KernelSU, built by `tools/build_aod_module.py`) places the APK at `/system/app/DepthWall`, which makes it preinstalled. The app requests the permission (`tools:ignore="ProtectedPermissions"`); Android grants it only to that system copy. A user-installed copy signed with the same key becomes an update of the system app and keeps its data.
+- **Separate component.** `supportsAmbientMode="true"` sits only in `res/xml/wallpaper_ambient.xml`, used by `AmbientDepthWallpaperService`. The manifest ships that service **disabled**. `AmbientWallpaper.syncComponent` (called at process start) enables it only while the permission is granted, and disables it if the module is removed. The ordinary `DepthWallpaperService` is unchanged, so a normal install never binds an ambient-capable wallpaper. In the SDK 37 resource table `attr/supportsAmbientMode` is `0x0101058d` and public; it is only absent from `R.java`, so aapt2 compiles it normally.
+- **ROM flag.** The module adds a static framework overlay setting `config_dozeSupportsAodWallpaper=true` (`/product/overlay`). The app reads the effective value at runtime and reports it; `--no-overlay` builds the module without it.
+- **SystemUI setting.** On `android17-release`, SystemUI keeps the wallpaper visible through its AOD scrim only when `doze_always_on`, the secure setting `doze_always_on_wallpaper_enabled` and that config flag are all on (`WallpaperRepository.wallpaperSupportsAmbientMode`; SysUI's `config_dozeSupportsAodWallpaperOverride` can override the flag). Otherwise the light-reveal scrim turns opaque on AOD, `FLAG_SHOW_WALLPAPER` is dropped and every wallpaper is hidden. With all three on, the scrim stops at 40 % (or 64 % on light wallpapers) black and SystemUI applies its own window blur to the wallpaper. The module's `service.sh` grants DepthWall the development permission `WRITE_SECURE_SETTINGS` at each boot and turns the setting on once; afterwards DepthWall's checklist switch decides. [Repository](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/packages/SystemUI/src/com/android/systemui/wallpapers/data/repository/WallpaperRepository.kt), [scrim interactor](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/LightRevealScrimInteractor.kt)
+- **Engine.** `DisplayRenderPolicy.mode` adds `AMBIENT_FRAME` for the ambient engine only: visible, and either the panel dozes (`STATE_DOZE`/`STATE_DOZE_SUSPEND`) or the hidden `onAmbientModeChanged(true, …)` callback arrived. That callback is `@SystemApi`, absent from the SDK stub, so the engine declares it without `override`; ART dispatches it by signature and `proguard-rules.pro` keeps it from R8. Display-state changes are the fallback if it never arrives. A fully awake panel always wins.
+- **Frame.** One still frame per AOD entry, redrawn only when the surface is recreated or the scene changes. Sensors stay off, no loop or clock tick runs, and no wake lock is held. `scene.frag`'s `ambient` uniform shrinks the scene to 40 % and lowers it so the planet sits about 80 % down the panel, beneath the AOD clock. It desaturates by 50 % and dims to 70 % (SystemUI's scrim dims further), removes stars, vignettes landscapes and rings, hides the wallpaper clock, and offsets the frame by one of eight burn-in positions (about 6 px). `AmbientFrameTest` checks that each scene's AOD frame is visible, at least 40 % dimmer than awake, and lights at most 15 % of pixels.
+- **Wake.** When the panel returns to `STATE_ON` from AOD, the AOD pose eases out over the framework's animation duration (600 ms by default), so the planet zooms back to the lock orbit before the existing unlock transition.
+
+`Settings → Always-on display` lists each prerequisite (system app, permission, component, ROM flag, AOD preference, AOD wallpaper on the lock screen) and applies the AOD component through the normal picker flow. AOD shows the lock wallpaper, so the scene must be applied to Lock or Both.
+
+### Emulator verification (3 November 2026)
+
+A disposable Android 17 (API 37, `google_apis`, ARM64) AVD with a writable system partition reproduced the module: DepthWall was first installed normally, then the same-key APK went to `/system/app/DepthWall` and the overlay to `/product/overlay`. The emulator has no doze component, so a test-only overlay (not shipped) supplied `config_dozeComponent` and `config_dozeAlwaysOnDisplayAvailable`.
+
+| Check | Result |
+| --- | --- |
+| Normal install after reboot | `UPDATED_SYSTEM_APP`, data kept, `AMBIENT_WALLPAPER: granted=true` |
+| Overlay | Enabled, immutable; app reads `config_dozeSupportsAodWallpaper=true` |
+| Ambient component | Enabled by `syncComponent`; picker bound it with no `SecurityException`; applied to Home and Lock (`mWhich=3`) |
+| Hidden callback in an R8 build | `onAmbientModeChanged` reached the engine (`ambientCallbacks` counted, `ambientSignal=true`) |
+| AOD with the secure setting off | One frame drawn, then the wallpaper window was hidden behind the opaque scrim |
+| AOD with `doze_always_on_wallpaper_enabled=1` | Engine stayed visible in `mode=AMBIENT_FRAME`; scrim settled at alpha 0.4; the dim planet showed below the AOD clock, blurred by SystemUI (`backgroundBlurRadius=44`) |
+| `service.sh` as root | Granted `WRITE_SECURE_SETTINGS`, set the secure setting once, wrote its marker |
+| Wake | Engine returned to `mode=RUN` with `ambientSignal=false` |
+
+The emulator reported `STATE_ON` throughout doze, so the frame came from the callback path, not the display-state fallback.
+
+**Not yet verified on the phone:** crDroid's SystemUI and overlays on the `hotdog` build, the real `STATE_DOZE`/`DOZE_SUSPEND` sequence, how the panel shows the blurred frame, and AOD power draw. The acceptance steps below still apply; add `adb shell dumpsys wallpaper` and `adb shell dumpsys activity service dev.srimi.depthwall/.wallpaper.AmbientDepthWallpaperService`, and check the engine's `mode=AMBIENT_FRAME ambientFrames=…` line. "Allow window-level blurs" in Developer options turns off SystemUI's blur if a sharp planet is preferred.
+
 ## Always-On Display is controlled by the ROM
 
 DepthWall is a normally installed, no-root application. It cannot enable Android's ambient-wallpaper interface just by adding a permission request or an AOD toggle.

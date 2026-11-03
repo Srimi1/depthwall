@@ -9,9 +9,9 @@ import dev.srimi.depthwall.DepthWallApp
 import dev.srimi.depthwall.data.SceneConfig
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.Calendar
-import java.text.SimpleDateFormat
-import java.util.Locale
+import dev.srimi.depthwall.clock.ClockFaces
+import dev.srimi.depthwall.clock.ClockStyle
+import java.time.ZonedDateTime
 
 /** All methods are called on the owner render thread with its EGL context current. */
 class GlPainter(private val context:Context) {
@@ -42,6 +42,8 @@ class GlPainter(private val context:Context) {
     private val timeLocation=GLES20.glGetUniformLocation(program,"time")
     private val progressLocation=GLES20.glGetUniformLocation(program,"progress")
     private val kindLocation=GLES20.glGetUniformLocation(program,"kind")
+    private val ambientLocation=GLES20.glGetUniformLocation(program,"ambient")
+    private val shiftLocation=GLES20.glGetUniformLocation(program,"ambientShift")
     private val samplerLocations=intArrayOf(
         GLES20.glGetUniformLocation(program,"backgroundTex"),
         GLES20.glGetUniformLocation(program,"foregroundTex"),
@@ -96,25 +98,16 @@ class GlPainter(private val context:Context) {
         if(now==minute)return
         minute=now
         if(config.clock=="Off") { upload(2,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888));return }
-        val bitmap=Bitmap.createBitmap(720,1560,Bitmap.Config.ARGB_8888);val canvas=Canvas(bitmap)
-        val p=Paint(Paint.ANTI_ALIAS_FLAG).apply { color=Color.rgb(244,238,229);textAlign=Paint.Align.CENTER;typeface=Typeface.create("sans-serif-light",Typeface.NORMAL) }
+        val face=ClockFaces.byId(config.clock) ?: run { upload(2,Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888));return }
+        val bitmap=Bitmap.createBitmap(720,1560,Bitmap.Config.ARGB_8888)
+        // A minute texture: no seconds and no flip animation, which would freeze half-way.
         val y=1560*config.clockY
-        if(config.clock=="Analogue") {
-            val c=Calendar.getInstance();val radius=110f;p.style=Paint.Style.STROKE;p.strokeWidth=2f;canvas.drawCircle(360f,y,radius,p)
-            for(i in 0..11) { val a=i*Math.PI/6;canvas.drawLine(360f+Math.sin(a).toFloat()*(radius-10),y-Math.cos(a).toFloat()*(radius-10),360f+Math.sin(a).toFloat()*radius,y-Math.cos(a).toFloat()*radius,p) }
-            fun hand(angle:Double,length:Float,width:Float){p.strokeWidth=width;p.strokeCap=Paint.Cap.ROUND;canvas.drawLine(360f,y,360f+Math.sin(angle).toFloat()*length,y-Math.cos(angle).toFloat()*length,p)}
-            hand((c.get(Calendar.HOUR)+c.get(Calendar.MINUTE)/60.0)*Math.PI/6,66f,6f);hand(c.get(Calendar.MINUTE)*Math.PI/30,93f,3f)
-        } else {
-            p.textSize=if(config.clock=="Minimal")74f else 134f
-            val pattern=if(android.text.format.DateFormat.is24HourFormat(context))"HH:mm" else "h:mm"
-            canvas.drawText(SimpleDateFormat(pattern,Locale.getDefault()).format(java.util.Date()),360f,y,p)
-            p.textSize=23f;p.letterSpacingCompat()
-            canvas.drawText(SimpleDateFormat("EEE, MMM d",Locale.getDefault()).format(java.util.Date()).uppercase(),360f,y+48,p)
-        }
+        face.draw(Canvas(bitmap),RectF(48f,y-150f,672f,y+150f),ZonedDateTime.now(),
+            ClockStyle(is24h=android.text.format.DateFormat.is24HourFormat(context),animate=false))
         upload(2,bitmap)
     }
-    private fun Paint.letterSpacingCompat() { /* Paint has no letter-spacing API; leave system shaping intact. */ }
-    fun draw(config:SceneConfig,w:Int,h:Int,time:Float,progress:Float,mx:Float,my:Float) {
+    /** [ambient] 1 draws the dim AOD pose (no clock); [shiftX]/[shiftY] move it against burn-in. */
+    fun draw(config:SceneConfig,w:Int,h:Int,time:Float,progress:Float,mx:Float,my:Float,ambient:Float=0f,shiftX:Float=0f,shiftY:Float=0f) {
         val edge=maxOf(w,h).coerceIn(256,minOf(4096,maxTextureSize).coerceAtLeast(256))
         if(loaded!=config || (config.scene=="depth" && textureEdge!=edge))load(config,edge)
         clock(config)
@@ -129,6 +122,8 @@ class GlPainter(private val context:Context) {
         GLES20.glUniform1f(timeLocation,time)
         GLES20.glUniform1f(progressLocation,progress)
         GLES20.glUniform1i(kindLocation,kind)
+        GLES20.glUniform1f(ambientLocation,ambient.coerceIn(0f,1f))
+        GLES20.glUniform2f(shiftLocation,shiftX,shiftY)
         for(i in 0..2) {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0+i);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textures[i]);GLES20.glUniform1i(samplerLocations[i],i)
         }
@@ -157,6 +152,7 @@ class WindowRenderer(context:Context,surface:Surface) {
     private var blit=0
     private var blitPosition=0
     private var blitTexture=0
+    private var blitTurns=0
     private val quad=ByteBuffer.allocateDirect(32).order(ByteOrder.nativeOrder()).asFloatBuffer().apply { put(floatArrayOf(-1f,-1f,1f,-1f,-1f,1f,1f,1f));position(0) }
     init {
         val version=IntArray(2);check(EGL14.eglInitialize(display,version,0,version,1)) { "EGL initialisation failed (0x%x)".format(EGL14.eglGetError()) }
@@ -170,10 +166,12 @@ class WindowRenderer(context:Context,surface:Surface) {
             painter=GlPainter(context)
             fun compile(type:Int,source:String):Int { val s=GLES20.glCreateShader(type);GLES20.glShaderSource(s,source);GLES20.glCompileShader(s);return s }
             val v=compile(GLES20.GL_VERTEX_SHADER,"attribute vec2 p;varying vec2 uv;void main(){uv=(p+1.0)*.5;gl_Position=vec4(p,0,1);}")
-            val f=compile(GLES20.GL_FRAGMENT_SHADER,"precision mediump float;varying vec2 uv;uniform sampler2D tex;void main(){gl_FragColor=texture2D(tex,uv);}")
+            // turns rotates the finished frame clockwise in quarter turns (StandBy on a portrait-locked window).
+            val f=compile(GLES20.GL_FRAGMENT_SHADER,"precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform int turns;void main(){vec2 t=turns==1?vec2(1.0-uv.y,uv.x):(turns==2?vec2(1.0-uv.x,1.0-uv.y):(turns==3?vec2(uv.y,1.0-uv.x):uv));gl_FragColor=texture2D(tex,t);}")
             blit=GLES20.glCreateProgram();GLES20.glAttachShader(blit,v);GLES20.glAttachShader(blit,f);GLES20.glLinkProgram(blit);GLES20.glDeleteShader(v);GLES20.glDeleteShader(f)
             blitPosition=GLES20.glGetAttribLocation(blit,"p")
             blitTexture=GLES20.glGetUniformLocation(blit,"tex")
+            blitTurns=GLES20.glGetUniformLocation(blit,"turns")
             GLES20.glGenFramebuffers(1,target,0);GLES20.glGenTextures(1,color,0)
         } catch(error:Throwable) {
             // A half-built renderer must not leak EGL objects into the next attempt.
@@ -187,8 +185,12 @@ class WindowRenderer(context:Context,surface:Surface) {
         eglSurface=EGL14.EGL_NO_SURFACE;eglContext=EGL14.EGL_NO_CONTEXT
         EGL14.eglReleaseThread();EGL14.eglTerminate(display)
     }
-    fun draw(c:SceneConfig,w:Int,h:Int,t:Float,p:Float,x:Float,y:Float,maxWidth:Int=960) {
-        val rw=minOf(w,maxWidth);val rh=(h.toFloat()*rw/w).toInt().coerceAtLeast(1)
+    fun draw(c:SceneConfig,w:Int,h:Int,t:Float,p:Float,x:Float,y:Float,maxWidth:Int=960,
+             ambient:Float=0f,shiftX:Float=0f,shiftY:Float=0f,turns:Int=0) {
+        // An odd quarter turn renders the scene in the other orientation; maxWidth bounds its short edge.
+        val quarter=Math.floorMod(turns,4);val lw=if(quarter%2==1)h else w;val lh=if(quarter%2==1)w else h
+        val scale=minOf(1f,maxWidth.toFloat()/minOf(lw,lh).coerceAtLeast(1))
+        val rw=(lw*scale).toInt().coerceAtLeast(1);val rh=(lh*scale).toInt().coerceAtLeast(1)
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,target[0])
         if(rw!=targetW || rh!=targetH) {
             targetW=rw;targetH=rh;GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,color[0])
@@ -198,10 +200,11 @@ class WindowRenderer(context:Context,surface:Surface) {
             GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER,GLES20.GL_COLOR_ATTACHMENT0,GLES20.GL_TEXTURE_2D,color[0],0)
             check(GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)==GLES20.GL_FRAMEBUFFER_COMPLETE)
         }
-        painter.draw(c,rw,rh,t,p,x,y)
+        painter.draw(c,rw,rh,t,p,x,y,ambient,shiftX,shiftY)
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,0);GLES20.glViewport(0,0,w,h);GLES20.glUseProgram(blit)
         GLES20.glEnableVertexAttribArray(blitPosition);GLES20.glVertexAttribPointer(blitPosition,2,GLES20.GL_FLOAT,false,0,quad)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,color[0]);GLES20.glUniform1i(blitTexture,0)
+        GLES20.glUniform1i(blitTurns,quarter)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);GLES20.glDisableVertexAttribArray(blitPosition)
         if(!EGL14.eglSwapBuffers(display,eglSurface))
             throw SurfaceLostException("Wallpaper surface was lost (EGL 0x%x).".format(EGL14.eglGetError()))

@@ -1,0 +1,4 @@
+<!-- A bare class name resolves inside this package, including the .preview build. -->
+<dream xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="dev.srimi.depthwall.StandBySettingsActivity"
+    android:showClockAndComplications="false" />

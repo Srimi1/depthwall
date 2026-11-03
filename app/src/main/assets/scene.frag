@@ -8,6 +8,9 @@ uniform float imageAspect;
 uniform float time;
 uniform float progress;
 uniform int kind;
+// AOD pose weight (0 awake, 1 dozing) and its burn-in shift in scene units.
+uniform float ambient;
+uniform vec2 ambientShift;
 uniform sampler2D backgroundTex;
 uniform sampler2D foregroundTex;
 uniform sampler2D clockTex;
@@ -26,7 +29,7 @@ mat2 rotate(float a) { return mat2(cos(a),-sin(a),sin(a),cos(a)); }
 vec3 sky(vec2 p) {
     vec2 cell=floor(p*650.0);float n=hash(vec3(cell,19.0));
     float star=pow(n,180.0)*.65*(.75+.25*sin(time*1.7+n*400.0));
-    return vec3(star*.7,star*.8,star);
+    return vec3(star*.7,star*.8,star)*(1.0-ambient);
 }
 // One crater per cell keeps the cost at four hashes per scale; x shades the bowl and rim, y darkens floors.
 vec2 craters(vec3 p, vec3 light) {
@@ -216,9 +219,18 @@ vec3 geometry(vec2 p) {
     }
     return col;
 }
+// AOD keeps a small, softened subject on true black so few OLED pixels stay lit. SystemUI's
+// AOD scrim (40–64 % black on Android 17) dims it further, so this stays fairly bright.
+vec3 dimForAod(vec3 c) {
+    float luma=dot(c,vec3(.299,.587,.114));
+    return mix(c,mix(c,vec3(luma),.5)*.7,ambient);
+}
 void main() {
-    vec2 p=(uv-.5)*vec2(resolution.x/resolution.y,1.0)*2.0;
-    vec4 clock=texture2D(clockTex,uv);
+    // The AOD pose shrinks the scene and lowers it beneath the AOD clock; waking scales and lifts it
+    // back to the lock orbit. At full AOD the planet centre lands about 80 % down the panel.
+    vec2 p=((uv-.5)*vec2(resolution.x/resolution.y,1.0)*2.0-ambientShift-vec2(0.0,.46*ambient))/mix(1.0,.4,ambient);
+    // SystemUI draws the AOD clock; the wallpaper clock fades out with the AOD pose.
+    vec4 clock=texture2D(clockTex,uv)*(1.0-ambient);
     if(kind==0) {
         float viewAspect=resolution.x/resolution.y;
         vec2 crop=vec2(min(1.0,viewAspect/imageAspect),min(1.0,imageAspect/viewAspect))/zoom;
@@ -226,9 +238,15 @@ void main() {
         vec4 bg=texture2D(backgroundTex,clamp(t+motion*.012,0.0,1.0));
         vec4 fg=texture2D(foregroundTex,clamp((t-.5)/1.04+.5-motion*.018,0.0,1.0));
         vec3 color=bg.rgb*(1.0-clock.a)+clock.rgb;
-        gl_FragColor=vec4(color*(1.0-fg.a)+fg.rgb,1.0);
+        color=color*(1.0-fg.a)+fg.rgb;
+        // Layered AOD: the foreground subject as a faint silhouette over an almost black background.
+        vec3 aod=bg.rgb*.04*(1.0-fg.a)+fg.rgb*.25;
+        gl_FragColor=vec4(mix(color,mix(aod,vec3(dot(aod,vec3(.299,.587,.114))),.6),ambient),1.0);
     } else {
         vec3 color=kind==5?snow(p):(kind==6?geometry(p):(kind==3?saturn(p):globe(p)));
+        // Landscapes and rings fill the panel, so AOD keeps only a soft central vignette of them.
+        if(kind==3||kind==5||kind==6) color*=mix(1.0,smoothstep(1.05,.3,length(p)),ambient);
+        color=dimForAod(color);
         gl_FragColor=vec4(color*(1.0-clock.a)+clock.rgb,1.0);
     }
 }

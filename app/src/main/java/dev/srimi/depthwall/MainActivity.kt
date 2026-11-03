@@ -24,7 +24,7 @@ open class MainActivity:ComponentActivity() {
             val settings by vm.settings.collectAsStateWithLifecycle()
             val ready by vm.settingsReady.collectAsStateWithLifecycle()
             DepthTheme(settings.appTheme) {
-                if(ready) DepthApp(vm, initialSettingsOpen=this is WallpaperSettingsActivity)
+                if(ready) DepthApp(vm, initialSettingsOpen=this is WallpaperSettingsActivity, initialStandByOpen=this is StandBySettingsActivity)
                 else Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             }
         }
@@ -33,3 +33,6 @@ open class MainActivity:ComponentActivity() {
 
 /** Android's live wallpaper settings button opens the same depth controls as the app. */
 class WallpaperSettingsActivity : MainActivity()
+
+/** Android's screen saver settings open StandBy's options here. */
+class StandBySettingsActivity : MainActivity()

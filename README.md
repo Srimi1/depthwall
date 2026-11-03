@@ -2,19 +2,20 @@
 <h1 align="center">DepthWall</h1>
 <p align="center">A little space. A lot of depth.</p>
 
-A personal, no-root Android wallpaper app with AMOLED blacks and papaya-orange accents. Designed for the OnePlus 7T Pro McLaren 4G (`hotdog`) and crDroid on Android 17. **Physical-phone validation is pending; emulator results are recorded separately.**
+A personal Android wallpaper app with AMOLED blacks and papaya-orange accents. It runs without root; an optional Magisk/KernelSU module adds super wallpapers on Always-On Display. Designed for the OnePlus 7T Pro McLaren 4G (`hotdog`) and crDroid on Android 17. **Physical-phone validation is pending; emulator results are recorded separately.**
 
 ## Inside
 
 - **Home:** a new start screen for the OnePlus 7T Pro's 1440 × 3120 AMOLED panel. A full-screen carousel of the newest originals, then shelves for Best for your phone, Living worlds, Papaya Edition, space and depth.
 - **Live:** seven built-in OpenGL worlds (Earth, Mars, Saturn, Moon, Snow Mountain, Geometry and Sun) with adjustable performance. Optional Xiaomi/HyperOS packs appear only once installed.
 - **Browse:** 76 original static illustrations, including twenty-eight 4K portrait car, theme and space designs, plus search, category/colour filters, online sources and website import, favourites, crop positioning, home/lock application and image export.
-- **Depth Studio:** 12 prepared layered scenes, transparent foreground import, a manual erase/restore mask editor, parallax and optional digital, minimal or analogue clocks.
+- **Depth Studio:** 12 prepared layered scenes, transparent foreground import, a manual erase/restore mask editor, parallax and an optional wallpaper clock in any of eleven faces.
 - **Library:** offline downloads, local imports, saved favourites, settings and optional hourly, six-hourly or daily static rotation.
 - **Online collections:** paginated NASA originals, SFW Wallhaven, Wikimedia, and ESA / ISRO / JAXA / CSA collections via Commons. Filter by verified 4K source dimensions and keep creator credits and source links.
 - **Website import:** paste an accessible HTTPS wallpaper page or direct image link, including official space galleries and wallpaper sites. Choose an original image from the detected candidates; sites requiring browser access can still be downloaded there and imported locally.
 - **Phone and depth settings:** Papaya, Space blue and AMOLED monochrome palettes; OnePlus 7T Pro 1440 × 3120 export profile; optional 2160 × 4680 portrait export; persistent depth/clock defaults and explicit updates to an active depth wallpaper. Android’s live wallpaper settings button opens these controls directly.
-- **crDroid AOD setup:** a direct system AOD settings shortcut and read-only compatibility report for the OnePlus 7T Pro McLaren 4G (`hotdog`). Wallpaper rendering/sensors pause on ambient displays; displaying DepthWall imagery during AOD still requires a supported privileged ROM integration.
+- **Super wallpapers on AOD (rooted):** with the DepthWall AOD module, crDroid's Always-On Display keeps a dim, desaturated planet on true black that zooms back to the lock-screen orbit when you wake the phone. A readiness checklist shows every prerequisite. Without the module, rendering and sensors pause on ambient displays as before. See [AOD support](docs/AOD_AND_EMULATOR.md).
+- **StandBy:** a full-screen charging clock, like iPhone StandBy. Turn the phone on its side on the charger: eleven clock faces, your DepthWall planet, calendar/battery/alarm/world widgets and a red night mode, tuned for the AMOLED panel. See [StandBy](docs/STANDBY.md).
 - No app download-count quota, ads, accounts, subscriptions, analytics or hosted backend. Provider rate limits, source rights and device storage still apply. Downloads retain originals; smaller images are never upscaled into claimed 4K detail.
 
 See [sources, downloads and phone settings](docs/ONLINE_WALLPAPERS.md) for supported integrations and limitations.
@@ -48,4 +49,4 @@ For a personally signed release, run `python3 tools/create_personal_key.py`, the
 
 The [logo master](branding/depthwall-logo.png), Android adaptive/monochrome launcher icons, and artwork generators ([catalogue](tools/generate_art.py), [car and theme extras](tools/generate_extra_art.py), [phone collection](tools/generate_device_art.py)) are included. Wallpaper artwork is original generative illustration. The logo's generation brief is recorded in [branding/PROMPT.md](branding/PROMPT.md). No Xiaomi, OnePlus or McLaren branding is used in the app identity.
 
-DepthWall's optional clock is drawn inside its own wallpaper. The native crDroid clock remains controlled by the ROM. Wallpaper AOD requires a restricted Android permission that current crDroid retains; this normally installed no-root APK cannot enable it. See [AOD support](docs/AOD_AND_EMULATOR.md).
+DepthWall's optional clock is drawn inside its own wallpaper. The native crDroid clock remains controlled by the ROM. Wallpaper AOD requires a restricted Android permission that crDroid grants only to system apps; the optional Magisk/KernelSU module installs DepthWall that way. See [AOD support](docs/AOD_AND_EMULATOR.md).

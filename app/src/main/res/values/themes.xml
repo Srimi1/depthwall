@@ -6,6 +6,14 @@
         <item name="android:windowBackground">#000000</item>
         <item name="android:colorAccent">#FF870A</item>
     </style>
+    <!-- StandBy runs edge to edge on true black; the window never shows a preview frame. -->
+    <style name="Theme.DepthWall.StandBy">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:statusBarColor">#000000</item>
+    </style>
     <color name="black">#000000</color>
     <string name="wallpaper_description">Original planetary scenes, layered depth and clocks. Choose a scene in DepthWall before applying.</string>
 </resources>
