@@ -2,6 +2,7 @@ package dev.srimi.depthwall
 
 import android.view.Display
 import dev.srimi.depthwall.data.DisplayRenderPolicy
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,5 +34,24 @@ class DisplayRenderPolicyTest {
         assertFalse(DisplayRenderPolicy.canRender(true, true, Display.STATE_UNKNOWN))
         assertFalse(DisplayRenderPolicy.canRender(true, true, -1))
         assertFalse(DisplayRenderPolicy.canRender(true, true, Int.MAX_VALUE))
+    }
+
+    @Test fun ordinaryEngineNeverDrawsWhileDozingEvenWithAnAmbientSignal() {
+        for (state in listOf(Display.STATE_DOZE, Display.STATE_DOZE_SUSPEND, Display.STATE_OFF))
+            assertEquals(DisplayRenderPolicy.Mode.STOP, DisplayRenderPolicy.mode(true, false, state, false, true))
+    }
+
+    @Test fun ambientEngineDrawsOneFrameOnlyWhileVisibleAndDozing() {
+        assertEquals(DisplayRenderPolicy.Mode.AMBIENT_FRAME, DisplayRenderPolicy.mode(true, false, Display.STATE_DOZE, true, false))
+        assertEquals(DisplayRenderPolicy.Mode.AMBIENT_FRAME, DisplayRenderPolicy.mode(true, false, Display.STATE_DOZE_SUSPEND, true, false))
+        // The framework callback can arrive before the panel reports doze.
+        assertEquals(DisplayRenderPolicy.Mode.AMBIENT_FRAME, DisplayRenderPolicy.mode(true, false, Display.STATE_OFF, true, true))
+        assertEquals(DisplayRenderPolicy.Mode.STOP, DisplayRenderPolicy.mode(false, false, Display.STATE_DOZE, true, true))
+        assertEquals(DisplayRenderPolicy.Mode.STOP, DisplayRenderPolicy.mode(true, false, Display.STATE_OFF, true, false))
+    }
+
+    @Test fun anAwakePanelOverridesAStaleAmbientCallback() {
+        assertEquals(DisplayRenderPolicy.Mode.RUN, DisplayRenderPolicy.mode(true, true, Display.STATE_ON, true, true))
+        assertEquals(DisplayRenderPolicy.Mode.RUN, DisplayRenderPolicy.mode(true, true, Display.STATE_ON, false, false))
     }
 }

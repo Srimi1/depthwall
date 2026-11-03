@@ -1,0 +1,6 @@
+id=depthwall_aod
+name=DepthWall AOD
+version=@VERSION@
+versionCode=@VERSION_CODE@
+author=srimi
+description=Installs DepthWall as a system app so crDroid grants AMBIENT_WALLPAPER and keeps its super wallpapers on Always-On Display.

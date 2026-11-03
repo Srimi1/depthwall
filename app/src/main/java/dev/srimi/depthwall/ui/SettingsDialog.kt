@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.srimi.depthwall.clock.ClockFaces
 import dev.srimi.depthwall.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.first
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Wait for persisted preferences before making an editable snapshot, including cold system-settings entry. */
-@Composable fun SettingsDialog(items:List<WallpaperItem>,vm:MainViewModel,onClose:()->Unit) {
+@Composable fun SettingsDialog(items:List<WallpaperItem>,vm:MainViewModel,onClose:()->Unit,onStandBy:()->Unit={}) {
     var attempt by remember { mutableIntStateOf(0) }
     var failure by remember { mutableStateOf<String?>(null) }
     val snapshot by produceState<AppSettings?>(null,vm,attempt) {
@@ -29,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
         catch(error:Exception) { failure=error.message ?: "Preferences could not be loaded." }
     }
     val loaded=snapshot
-    if(loaded!=null)LoadedSettingsDialog(loaded,items,vm,onClose)
+    if(loaded!=null)LoadedSettingsDialog(loaded,items,vm,onClose,onStandBy)
     else AlertDialog(onDismissRequest=onClose,
         title={Text(if(failure==null)"Loading preferences" else "Preferences unavailable")},
         text={
@@ -41,7 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 }
 
 @OptIn(coil.annotation.ExperimentalCoilApi::class)
-@Composable private fun LoadedSettingsDialog(settings:AppSettings,items:List<WallpaperItem>,vm:MainViewModel,onClose:()->Unit) {
+@Composable private fun LoadedSettingsDialog(settings:AppSettings,items:List<WallpaperItem>,vm:MainViewModel,onClose:()->Unit,onStandBy:()->Unit) {
     // A preference emission from another screen must not replace an in-progress draft.
     var s by remember { mutableStateOf(settings) }
     val context=LocalContext.current
@@ -64,7 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             Toggle("Open images in Depth mode",s.depthEnabled){s=s.copy(depthEnabled=it)}
             LabelSlider("Parallax strength",s.depthParallax,0f..1f){s=s.copy(depthParallax=it)}
             Text("Wallpaper clock",fontSize=12.sp,color=Muted)
-            ChoiceRow(listOf("Off","Digital","Minimal","Analogue"),s.depthClock){s=s.copy(depthClock=it)}
+            ChoiceRow(ClockFaces.wallpaperChoices,s.depthClock){s=s.copy(depthClock=it)}
             if(s.depthClock!="Off")LabelSlider("Clock position",s.depthClockY,.18f.. .72f){s=s.copy(depthClockY=it)}
             Text("Defaults apply when you open a wallpaper preview. For a subject in front of the clock, use a layered wallpaper or create a foreground with Edit mask / Import layer. The Android lock-screen clock is separate.",fontSize=12.sp,color=Muted)
             OutlinedButton(enabled=!busy,onClick={vm.applyDepthDefaults(s);onClose()},modifier=Modifier.fillMaxWidth().testTag("update_active_depth")) {
@@ -89,11 +90,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             Text("Saved images: %.1f MB".format(items.filter { it.localPath.isNotBlank() }.sumOf { it.bytes }/1048576.0),fontSize=12.sp,color=Muted)
             TextButton(onClick={vm.run("Thumbnail cache cleared. Saved wallpapers are kept.") { withContext(Dispatchers.IO) { coil.Coil.imageLoader(context).diskCache?.clear();coil.Coil.imageLoader(context).memoryCache?.clear() } }}){Text("Clear thumbnail cache")}
             HorizontalDivider()
-            AodSettingsSection()
+            AodSettingsSection(vm)
+            HorizontalDivider()
+            Text("StandBy",style=MaterialTheme.typography.titleSmall)
+            Text("A full-screen clock on the charger, with every clock face, your planets, widgets and a red night mode.",fontSize=12.sp,color=Muted)
+            TextButton(onClick=onStandBy,modifier=Modifier.testTag("standby_settings")){Text("StandBy settings")}
             HorizontalDivider()
             Text("DepthWall ${dev.srimi.depthwall.BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.titleSmall)
             Text("Personal edition · Android 12+\nDesigned for the OnePlus 7T Pro\nNo ads. No accounts. No analytics.",fontSize=12.sp,color=Muted)
-            Text("Phone-specific frame rate, battery and original-pack compatibility require testing on your crDroid build. AOD and native lock-screen clock layering are not enabled by this no-root app.",fontSize=12.sp,color=Muted)
+            Text("Phone-specific frame rate, battery and original-pack compatibility require testing on your crDroid build. Super wallpapers on AOD need the DepthWall AOD module; the native lock-screen clock stays crDroid’s.",fontSize=12.sp,color=Muted)
         }
     },confirmButton={TextButton(enabled=!busy,onClick={vm.saveSettings(s);onClose()}){Text("Save preferences")}},dismissButton={TextButton(onClick=onClose){Text("Cancel")}})
 }

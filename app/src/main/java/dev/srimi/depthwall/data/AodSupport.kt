@@ -3,7 +3,6 @@ package dev.srimi.depthwall.data
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
@@ -20,8 +19,19 @@ data class AodStatus(
     val colorInversion: Boolean?,
     val batterySaver: Boolean,
     val ambientPermission: Boolean,
+    val systemApp: Boolean = false,
+    val ambientComponent: Boolean = false,
+    val romAodWallpaper: Boolean? = null,
+    /** crDroid's `doze_always_on_wallpaper_enabled`; null when it cannot be read. */
+    val aodWallpaperSetting: Boolean? = null,
+    val canWriteSecure: Boolean = false,
+    /** True when the lock screen (which AOD shows) runs the AOD-capable DepthWall component. */
+    val lockUsesAmbient: Boolean? = null,
 ) {
     val isHotdog: Boolean get() = device.equals("hotdog", ignoreCase = true)
+    /** Every prerequisite this app can observe; the panel itself still needs checking on the phone. */
+    val aodReady: Boolean get() = ambientPermission && ambientComponent && lockUsesAmbient == true &&
+        romAodWallpaper != false && alwaysOn != false && aodWallpaperSetting != false
 
     fun report(): String = buildString {
         appendLine("DepthWall ${dev.srimi.depthwall.BuildConfig.VERSION_NAME} AOD compatibility observations")
@@ -33,8 +43,12 @@ data class AodStatus(
         appendLine("Doze suppression: ${label(suppressed)}")
         appendLine("Colour inversion: ${label(colorInversion)}")
         appendLine("Battery Saver: ${label(batterySaver)}")
+        appendLine("Installed as system app: ${if (systemApp) "yes" else "no"}")
         appendLine("Ambient wallpaper permission: ${if (ambientPermission) "granted" else "not granted"}")
-        appendLine("Wallpaper ambient integration: not implemented by this ordinary APK")
+        appendLine("AOD wallpaper component: ${if (ambientComponent) "enabled" else "disabled"}")
+        appendLine("ROM config_dozeSupportsAodWallpaper: ${label(romAodWallpaper)}")
+        appendLine("Secure doze_always_on_wallpaper_enabled: ${label(aodWallpaperSetting)} (writable: ${if (canWriteSecure) "yes" else "no"})")
+        appendLine("Lock screen uses DepthWall AOD wallpaper: ${label(lockUsesAmbient)}")
         appendLine("Physical AOD / sleep / wake validation: not established by these observations")
     }
 
@@ -44,7 +58,13 @@ data class AodStatus(
 }
 
 object AodSupport {
-    private const val AMBIENT_PERMISSION = "android.permission.AMBIENT_WALLPAPER"
+    /** Shared with the Magisk/KernelSU module in tools/magisk; keep both in step. */
+    const val MODULE_STEPS = """DepthWall AOD module (rooted crDroid)
+1. Build: python3 tools/build_aod_module.py app/build/outputs/apk/release/app-release.apk
+2. Flash artifacts/DepthWall-AOD-module.zip in Magisk or KernelSU, then reboot. It turns on crDroid's wallpaper-on-AOD setting once.
+3. Keep the same signing key for DepthWall updates; a differently signed copy cannot update the system app.
+4. In DepthWall: Settings → Always-on display → Apply AOD wallpaper, choose Lock screen or Home and lock screens.
+5. Turn on crDroid's Always-on display, then lock the phone."""
 
     fun read(context: Context): AodStatus {
         // These three keys are @Readable in crDroid 17. A missing/denied value stays unknown.
@@ -56,7 +76,17 @@ object AodSupport {
             preference("doze_always_on"), preference("suppress_doze"),
             preference("accessibility_display_inversion_enabled"),
             context.getSystemService(PowerManager::class.java).isPowerSaveMode,
-            context.checkSelfPermission(AMBIENT_PERMISSION) == PackageManager.PERMISSION_GRANTED,
+            AmbientWallpaper.isGranted(context),
+            AmbientWallpaper.isSystemInstall(context),
+            AmbientWallpaper.isAmbientEnabled(context),
+            AmbientWallpaper.romSupportsAodWallpaper(),
+            AmbientWallpaper.aodWallpaperSetting(context),
+            AmbientWallpaper.canWriteSecureSettings(context),
+            WallpaperApplyState.capture(context)?.let { state ->
+                // Without a separate lock wallpaper, the lock screen shows the home wallpaper.
+                val lock = if (state.lockId < 0) state.homeComponent else state.lockComponent
+                lock == AmbientWallpaper.ambientComponent(context).flattenToString()
+            },
         )
     }
 

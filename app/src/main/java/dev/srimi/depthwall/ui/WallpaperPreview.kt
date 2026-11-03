@@ -31,6 +31,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.style.TextOverflow
+import dev.srimi.depthwall.clock.ClockFaces
 import dev.srimi.depthwall.data.*
 import dev.srimi.depthwall.wallpaper.SceneView
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +105,7 @@ import kotlinx.coroutines.withContext
                     }
                     if(live) {
                         Text("Clock style",fontSize=12.sp,color=Muted)
-                        ChoiceRow(listOf("Off","Digital","Minimal","Analogue"),config.clock) { config=config.copy(clock=it) }
+                        ChoiceRow(ClockFaces.wallpaperChoices,config.clock) { config=config.copy(clock=it) }
                         if(config.clock!="Off") {
                             LabelSlider("Clock position",config.clockY,.18f.. .72f) { config=config.copy(clockY=it) }
                             Text("This clock is drawn in the wallpaper. The crDroid clock is separate.",color=Muted,fontSize=11.sp)

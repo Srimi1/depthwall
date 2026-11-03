@@ -45,6 +45,16 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
                 requestDraw()
             }
         }
+    /** Clockwise quarter turns of the drawn scene, for StandBy on a window that did not rotate. */
+    @Volatile var turns=0
+        set(value) {
+            if(field==value)return
+            field=value
+            requestDraw()
+        }
+    /** StandBy caps the scene's frame rate and resolution below the wallpaper's quality profile. */
+    @Volatile var maxFps=Int.MAX_VALUE
+    @Volatile var maxRenderWidth=Int.MAX_VALUE
     @Volatile private var active=true
     @Volatile private var ready=false
     @Volatile private var closed=false
@@ -178,11 +188,11 @@ class SceneView(context:Context):SurfaceView(context),SurfaceHolder.Callback {
             // time-driven effect, so it only needs edits and clock-minute draws.
             val still=!RenderBudget.hasContinuousMotion(current.scene,progress)
             val fps=if(still && !changing)0 else
-                RenderBudget.fps(quality,changing,true,saver,hot,refreshRate)
-            val maxWidth=RenderBudget.renderWidth(quality,saver,hot)
+                minOf(RenderBudget.fps(quality,changing,true,saver,hot,refreshRate),maxFps)
+            val maxWidth=minOf(RenderBudget.renderWidth(quality,saver,hot),maxRenderWidth)
             try {
                 renderer?.draw(current,renderWidth,renderHeight,(now-start)/1000f,
-                    progress,0f,0f,maxWidth)
+                    progress,0f,0f,maxWidth,turns=turns)
             } catch(error:Exception) { reportError(error);return }
             val delay=if(fps>0)(1000L/fps-(SystemClock.elapsedRealtime()-now)).coerceAtLeast(1)
                 else if(current.clock!="Off")60000-System.currentTimeMillis()%60000 else 0

@@ -43,7 +43,8 @@ fun cardBadge(item: WallpaperItem): String? = when {
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
-@Composable fun HomeScreen(items: List<WallpaperItem>, picks: List<WallpaperItem>, onSelect: (WallpaperItem) -> Unit, onBrowse: (String) -> Unit, onOpenTab: (Int) -> Unit) {
+@Composable fun HomeScreen(items: List<WallpaperItem>, picks: List<WallpaperItem>, onSelect: (WallpaperItem) -> Unit, onBrowse: (String) -> Unit,
+    onStandBy: () -> Unit = {}, onOpenTab: (Int) -> Unit) {
     val scenes = items.filter { it.kind == "NATIVE_SCENE" }
     val papaya = items.filter { it.category == "Papaya Edition" }
     val space = items.filter { it.kind == "STATIC" && it.category == "Space" && it.isLocal }
@@ -84,6 +85,7 @@ fun cardBadge(item: WallpaperItem): String? = when {
         if (depth.isNotEmpty()) item(key = "depth") {
             Shelf("Depth", "Layered scenes with parallax and an optional clock", depth, "depth", onSelect) { onOpenTab(Tabs.DEPTH) }
         }
+        item(key = "standby") { StandByCard(onStandBy, Modifier.padding(horizontal = 20.dp)) }
         item(key = "browse") {
             Card(onClick = { onBrowse("All") }, colors = CardDefaults.cardColors(containerColor = Raised), shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth().testTag("home_browse")) {

@@ -35,7 +35,15 @@ The native clock belongs to SystemUI; DepthWall's clock is a separate optional w
 
 ## Always-on display
 
-The no-root app does not declare hidden ambient-wallpaper support. Android 17 and crDroid require the system-only `AMBIENT_WALLPAPER` permission for that flag, and reject ambient wallpaper binding without it (except watches). Screen-off rendering therefore stays stopped. The Settings screen offers crDroid's exported native AOD activity, with display/settings fallbacks and read-only preference observations. Both the wallpaper and preview gate drawing on their own display being `STATE_ON` as well as global interactivity; ambient/off display changes cancel future frames and stop wallpaper sensors. AOD requires a supported ROM integration and physical-device verification, not a timer drawing while the screen is off.
+An ordinary install does not declare ambient-wallpaper support: Android 17 and crDroid require the `signature|preinstalled` `AMBIENT_WALLPAPER` permission and reject ambient binding without it. Its screen-off rendering stays stopped; both the wallpaper and preview gate drawing on their own display being `STATE_ON` as well as global interactivity.
+
+On a rooted phone the DepthWall AOD module installs the APK as a system app, which receives the permission. A second, initially disabled `AmbientDepthWallpaperService` declares `supportsAmbientMode`; `AmbientWallpaper.syncComponent` enables it only while the permission is held, and new applies then use it. Its engine draws one dim, shrunken, burn-in-shifted still frame per AOD entry (`DisplayRenderPolicy.Mode.AMBIENT_FRAME`) and eases back to the lock orbit on wake. Android 17's SystemUI shows it only while `doze_always_on_wallpaper_enabled` is on; the module grants `WRITE_SECURE_SETTINGS` so the checklist can switch that setting. Details and limits are in [AOD support](AOD_AND_EMULATOR.md).
+
+## Clocks and StandBy
+
+`ClockFaces` holds eleven Canvas clock faces (plus StandBy's scene overlay) with pure time logic in `ClockMath`. The wallpaper clock layer draws a face into a minute texture with animation off; StandBy draws them live.
+
+StandBy is a `DreamService` that crDroid starts while charging, plus an activity and Quick Settings tile that host the same `StandByView`. The view turns its content from accelerometer orientation (`StandByPolicy`), so it works with auto-rotate off. Landscape pages are a clock, a `SceneView` planet (30 fps, 720 px short edge, blitted with the same quarter turn) and widgets; portrait is a nightstand clock. Sensors and receivers live between `start()` and `stop()`; redraws follow each face's next visible change, at most once a second outside a 600 ms flip. Night mode uses the light sensor with hysteresis. See [StandBy](STANDBY.md).
 
 ## Original Super Wallpaper ports
 

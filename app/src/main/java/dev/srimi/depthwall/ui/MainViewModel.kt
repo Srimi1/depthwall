@@ -1,12 +1,10 @@
 package dev.srimi.depthwall.ui
 
 import android.app.Application
-import android.content.ComponentName
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.srimi.depthwall.DepthWallApp
 import dev.srimi.depthwall.data.*
-import dev.srimi.depthwall.wallpaper.DepthWallpaperService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
@@ -65,16 +63,16 @@ class MainViewModel(app:Application):AndroidViewModel(app) {
         persistSettings(s)
         val state = WallpaperApplyState.capture(getApplication())
             ?: error("Preferences saved. Cannot read the active wallpaper; reopen its preview to apply these controls.")
-        val component = ComponentName(getApplication(), DepthWallpaperService::class.java).flattenToString()
+        val app: Application = getApplication()
         var updated = 0
         val home = repo.scenes.active(1)
-        if (state.homeComponent == component && home.scene == "depth") {
+        if (AmbientWallpaper.isOwn(app, state.homeComponent) && home.scene == "depth") {
             val flags = if (state.lockId < 0) 3 else 1
             repo.scenes.commit(home.copy(parallax=s.depthParallax, clock=s.depthClock, clockY=s.depthClockY), flags)
             updated = updated or flags
         }
         val lock = repo.scenes.active(2)
-        if (state.lockId > 0 && state.lockComponent == component && lock.scene == "depth") {
+        if (state.lockId > 0 && AmbientWallpaper.isOwn(app, state.lockComponent) && lock.scene == "depth") {
             repo.scenes.commit(lock.copy(parallax=s.depthParallax, clock=s.depthClock, clockY=s.depthClockY), 2)
             updated = updated or 2
         }

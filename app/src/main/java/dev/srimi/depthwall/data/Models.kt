@@ -1,6 +1,8 @@
 package dev.srimi.depthwall.data
 
 import androidx.room.*
+import dev.srimi.depthwall.clock.ClockFaces
+import dev.srimi.depthwall.clock.ClockStyle
 import kotlinx.coroutines.flow.Flow
 
 enum class WallpaperKind { STATIC, LAYERED_DEPTH, NATIVE_SCENE, EXTERNAL_SERVICE }
@@ -73,6 +75,38 @@ data class AppSettings(
     val depthClock: String = "Off",
     val depthClockY: Float = .33f,
 )
+
+/** StandBy (charging clock) preferences. Every field is validated when read. */
+data class StandBySettings(
+    val face: String = "Bold",
+    val nightMode: String = "Auto",
+    val scene: String = "earth",
+    val zones: List<String> = ClockStyle.DEFAULT_ZONES,
+    val showSeconds: Boolean = false,
+    val burnInShift: Boolean = true,
+    /** Minutes without a touch before StandBy dims; 0 never dims. */
+    val dimAfterMinutes: Int = 30,
+) {
+    companion object {
+        val NIGHT_MODES = listOf("Auto", "Always", "Off")
+        val SCENES = listOf("earth", "mars", "moon", "saturn", "sun", "snow", "geometry")
+        val DIM_CHOICES = listOf(0, 10, 30)
+        /** World-clock cities offered in settings, as IANA zones. */
+        val CITIES = listOf("Europe/London", "America/New_York", "Asia/Tokyo", "Asia/Kolkata", "Asia/Dubai",
+            "Asia/Singapore", "Europe/Paris", "America/Los_Angeles", "Australia/Sydney", "Europe/Berlin")
+
+        fun of(face: String?, nightMode: String?, scene: String?, zones: String?, seconds: Boolean?, shift: Boolean?, dim: Int?) = StandBySettings(
+            face = face?.takeIf { it in ClockFaces.standByIds } ?: "Bold",
+            nightMode = nightMode?.takeIf { it in NIGHT_MODES } ?: "Auto",
+            scene = scene?.takeIf { it in SCENES } ?: "earth",
+            zones = zones?.split(',')?.map { it.trim() }?.filter { runCatching { java.time.ZoneId.of(it) }.isSuccess }
+                ?.distinct()?.take(4)?.ifEmpty { null } ?: ClockStyle.DEFAULT_ZONES,
+            showSeconds = seconds ?: false,
+            burnInShift = shift ?: true,
+            dimAfterMinutes = dim?.takeIf { it in DIM_CHOICES } ?: 30,
+        )
+    }
+}
 
 object CropMath {
     data class Crop(val left: Int, val top: Int, val width: Int, val height: Int)
