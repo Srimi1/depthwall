@@ -86,6 +86,11 @@ data class StandBySettings(
     val burnInShift: Boolean = true,
     /** Minutes without a touch before StandBy dims; 0 never dims. */
     val dimAfterMinutes: Int = 30,
+    /**
+     * Start by itself: Android's screen saver while charging, shown only while the phone is on its
+     * side. On by default; DepthWall switches the screen saver when it may write secure settings.
+     */
+    val autoStart: Boolean = true,
 ) {
     companion object {
         val NIGHT_MODES = listOf("Auto", "Always", "Off")
@@ -95,7 +100,8 @@ data class StandBySettings(
         val CITIES = listOf("Europe/London", "America/New_York", "Asia/Tokyo", "Asia/Kolkata", "Asia/Dubai",
             "Asia/Singapore", "Europe/Paris", "America/Los_Angeles", "Australia/Sydney", "Europe/Berlin")
 
-        fun of(face: String?, nightMode: String?, scene: String?, zones: String?, seconds: Boolean?, shift: Boolean?, dim: Int?) = StandBySettings(
+        fun of(face: String?, nightMode: String?, scene: String?, zones: String?, seconds: Boolean?, shift: Boolean?, dim: Int?,
+               auto: Boolean? = null) = StandBySettings(
             face = face?.takeIf { it in ClockFaces.standByIds } ?: "Bold",
             nightMode = nightMode?.takeIf { it in NIGHT_MODES } ?: "Auto",
             scene = scene?.takeIf { it in SCENES } ?: "earth",
@@ -104,6 +110,7 @@ data class StandBySettings(
             showSeconds = seconds ?: false,
             burnInShift = shift ?: true,
             dimAfterMinutes = dim?.takeIf { it in DIM_CHOICES } ?: 30,
+            autoStart = auto ?: true,
         )
     }
 }

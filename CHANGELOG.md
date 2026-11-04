@@ -11,6 +11,7 @@ Installs as a normal update over 1.5.0. If you use the AOD module, rebuild it fr
 
 ### Added
 
+- **StandBy starts by itself.** On the charger and on its side, StandBy now starts when the screen times out. Upright, the phone sleeps as usual, and standing it upright closes StandBy. The new **Start by itself on its side** setting is on by default. With the AOD module (or a one-time `adb shell pm grant` of `WRITE_SECURE_SETTINGS`), DepthWall makes StandBy Android's screen saver while charging; otherwise StandBy settings explains the one-time setup.
 - **`tools/integrity_report.sh`**, a read-only phone report: boot and build state, Developer options, VPN, Magisk modules and DenyList, app versions and installers, and, for every process of DigiYatra, Claude, DigiLocker, Google Play services, the Play Store, zygote and any package you name, each system path that is really served from `/data` (a magic-mounted module file, whatever its name). It stops if adb cannot reach the phone and says so when root is not available.
 
 ### Changed

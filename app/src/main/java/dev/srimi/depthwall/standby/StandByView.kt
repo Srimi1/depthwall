@@ -120,12 +120,13 @@ class StandByView(context: Context, private val listener: Listener) : FrameLayou
         }
     }
 
-    fun start() {
+    /** [orientation]: a reading the caller already has (the screen saver's on-its-side check), if any. */
+    fun start(orientation: Int = StandByPolicy.UNKNOWN_ORIENTATION) {
         if (started) return
         started = true
         lastTouch = SystemClock.elapsedRealtime()
-        // Until the sensor reports, assume the window's own rotation is upright.
-        snapped = Math.floorMod(-(display?.rotation ?: 0) * 90, 360)
+        // Until the sensor reports, use the caller's reading or assume the window's own rotation is upright.
+        snapped = if (orientation != StandByPolicy.UNKNOWN_ORIENTATION) orientation else Math.floorMod(-(display?.rotation ?: 0) * 90, 360)
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_CHANGED); addAction(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
             addAction(Intent.ACTION_TIME_CHANGED); addAction(Intent.ACTION_TIMEZONE_CHANGED)

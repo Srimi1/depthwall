@@ -31,6 +31,8 @@ class SettingsStore(private val context: Context) {
     private val standBySeconds = booleanPreferencesKey("standby_seconds")
     private val standByShift = booleanPreferencesKey("standby_shift")
     private val standByDim = intPreferencesKey("standby_dim")
+    private val standByAuto = booleanPreferencesKey("standby_auto")
+    private val standByAutoApplied = booleanPreferencesKey("standby_auto_applied")
     val flow = context.dataStore.data.map { values ->
         AppSettings(
             quality = values[quality] ?: "Balanced",
@@ -54,12 +56,16 @@ class SettingsStore(private val context: Context) {
     }
     val standBy = context.dataStore.data.map { values ->
         StandBySettings.of(values[standByFace], values[standByNight], values[standByScene], values[standByZones],
-            values[standBySeconds], values[standByShift], values[standByDim])
+            values[standBySeconds], values[standByShift], values[standByDim], values[standByAuto])
     }
     suspend fun saveStandBy(s: StandBySettings) = context.dataStore.edit {
         it[standByFace]=s.face; it[standByNight]=s.nightMode; it[standByScene]=s.scene; it[standByZones]=s.zones.joinToString(",")
         it[standBySeconds]=s.showSeconds; it[standByShift]=s.burnInShift; it[standByDim]=s.dimAfterMinutes
+        it[standByAuto]=s.autoStart
     }
+    /** Set once DepthWall has switched the screen saver by default, so a later choice in Android's settings stands. */
+    val standByAutoDefaultApplied = context.dataStore.data.map { it[standByAutoApplied] ?: false }
+    suspend fun markStandByAutoDefaultApplied() = context.dataStore.edit { it[standByAutoApplied] = true }
     /** StandBy remembers the last face swiped to, like the clock on a nightstand. */
     suspend fun saveStandByFace(face: String) = context.dataStore.edit { it[standByFace] = face }
 }

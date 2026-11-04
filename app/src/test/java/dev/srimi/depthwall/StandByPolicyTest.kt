@@ -86,4 +86,46 @@ class StandByPolicyTest {
         val many = StandBySettings.of(null, null, null, StandBySettings.CITIES.joinToString(","), null, null, null)
         assertEquals(4, many.zones.size)
     }
+
+    @Test fun startingByItselfIsOnByDefault() {
+        assertTrue(StandBySettings().autoStart)
+        assertTrue(StandBySettings.of(null, null, null, null, null, null, null).autoStart)
+        assertFalse(StandBySettings.of(null, null, null, null, null, null, null, auto = false).autoStart)
+    }
+
+    @Test fun automaticStandByShowsOnlyOnItsSide() {
+        val unknown = StandByPolicy.UNKNOWN_ORIENTATION
+        // On its side either way: show straight away.
+        assertEquals(StandByPolicy.SideGate.SHOW, StandByPolicy.sideGate(90, 0))
+        assertEquals(StandByPolicy.SideGate.SHOW, StandByPolicy.sideGate(270, 10_000))
+        // Upright, upside down or no reading yet: wait a moment for a turn, then sleep as usual.
+        assertEquals(StandByPolicy.SideGate.WAIT, StandByPolicy.sideGate(0, 0))
+        assertEquals(StandByPolicy.SideGate.WAIT, StandByPolicy.sideGate(unknown, StandByPolicy.SIDE_WAIT_MS - 1))
+        assertEquals(StandByPolicy.SideGate.SLEEP, StandByPolicy.sideGate(0, StandByPolicy.SIDE_WAIT_MS))
+        assertEquals(StandByPolicy.SideGate.SLEEP, StandByPolicy.sideGate(180, StandByPolicy.SIDE_WAIT_MS))
+        // Lying flat gives no reading, so an unknown orientation stays unknown and never counts as on its side.
+        assertEquals(unknown, StandByPolicy.snap(-1, unknown))
+        assertEquals(StandByPolicy.SideGate.SLEEP, StandByPolicy.sideGate(StandByPolicy.snap(-1, unknown), StandByPolicy.SIDE_WAIT_MS))
+    }
+
+    @Test fun screenSaverSettingsDecideWhetherStandByStartsOnTheCharger() {
+        val pkg = "dev.srimi.depthwall"
+        val cls = "dev.srimi.depthwall.standby.StandByDreamService"
+        fun starts(enabled: String?, components: String?, onCharge: String?) =
+            StandByPolicy.screenSaverStartsStandBy(enabled, components, onCharge, pkg, cls)
+        assertTrue(starts("1", "$pkg/.standby.StandByDreamService", "1"))
+        assertTrue(starts("1", "$pkg/$cls", "1"))
+        // "Use screen saver" is on by default on crDroid; "While charging" is not.
+        assertTrue(starts(null, "$pkg/$cls", "1"))
+        assertFalse(starts(null, "$pkg/$cls", null))
+        assertFalse(starts("0", "$pkg/$cls", "1"))
+        assertFalse(starts("1", "$pkg/$cls", "0"))
+        // Android starts only the first listed screen saver.
+        assertTrue(starts("1", "$pkg/$cls,com.google.android.deskclock/com.android.deskclock.Screensaver", "1"))
+        assertFalse(starts("1", "com.google.android.deskclock/com.android.deskclock.Screensaver,$pkg/$cls", "1"))
+        // The preview build is a different package.
+        assertFalse(starts("1", "$pkg.preview/$cls", "1"))
+        assertFalse(starts("1", null, "1"))
+        assertFalse(starts("1", "", "1"))
+    }
 }
