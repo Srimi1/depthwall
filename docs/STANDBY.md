@@ -4,11 +4,18 @@ StandBy turns the phone into a bedside or desk clock while it charges, in the sp
 
 ## Setup
 
-1. **Home → StandBy** or **Settings → StandBy settings**: pick a face, night mode, planet and world-clock cities.
-2. Tap **Screen saver**, choose **DepthWall StandBy**, and set **When to start** to **While charging**.
-3. Put the phone on its side on the charger and let the screen time out.
+StandBy starts by itself (**Start by itself on its side**, on by default): put the phone **on its side on the charger** and it starts when the screen times out. Upright, flat or upside down, the phone just sleeps as usual. Standing it upright while StandBy shows closes StandBy after 3 seconds, and unplugging ends it. The power button still just locks the phone, as on any Android phone.
 
-**Save & try** and the **StandBy** Quick Settings tile open the same view as a normal activity. It keeps the screen on only while the phone is charging.
+How it works: StandBy is Android's screen saver. crDroid 17 starts the chosen screen saver when the screen times out while charging, if "When to start" includes "While charging", which is off by default (`PowerManagerService.shouldNapAtBedTimeLocked`). When the screen saver starts, StandBy keeps the screen black for up to 4 seconds while it checks the accelerometer, then either shows itself (landscape) or ends so the phone sleeps. A tap during those seconds wakes the phone as usual.
+
+Android lets an app change the screen saver only with `WRITE_SECURE_SETTINGS`:
+
+- **With the AOD module**, the module grants it and DepthWall makes DepthWall StandBy the screen saver while charging the first time it runs or comes to the front. It does this once; if you later pick another screen saver in Android's settings, that choice stands and the switch in **StandBy settings** shows off. Turning the switch on again makes StandBy the screen saver; turning it off puts back the screen saver DepthWall replaced. A StandBy screen saver you set up yourself is left in place, and only the on-its-side rule lifts. The preview build never takes the screen saver by itself.
+- **Without the module**, grant it once from a computer: `adb shell pm grant dev.srimi.depthwall android.permission.WRITE_SECURE_SETTINGS`, then open DepthWall. Or set it by hand: **StandBy settings → Screen saver**, choose **DepthWall StandBy** and set **When to start** to **While charging**. The on-its-side rule applies either way.
+
+With **Start by itself** off, a screen saver you choose by hand shows StandBy in any orientation, including the portrait nightstand clock, as before. **Home → StandBy** (or **Settings → StandBy settings**) picks the face, night mode, planet and world-clock cities.
+
+**Save & try** and the **StandBy** Quick Settings tile open the same view as a normal activity in any orientation. It keeps the screen on only while the phone is charging. The screen saver's own **Preview** follows the on-its-side rule.
 
 ## Using it
 

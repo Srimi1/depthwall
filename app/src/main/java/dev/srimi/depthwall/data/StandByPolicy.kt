@@ -26,6 +26,40 @@ object StandByPolicy {
 
     fun layout(snapped: Int): Layout = if (snapped == 90 || snapped == 270) Layout.LANDSCAPE else Layout.PORTRAIT
 
+    /** No orientation reading yet. [snap] keeps it while the phone lies flat, and [layout] reads it as upright. */
+    const val UNKNOWN_ORIENTATION = -1
+    /** How long the screen saver waits for the phone to be on its side before letting it sleep. */
+    const val SIDE_WAIT_MS = 4_000L
+    /** How long StandBy stays after the phone is stood upright again. */
+    const val UPRIGHT_LEAVE_MS = 3_000L
+
+    enum class SideGate { SHOW, WAIT, SLEEP }
+
+    /**
+     * Automatic StandBy runs only on its side: show it in landscape, otherwise wait briefly for a
+     * reading (or a turn) and then let the phone sleep as if no screen saver were set.
+     */
+    fun sideGate(snapped: Int, waitedMs: Long): SideGate = when {
+        layout(snapped) == Layout.LANDSCAPE -> SideGate.SHOW
+        waitedMs >= SIDE_WAIT_MS -> SideGate.SLEEP
+        else -> SideGate.WAIT
+    }
+
+    /**
+     * Whether Android will start DepthWall StandBy at screen timeout on the charger, from the raw
+     * secure settings (null = never written). crDroid enables screen savers by default, but leaves
+     * "While charging" off; the chosen screen saver is the first of a comma-separated list of
+     * flattened components, whose class may be written relative to the package.
+     */
+    fun screenSaverStartsStandBy(enabled: String?, components: String?, onCharge: String?,
+                                 packageName: String, className: String): Boolean {
+        if (enabled == "0" || onCharge != "1") return false
+        val first = components?.split(',')?.firstOrNull()?.trim().orEmpty()
+        val pkg = first.substringBefore('/', "")
+        val cls = first.substringAfter('/', "").let { if (it.startsWith('.')) pkg + it else it }
+        return pkg == packageName && cls == className
+    }
+
     /**
      * Clockwise quarter turns that keep content upright. The listener reports 90 when the left side
      * is up; a window the system already rotated (auto-rotate on) cancels the turn out.

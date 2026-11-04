@@ -1,0 +1,139 @@
+#!/bin/sh
+# Read-only root-hiding and Play Integrity report for one phone, written to OUTPUT_DIRECTORY.
+# It shows which module files are mapped into apps that check for root, and records the boot, ROM,
+# Magisk and app state those apps and Play Integrity look at. Nothing on the phone is changed, and
+# the keybox is only checked for presence, never read.
+# Root checks use `su -c`; Magisk asks once to allow root for "Shell". Exits 3 without root.
+# Open the apps first: only running processes can be checked. Extra package names are checked too.
+set -eu
+: "${ANDROID_HOME:=$HOME/Library/Android/sdk}"
+if [ "$#" -lt 2 ]; then echo 'Usage: tools/integrity_report.sh SERIAL OUTPUT_DIRECTORY [PACKAGE ...]' >&2; exit 2; fi
+serial=$1
+destination=$2
+shift 2
+APPS="org.digiyatra.org com.anthropic.claude com.digilocker.android com.google.android.gms com.android.vending${*:+ $*}"
+adb="$ANDROID_HOME/platform-tools/adb"
+
+state=$("$adb" -s "$serial" get-state 2>&1 | tr -d '\r' || true)
+if [ "$state" != device ]; then
+    echo "adb cannot use $serial ($state). Check the serial, USB debugging authorisation and ANDROID_HOME." >&2
+    exit 1
+fi
+mkdir -p "$destination"
+
+device() { "$adb" -s "$serial" shell "$1" 2>&1 | tr -d '\r' || true; }
+# Arguments must not contain double quotes.
+root() { "$adb" -s "$serial" shell "su -c \"$1\"" 2>&1 | tr -d '\r' || true; }
+has_root=0
+if [ "$(root 'id -u')" = 0 ]; then has_root=1; fi
+
+# Every process of a package, including its ":name" subprocesses (detection SDKs often run there).
+pids_of() { device 'ps -A -o PID,NAME' | awk -v p="$1" '$2 == p || index($2, p ":") == 1 { print $1 }'; }
+
+# Magisk bind-mounts module files onto their system paths, so maps shows /product/..., not
+# /data/adb/... Match by device instead: a path outside /data whose device is /data's is a module file.
+# stdin: /proc/PID/maps; $1: /data's major:minor in decimal, from mountinfo.
+module_backed() {
+    awk -v data="$1" '
+        function hex(s,    i, n, c) {
+            n = 0; s = tolower(s)
+            for (i = 1; i <= length(s); i++) { c = index("0123456789abcdef", substr(s, i, 1)); if (!c) return -1; n = n * 16 + c - 1 }
+            return n
+        }
+        NF >= 6 {
+            split($4, d, ":")
+            path = $6; for (i = 7; i <= NF; i++) path = path " " $i
+            if (hex(d[1]) ":" hex(d[2]) == data && path ~ /^\// && path !~ /^\/data\//) print
+        }' | sort -u
+}
+
+{
+    for key in ro.product.model ro.product.device ro.build.fingerprint ro.build.display.id ro.crdroid.version \
+        ro.build.date ro.build.type ro.build.tags ro.debuggable ro.secure ro.adb.secure \
+        ro.boot.verifiedbootstate ro.boot.flash.locked ro.boot.vbmeta.device_state \
+        ro.build.version.release ro.build.version.sdk ro.build.version.security_patch ro.vendor.build.security_patch; do
+        printf '%s: %s\n' "$key" "$(device "getprop $key")"
+    done
+    printf 'selinux: %s\n' "$(device getenforce)"
+} > "$destination/boot-and-build.txt"
+
+{
+    for key in development_settings_enabled adb_enabled adb_wifi_enabled private_dns_mode private_dns_specifier; do
+        printf '%s: %s\n' "$key" "$(device "settings get global $key")"
+    done
+    printf 'accessibility services: %s\n' "$(device 'settings get secure enabled_accessibility_services')"
+    echo '--- VPN networks (empty when no VPN is connected)'
+    device 'dumpsys connectivity' | grep -iE 'VPN|IKEv2|WireGuard' | grep -v -e NOT_VPN -e VpnNetworkProvider | head -n 20 || true
+} > "$destination/environment.txt"
+
+{
+    for package in $APPS; do
+        echo "=== $package"
+        device "pm path $package"
+        device "dumpsys package $package" | grep -E 'versionName|installerPackageName|installInitiatingPackageName|codePath|lastUpdateTime' | head -n 8 || true
+    done
+} > "$destination/packages.txt"
+
+{
+    echo '--- DepthWall overlays targeting android (must be empty: zygote would load them into every app)'
+    device 'cmd overlay list android' | grep -i depthwall || true
+    echo '--- DepthWall overlays targeting SystemUI (only with --systemui-overlay)'
+    device 'cmd overlay list com.android.systemui' | grep -i depthwall || true
+    echo '--- framework AOD wallpaper flag (crDroid sets true)'
+    device 'cmd overlay lookup android android:bool/config_dozeSupportsAodWallpaper'
+    echo '--- SystemUI AOD wallpaper override (-1 = use the framework flag)'
+    device 'cmd overlay lookup com.android.systemui com.android.systemui:integer/config_dozeSupportsAodWallpaperOverride'
+    if [ "$has_root" = 1 ]; then
+        echo '--- DepthWall idmaps in /data/resource-cache (apps can list this folder)'
+        root 'ls /data/resource-cache' | grep -i depthwall || true
+    fi
+} > "$destination/overlays.txt"
+
+{
+    if [ "$has_root" != 1 ]; then
+        echo 'ROOT UNAVAILABLE: allow root for Shell in Magisk, then run again.'
+    else
+        echo '--- root'
+        root 'magisk -v; magisk -V'
+        echo '--- modules (disable/remove markers listed under each)'
+        root 'for m in /data/adb/modules/*; do echo \$m; ls \$m | grep -E disable\|remove\|skip_mount; done'
+        echo '--- denylist'
+        root 'magisk --denylist status; magisk --denylist ls'
+        echo '--- tricky store (file names only; keybox contents are not read)'
+        root 'ls /data/adb/tricky_store'
+        root 'test -f /data/adb/tricky_store/keybox.xml && echo keybox.xml present || echo no keybox.xml'
+    fi
+} > "$destination/root.txt"
+
+# The decisive check. zygote64 shows what every new app inherits before any DenyList unmount.
+{
+    if [ "$has_root" != 1 ]; then
+        echo 'ROOT UNAVAILABLE: allow root for Shell in Magisk, then run again. No process was checked.'
+    else
+        for process in zygote64 zygote $APPS; do
+            pids=$(pids_of "$process")
+            if [ -z "$pids" ]; then echo "=== $process: not running"; continue; fi
+            for pid in $pids; do
+                maps=$(root "cat /proc/$pid/maps")
+                data=$(root "cat /proc/$pid/mountinfo" | awk '$5 == "/data" { print $3; exit }')
+                echo "=== $process pid $pid (/data device ${data:-unknown})"
+                echo '--- system paths served from /data (module files; should be empty)'
+                if [ -n "$data" ]; then printf '%s\n' "$maps" | module_backed "$data"; fi
+                echo '--- paths naming DepthWall, Magisk or /data/adb'
+                printf '%s\n' "$maps" | grep -iE 'depthwall|magisk|/data/adb' | sort -u || true
+                root "ls -l /proc/$pid/fd" | grep -iE 'depthwall|magisk|/data/adb' || true
+            done
+        done
+        zygote=$(pids_of zygote64 | head -n 1)
+        if [ -n "$zygote" ]; then
+            echo '=== module mounts zygote64 sees (DenyList and Shamiko remove these from hidden apps after fork)'
+            root "cat /proc/$zygote/mountinfo" | grep -E 'magisk|/adb/modules|KSU' || true
+        fi
+    fi
+} > "$destination/app-mappings.txt"
+
+if [ "$has_root" != 1 ]; then
+    echo "Partial report saved in $destination: root was not available, so no process was checked." >&2
+    exit 3
+fi
+echo "Read-only report saved in $destination. Only running processes were checked; open the apps first."

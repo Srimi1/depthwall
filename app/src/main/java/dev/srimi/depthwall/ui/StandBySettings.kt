@@ -36,6 +36,7 @@ import dev.srimi.depthwall.clock.ClockFace
 import dev.srimi.depthwall.clock.ClockFaces
 import dev.srimi.depthwall.clock.ClockMath
 import dev.srimi.depthwall.clock.ClockStyle
+import dev.srimi.depthwall.data.StandByAutoStart
 import dev.srimi.depthwall.data.StandBySettings
 import dev.srimi.depthwall.standby.StandByActivity
 import dev.srimi.depthwall.standby.StandByTileService
@@ -64,8 +65,16 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
 
 /** Wait for saved preferences before editing, like the main settings dialog. */
 @Composable fun StandBySettingsDialog(vm: MainViewModel, onClose: () -> Unit) {
+    val context = LocalContext.current
     val loaded by produceState<StandBySettings?>(null, vm) {
-        value = try { vm.repo.settings.standBy.first() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { StandBySettings() }
+        value = try {
+            val stored = vm.repo.settings.standBy.first()
+            val defaultApplied = vm.repo.settings.standByAutoDefaultApplied.first()
+            // Once the default has run, a screen saver picked later in Android shows here as off, so
+            // Save leaves that choice alone and turning the switch on is an explicit change.
+            stored.copy(autoStart = stored.autoStart && (!defaultApplied || !StandByAutoStart.canSwitch(context) ||
+                StandByAutoStart.isOn(context) != false))
+        } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { StandBySettings() }
     }
     loaded?.let { StandByEditor(it, vm, onClose) }
         ?: AlertDialog(onDismissRequest = onClose, title = { Text("StandBy") }, text = { LinearProgressIndicator(Modifier.fillMaxWidth()) },
@@ -79,6 +88,19 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
     val time = rememberTicking()
     val is24h = DateFormat.is24HourFormat(context)
     val faces = ClockFaces.all.filterNot { it.standByOnly }
+    // Android's own screen saver state, re-read whenever the dialog opens (the user may have changed it there).
+    val systemOn = remember { StandByAutoStart.isOn(context) }
+    val canSwitch = remember { StandByAutoStart.canSwitch(context) }
+    /** Saves, then switches Android's screen saver to match "Start by itself" when DepthWall may. */
+    fun save(chosen: StandBySettings) = vm.run("StandBy saved") {
+        vm.repo.settings.saveStandBy(chosen)
+        // Only a change of the switch touches Android's screen saver (the default itself is applied on resume).
+        if (chosen.autoStart != initial.autoStart) {
+            val switched = if (chosen.autoStart) StandByAutoStart.turnOn(context) else StandByAutoStart.turnOff(context)
+            // Without the permission nothing changed: leave the default to apply once it is granted.
+            if (switched && StandByAutoStart.canSwitch(context)) vm.repo.settings.markStandByAutoDefaultApplied()
+        }
+    }
     fun styleFor(night: Boolean) = ClockStyle(is24h = is24h, showSeconds = s.showSeconds, zones = s.zones).let { if (night) it.toNight() else it }
     AlertDialog(onDismissRequest = onClose, title = { Text("StandBy") }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -126,7 +148,9 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
             Text("True black everywhere, at most one redraw a second, a few pixels of drift each minute. Planets render at 30 fps and 720 px; nothing runs off the charger.", fontSize = 12.sp, color = Muted)
             HorizontalDivider()
             Text("Start on the charger", style = MaterialTheme.typography.titleSmall)
-            Text("In Screen saver, choose DepthWall StandBy and set When to start to While charging. Turn the phone on its side on the charger.", fontSize = 12.sp, color = Muted)
+            StandByToggle("Start by itself on its side", s.autoStart) { s = s.copy(autoStart = it) }
+            Text(autoStartStatus(s.autoStart, systemOn, canSwitch, StandByAutoStart.adbGrant(context)), fontSize = 12.sp, color = Muted,
+                modifier = Modifier.testTag("standby_auto_status"))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     runCatching { context.startActivity(Intent(Settings.ACTION_DREAM_SETTINGS)) }
@@ -145,17 +169,25 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
         }
     }, confirmButton = {
         TextButton(onClick = {
-            val chosen = s
-            vm.run("StandBy saved") { vm.repo.settings.saveStandBy(chosen) }
+            save(s)
             context.startActivity(Intent(context, StandByActivity::class.java))
             onClose()
         }, modifier = Modifier.testTag("standby_try")) { Text("Save & try") }
     }, dismissButton = {
         Row {
-            TextButton(onClick = { val chosen = s; vm.run("StandBy saved") { vm.repo.settings.saveStandBy(chosen) }; onClose() }) { Text("Save") }
+            TextButton(onClick = { save(s); onClose() }) { Text("Save") }
             TextButton(onClick = onClose) { Text("Cancel") }
         }
     })
+}
+
+/** What "Start by itself" will do on this phone, in plain words. */
+private fun autoStartStatus(wanted: Boolean, systemOn: Boolean?, canSwitch: Boolean, adbGrant: String): String = when {
+    !wanted -> "Off. StandBy opens from the tile or Save & try. If you pick DepthWall StandBy as the screen saver yourself, it shows in any orientation."
+    systemOn == true -> "On. On the charger and on its side, StandBy starts when the screen times out. Upright, the phone sleeps as usual. The power button still just locks the phone."
+    canSwitch -> "Save to make DepthWall StandBy Android's screen saver while charging. It then starts when the screen times out on the charger, on its side only."
+    else -> "Android lets DepthWall switch the screen saver only with the AOD module or a one-time grant from a computer: $adbGrant. " +
+        "Or tap Screen saver, choose DepthWall StandBy and set When to start to While charging."
 }
 
 @Composable private fun StandByToggle(label: String, value: Boolean, onChange: (Boolean) -> Unit) {

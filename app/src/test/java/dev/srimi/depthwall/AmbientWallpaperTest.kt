@@ -27,4 +27,16 @@ class AmbientWallpaperTest {
         val samples = (0..600 step 50).map { AmbientWallpaper.exitLevel(it.toLong(), 600) }
         assertTrue(samples.zipWithNext().all { (a, b) -> b <= a })
     }
+
+    @Test fun systemUiOverrideDecidesBeforeTheFrameworkFlag() {
+        // The optional SystemUI overlay sets 1, for ROMs whose framework flag is false.
+        assertEquals(true, AmbientWallpaper.effectiveAodWallpaperFlag(1, false))
+        assertEquals(false, AmbientWallpaper.effectiveAodWallpaperFlag(0, true))
+        // -1 (SystemUI's default), other values or an unreadable override defer to the framework.
+        assertEquals(false, AmbientWallpaper.effectiveAodWallpaperFlag(-1, false))
+        assertEquals(true, AmbientWallpaper.effectiveAodWallpaperFlag(-1, true))
+        assertEquals(true, AmbientWallpaper.effectiveAodWallpaperFlag(2, true))
+        assertEquals(false, AmbientWallpaper.effectiveAodWallpaperFlag(null, false))
+        assertNull(AmbientWallpaper.effectiveAodWallpaperFlag(null, null))
+    }
 }

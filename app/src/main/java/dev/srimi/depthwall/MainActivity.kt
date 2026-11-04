@@ -12,8 +12,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.srimi.depthwall.data.StandByAutoStart
 import dev.srimi.depthwall.ui.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 open class MainActivity:ComponentActivity() {
     override fun onCreate(savedInstanceState:Bundle?) {
@@ -28,6 +32,13 @@ open class MainActivity:ComponentActivity() {
                 else Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Picks up a WRITE_SECURE_SETTINGS grant that arrived while this process was already running.
+        val app = application as DepthWallApp
+        lifecycleScope.launch(Dispatchers.IO) { StandByAutoStart.applyDefault(app, app.repository.settings) }
     }
 }
 

@@ -1,5 +1,7 @@
-<!-- Static framework overlay: lets SystemUI keep an ambient-capable wallpaper visible during AOD. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.srimi.depthwall.aodoverlay">
-    <overlay android:targetPackage="android" android:isStatic="true" android:priority="980" />
+<!-- Static SystemUI overlay: lets SystemUI keep an ambient-capable wallpaper visible during AOD.
+     Never target "android" here. Zygote preloads static framework overlays and every app inherits
+     the open file, so a framework overlay from a Magisk module is visible to apps on the DenyList. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.srimi.depthwall.aodoverlay.systemui">
+    <overlay android:targetPackage="com.android.systemui" android:isStatic="true" android:priority="980" />
     <application android:hasCode="false" />
 </manifest>

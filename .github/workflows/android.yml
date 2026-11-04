@@ -22,6 +22,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Verify release tooling
         run: python3 -m unittest discover -s tools -p 'test_verify*.py'
+      - name: Verify AOD module and integrity report tooling
+        run: |
+          python3 -m unittest discover -s tools -p 'test_build_aod_module.py'
+          python3 -m unittest discover -s tools -p 'test_integrity_report.py'
       - name: Build and verify
         run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest assemblePreview testPreviewUnitTest lintPreview
       - uses: actions/upload-artifact@v4

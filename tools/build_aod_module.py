@@ -1,11 +1,22 @@
 """Package DepthWall as a Magisk/KernelSU module for crDroid Always-On Display.
 
-Usage: python3 tools/build_aod_module.py [signed.apk] [--out artifacts/DepthWall-AOD-module.zip] [--no-overlay]
+Usage: python3 tools/build_aod_module.py [signed.apk] [--out artifacts/DepthWall-AOD-module.zip] [--systemui-overlay]
 
 The module installs the APK at /system/app/DepthWall. AMBIENT_WALLPAPER is a
 signature|preinstalled permission, so Android grants it to that system copy and
-DepthWall's ambient wallpaper component can bind on AOD. An optional static
-overlay sets crDroid's config_dozeSupportsAodWallpaper (default false).
+DepthWall's ambient wallpaper component can bind on AOD.
+
+By default the module ships no overlay. crDroid already sets the framework's
+config_dozeSupportsAodWallpaper to true in its vendor overlay, and every file a
+module adds under /product/overlay is one more trace for root detectors.
+--systemui-overlay adds a static SystemUI overlay that sets
+config_dozeSupportsAodWallpaperOverride to 1, which SystemUI reads first, for ROMs
+that leave the framework flag false. DepthWall's AOD checklist shows which applies.
+
+The overlay targets SystemUI, never "android". Zygote preloads static framework
+overlays and every app inherits the open file, so a framework overlay served from
+a Magisk module shows up in the memory maps of apps on the DenyList (1.5.0 did this,
+and root-detecting apps flagged the phone). Only SystemUI loads a SystemUI overlay.
 
 The overlay is compiled with the Android SDK's aapt2/zipalign/apksigner and
 signed with the local debug key; a static, preinstalled overlay is trusted by its
@@ -33,6 +44,8 @@ SIGNING_MAGIC = b"APK Sig Block 42"
 # APK Signature Scheme v3 and v2 block IDs; v3 is preferred because it carries rotation.
 SCHEME_IDS = (0xF05368C0, 0x7109871A)
 EXECUTABLE = {"customize.sh", "service.sh", "META-INF/com/google/android/update-binary"}
+OVERLAY_TARGET = "com.android.systemui"
+OVERLAY_PATH = "system/product/overlay/DepthWallAodSystemUIOverlay.apk"
 
 
 def signing_certificate(apk: bytes) -> bytes:
@@ -100,7 +113,24 @@ def badging(tools: Path, apk: Path) -> dict[str, str]:
     return dict(re.findall(r"(\w+)='([^']*)'", line))
 
 
+def overlay_target(manifest: Path) -> str:
+    """targetPackage of the overlay manifest's <overlay> element."""
+    match = re.search(r'<overlay\b[^>]*\bandroid:targetPackage="([^"]+)"', manifest.read_text())
+    if not match:
+        raise SystemExit(f"{manifest} has no <overlay android:targetPackage>.")
+    return match.group(1)
+
+
+def check_overlay_target(manifest: Path) -> None:
+    """Refuse a framework overlay: zygote would load it into every app, hidden apps included."""
+    target = overlay_target(manifest)
+    if target != OVERLAY_TARGET:
+        raise SystemExit(f"{manifest} targets {target}. The AOD overlay must target {OVERLAY_TARGET}: "
+                         "a static overlay for 'android' is preloaded by zygote and leaks the module into every app.")
+
+
 def build_overlay(tools: Path, platform: Path, work: Path) -> Path:
+    check_overlay_target(OVERLAY / "AndroidManifest.xml")
     compiled, unsigned, aligned, signed = (work / name for name in ("res.zip", "overlay-unsigned.apk", "overlay-aligned.apk", "overlay.apk"))
     run(tools / "aapt2", "compile", "--dir", OVERLAY / "res", "-o", compiled)
     run(tools / "aapt2", "link", "--manifest", OVERLAY / "AndroidManifest.xml", "-I", platform / "android.jar",
@@ -134,18 +164,29 @@ def package(apk: Path, out: Path, overlay: Path | None, info: dict[str, str], si
         # APKs are stored uncompressed so Android can map them directly from the module.
         archive.write(apk, "system/app/DepthWall/DepthWall.apk", zipfile.ZIP_STORED)
         if overlay:
-            archive.write(overlay, "system/product/overlay/DepthWallAodOverlay.apk", zipfile.ZIP_STORED)
+            archive.write(overlay, OVERLAY_PATH, zipfile.ZIP_STORED)
         if sighash:
             archive.writestr("depthwall.sighash", sighash + "\n")
         archive.writestr("depthwall.package", info["name"] + "\n")
 
 
-def main(argv: list[str]) -> None:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("apk", nargs="?", default=ROOT / "app/build/outputs/apk/release/app-release.apk", type=Path)
     parser.add_argument("--out", default=ROOT / "artifacts/DepthWall-AOD-module.zip", type=Path)
-    parser.add_argument("--no-overlay", action="store_true", help="Leave crDroid's AOD wallpaper flag unchanged.")
+    parser.add_argument("--systemui-overlay", action="store_true",
+                        help="Add a SystemUI overlay that allows wallpapers on AOD, for ROMs whose framework flag is false. "
+                             "crDroid does not need it.")
+    # The default since 1.5.1; still accepted so older build commands keep working.
+    parser.add_argument("--no-overlay", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.systemui_overlay and args.no_overlay:
+        parser.error("--systemui-overlay and --no-overlay contradict each other.")
+    return args
+
+
+def main(argv: list[str]) -> None:
+    args = parse_args(argv)
     if not args.apk.is_file():
         raise SystemExit(f"Signed APK not found: {args.apk}. Build it with ./gradlew :app:assembleRelease.")
     android = sdk()
@@ -160,9 +201,9 @@ def main(argv: list[str]) -> None:
         print(f"Warning: signing key not recorded ({error}); the installer will not compare keys.", file=sys.stderr)
         sighash = None
     with tempfile.TemporaryDirectory() as directory:
-        overlay = None if args.no_overlay else build_overlay(tools, latest(android / "platforms"), Path(directory))
+        overlay = build_overlay(tools, latest(android / "platforms"), Path(directory)) if args.systemui_overlay else None
         package(args.apk, args.out, overlay, info, sighash)
-    print(f"{args.out} · DepthWall {info['versionName']} ({info['name']})" + ("" if overlay else " · no overlay"))
+    print(f"{args.out} · DepthWall {info['versionName']} ({info['name']})" + (" · SystemUI overlay" if overlay else " · no overlay"))
 
 
 if __name__ == "__main__":
