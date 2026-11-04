@@ -65,8 +65,16 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
 
 /** Wait for saved preferences before editing, like the main settings dialog. */
 @Composable fun StandBySettingsDialog(vm: MainViewModel, onClose: () -> Unit) {
+    val context = LocalContext.current
     val loaded by produceState<StandBySettings?>(null, vm) {
-        value = try { vm.repo.settings.standBy.first() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { StandBySettings() }
+        value = try {
+            val stored = vm.repo.settings.standBy.first()
+            val defaultApplied = vm.repo.settings.standByAutoDefaultApplied.first()
+            // Once the default has run, a screen saver picked later in Android shows here as off, so
+            // Save leaves that choice alone and turning the switch on is an explicit change.
+            stored.copy(autoStart = stored.autoStart && (!defaultApplied || !StandByAutoStart.canSwitch(context) ||
+                StandByAutoStart.isOn(context) != false))
+        } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { StandBySettings() }
     }
     loaded?.let { StandByEditor(it, vm, onClose) }
         ?: AlertDialog(onDismissRequest = onClose, title = { Text("StandBy") }, text = { LinearProgressIndicator(Modifier.fillMaxWidth()) },
@@ -86,7 +94,8 @@ private val DIM_LABELS = mapOf(0 to "Never", 10 to "10 min", 30 to "30 min")
     /** Saves, then switches Android's screen saver to match "Start by itself" when DepthWall may. */
     fun save(chosen: StandBySettings) = vm.run("StandBy saved") {
         vm.repo.settings.saveStandBy(chosen)
-        if (chosen.autoStart != initial.autoStart || (chosen.autoStart && systemOn != true)) {
+        // Only a change of the switch touches Android's screen saver (the default itself is applied on resume).
+        if (chosen.autoStart != initial.autoStart) {
             val switched = if (chosen.autoStart) StandByAutoStart.turnOn(context) else StandByAutoStart.turnOff(context)
             // Without the permission nothing changed: leave the default to apply once it is granted.
             if (switched && StandByAutoStart.canSwitch(context)) vm.repo.settings.markStandByAutoDefaultApplied()

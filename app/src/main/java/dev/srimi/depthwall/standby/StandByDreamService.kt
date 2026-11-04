@@ -50,9 +50,9 @@ class StandByDreamService : DreamService(), StandByView.Listener {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        isInteractive = true
+        // Until StandBy shows: dim, black, and a tap wakes the phone (a non-interactive dream does).
+        isInteractive = false
         isFullscreen = true
-        // Dim and black until StandBy actually shows.
         isScreenBright = false
         window?.setBackgroundDrawable(ColorDrawable(Color.BLACK))
         view = StandByView(this, this).apply { visibility = View.INVISIBLE }
@@ -103,6 +103,7 @@ class StandByDreamService : DreamService(), StandByView.Listener {
         if (showing) return
         showing = true
         view.removeCallbacks(sleepIfNotOnSide)
+        isInteractive = true
         isScreenBright = true
         view.visibility = View.VISIBLE
         view.start(snapped)

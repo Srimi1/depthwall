@@ -45,9 +45,9 @@ object StandByAutoStart {
         if (!canSwitch(context)) return false
         return try {
             val resolver = context.contentResolver
-            val backup = context.getSharedPreferences(BACKUP, Context.MODE_PRIVATE)
-            if (!backup.getBoolean(SAVED, false)) {
-                val editor = backup.edit()
+            // Whatever is set now is what gets replaced, so a choice made later in Android is what comes back.
+            if (isOn(context) != true) {
+                val editor = context.getSharedPreferences(BACKUP, Context.MODE_PRIVATE).edit().clear()
                 KEYS.forEach { editor.putString(it, Settings.Secure.getString(resolver, it)) }
                 editor.putBoolean(SAVED, true).apply()
             }
@@ -57,27 +57,33 @@ object StandByAutoStart {
         } catch (error: SecurityException) { Log.w("DepthWall", "StandBy screen saver", error); false }
     }
 
-    /** Puts back the screen saver StandBy replaced, if StandBy is still the one Android starts. */
+    /**
+     * Puts back the screen saver DepthWall replaced, if StandBy is still the one Android starts.
+     * A StandBy screen saver set up by hand (no backup) is left alone: only the on-its-side rule lifts.
+     */
     fun turnOff(context: Context): Boolean {
-        if (isOn(context) != true) return true
+        val backup = context.getSharedPreferences(BACKUP, Context.MODE_PRIVATE)
+        if (!backup.getBoolean(SAVED, false)) return true
+        // Another screen saver chosen in Android since then: nothing of DepthWall's to undo.
+        if (isOn(context) != true) { backup.edit().clear().apply(); return true }
         if (!canSwitch(context)) return false
         return try {
             val resolver = context.contentResolver
-            val backup = context.getSharedPreferences(BACKUP, Context.MODE_PRIVATE)
-            val restored = if (backup.getBoolean(SAVED, false)) KEYS.all { Settings.Secure.putString(resolver, it, backup.getString(it, null)) }
-                else Settings.Secure.putInt(resolver, ON_CHARGE, 0)
+            val restored = KEYS.all { Settings.Secure.putString(resolver, it, backup.getString(it, null)) }
             backup.edit().clear().apply()
-            // A backup that already named StandBy (set by hand earlier) would leave it on: stop it starting.
-            restored && (isOn(context) != true || Settings.Secure.putInt(resolver, ON_CHARGE, 0))
+            restored
         } catch (error: SecurityException) { Log.w("DepthWall", "StandBy screen saver", error); false }
     }
 
     /**
      * StandBy is on by default: the first time DepthWall may switch the screen saver, it does so
      * once. Afterwards only the StandBy setting changes it, so a later choice in Android stands.
+     * Called at process start and whenever the app comes to the front, because a `pm grant` (from
+     * the module after boot, or over adb) does not restart a process that is already running.
      */
     suspend fun applyDefault(context: Context, store: SettingsStore) {
-        if (!canSwitch(context)) return
+        // The side-by-side preview build must not take the screen saver from the real app.
+        if (context.packageName.endsWith(".preview") || !canSwitch(context)) return
         try {
             if (store.standByAutoDefaultApplied.first()) return
             if (store.standBy.first().autoStart && isOn(context) != true && !turnOn(context)) return
